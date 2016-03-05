@@ -7,7 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		CA49B0EB1C817C4800A0951B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CA49B0EA1C817C4800A0951B /* main.cpp */; };
+		CA49B0F21C817CEE00A0951B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CA49B0F11C817CEE00A0951B /* main.cpp */; };
+		CA49B0FF1C817D0600A0951B /* randomforest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CA49B0F81C817D0600A0951B /* randomforest.cpp */; };
+		CA49B1001C817D0600A0951B /* regressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CA49B0FA1C817D0600A0951B /* regressor.cpp */; };
+		CA49B1011C817D0600A0951B /* utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CA49B0FD1C817D0600A0951B /* utils.cpp */; };
+		CA49B1161C81835400A0951B /* libopencv_imgproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = CA49B1151C81835400A0951B /* libopencv_imgproc.dylib */; };
+		CA49B1181C81836000A0951B /* libopencv_highgui.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = CA49B1171C81836000A0951B /* libopencv_highgui.dylib */; };
+		CA49B11A1C81836800A0951B /* libopencv_core.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = CA49B1191C81836800A0951B /* libopencv_core.dylib */; };
+		CA49B11C1C81839000A0951B /* libopencv_objdetect.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = CA49B11B1C81839000A0951B /* libopencv_objdetect.dylib */; };
+		CA49B11D1C81845B00A0951B /* linear.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CA49B1111C817D1300A0951B /* linear.cpp */; };
+		CA49B11E1C81846E00A0951B /* tron.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CA49B1131C817D1300A0951B /* tron.cpp */; };
+		CA49B1241C819C7400A0951B /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CA49B1231C819C7400A0951B /* Accelerate.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -24,7 +34,28 @@
 
 /* Begin PBXFileReference section */
 		CA49B0E71C817C4800A0951B /* face3000 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = face3000; sourceTree = BUILT_PRODUCTS_DIR; };
-		CA49B0EA1C817C4800A0951B /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		CA49B0F11C817CEE00A0951B /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		CA49B0F31C817D0600A0951B /* detect.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = detect.png; sourceTree = "<group>"; };
+		CA49B0F41C817D0600A0951B /* final.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = final.png; sourceTree = "<group>"; };
+		CA49B0F51C817D0600A0951B /* haarcascade_frontalface_alt2.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = haarcascade_frontalface_alt2.xml; sourceTree = "<group>"; };
+		CA49B0F61C817D0600A0951B /* headers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = headers.h; sourceTree = "<group>"; };
+		CA49B0F71C817D0600A0951B /* initial.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = initial.png; sourceTree = "<group>"; };
+		CA49B0F81C817D0600A0951B /* randomforest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = randomforest.cpp; sourceTree = "<group>"; };
+		CA49B0F91C817D0600A0951B /* randomforest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = randomforest.h; sourceTree = "<group>"; };
+		CA49B0FA1C817D0600A0951B /* regressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = regressor.cpp; sourceTree = "<group>"; };
+		CA49B0FB1C817D0600A0951B /* regressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = regressor.h; sourceTree = "<group>"; };
+		CA49B0FC1C817D0600A0951B /* tang.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = tang.jpg; sourceTree = "<group>"; };
+		CA49B0FD1C817D0600A0951B /* utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = utils.cpp; sourceTree = "<group>"; };
+		CA49B0FE1C817D0600A0951B /* utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utils.h; sourceTree = "<group>"; };
+		CA49B1111C817D1300A0951B /* linear.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = linear.cpp; sourceTree = "<group>"; };
+		CA49B1121C817D1300A0951B /* linear.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = linear.h; sourceTree = "<group>"; };
+		CA49B1131C817D1300A0951B /* tron.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = tron.cpp; sourceTree = "<group>"; };
+		CA49B1141C817D1300A0951B /* tron.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = tron.h; sourceTree = "<group>"; };
+		CA49B1151C81835400A0951B /* libopencv_imgproc.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libopencv_imgproc.dylib; sourceTree = "<group>"; };
+		CA49B1171C81836000A0951B /* libopencv_highgui.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libopencv_highgui.dylib; sourceTree = "<group>"; };
+		CA49B1191C81836800A0951B /* libopencv_core.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libopencv_core.dylib; sourceTree = "<group>"; };
+		CA49B11B1C81839000A0951B /* libopencv_objdetect.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libopencv_objdetect.dylib; sourceTree = "<group>"; };
+		CA49B1231C819C7400A0951B /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +63,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CA49B1241C819C7400A0951B /* Accelerate.framework in Frameworks */,
+				CA49B11C1C81839000A0951B /* libopencv_objdetect.dylib in Frameworks */,
+				CA49B1161C81835400A0951B /* libopencv_imgproc.dylib in Frameworks */,
+				CA49B11A1C81836800A0951B /* libopencv_core.dylib in Frameworks */,
+				CA49B1181C81836000A0951B /* libopencv_highgui.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -41,6 +77,7 @@
 		CA49B0DE1C817C4800A0951B = {
 			isa = PBXGroup;
 			children = (
+				CA49B1231C819C7400A0951B /* Accelerate.framework */,
 				CA49B0E91C817C4800A0951B /* face3000 */,
 				CA49B0E81C817C4800A0951B /* Products */,
 			);
@@ -57,9 +94,37 @@
 		CA49B0E91C817C4800A0951B /* face3000 */ = {
 			isa = PBXGroup;
 			children = (
-				CA49B0EA1C817C4800A0951B /* main.cpp */,
+				CA49B1151C81835400A0951B /* libopencv_imgproc.dylib */,
+				CA49B1171C81836000A0951B /* libopencv_highgui.dylib */,
+				CA49B1191C81836800A0951B /* libopencv_core.dylib */,
+				CA49B11B1C81839000A0951B /* libopencv_objdetect.dylib */,
+				CA49B0F31C817D0600A0951B /* detect.png */,
+				CA49B0F41C817D0600A0951B /* final.png */,
+				CA49B0F51C817D0600A0951B /* haarcascade_frontalface_alt2.xml */,
+				CA49B0F61C817D0600A0951B /* headers.h */,
+				CA49B0F71C817D0600A0951B /* initial.png */,
+				CA49B0F81C817D0600A0951B /* randomforest.cpp */,
+				CA49B0F91C817D0600A0951B /* randomforest.h */,
+				CA49B0FA1C817D0600A0951B /* regressor.cpp */,
+				CA49B0FB1C817D0600A0951B /* regressor.h */,
+				CA49B0FC1C817D0600A0951B /* tang.jpg */,
+				CA49B0FD1C817D0600A0951B /* utils.cpp */,
+				CA49B0FE1C817D0600A0951B /* utils.h */,
+				CA49B0F11C817CEE00A0951B /* main.cpp */,
+				CA49B1021C817D1300A0951B /* liblinear */,
 			);
 			path = face3000;
+			sourceTree = "<group>";
+		};
+		CA49B1021C817D1300A0951B /* liblinear */ = {
+			isa = PBXGroup;
+			children = (
+				CA49B1111C817D1300A0951B /* linear.cpp */,
+				CA49B1121C817D1300A0951B /* linear.h */,
+				CA49B1131C817D1300A0951B /* tron.cpp */,
+				CA49B1141C817D1300A0951B /* tron.h */,
+			);
+			path = liblinear;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -118,7 +183,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CA49B0EB1C817C4800A0951B /* main.cpp in Sources */,
+				CA49B11E1C81846E00A0951B /* tron.cpp in Sources */,
+				CA49B11D1C81845B00A0951B /* linear.cpp in Sources */,
+				CA49B0F21C817CEE00A0951B /* main.cpp in Sources */,
+				CA49B0FF1C817D0600A0951B /* randomforest.cpp in Sources */,
+				CA49B1001C817D0600A0951B /* regressor.cpp in Sources */,
+				CA49B1011C817D0600A0951B /* utils.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -207,6 +277,14 @@
 		CA49B0EF1C817C4800A0951B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				CLANG_X86_VECTOR_INSTRUCTIONS = default;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				HEADER_SEARCH_PATHS = /usr/local/include;
+				LIBRARY_SEARCH_PATHS = (
+					/usr/local/lib,
+					"$(PROJECT_DIR)/face3000",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -214,6 +292,14 @@
 		CA49B0F01C817C4800A0951B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				CLANG_X86_VECTOR_INSTRUCTIONS = default;
+				GCC_OPTIMIZATION_LEVEL = s;
+				HEADER_SEARCH_PATHS = /usr/local/include;
+				LIBRARY_SEARCH_PATHS = (
+					/usr/local/lib,
+					"$(PROJECT_DIR)/face3000",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -237,6 +323,7 @@
 				CA49B0F01C817C4800A0951B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
