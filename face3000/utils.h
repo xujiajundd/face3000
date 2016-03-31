@@ -13,15 +13,18 @@
 //using namespace std;
 //using namespace cv;
 
+
+
+
 //std::mutex m;
 class BoundingBox {
 public:
-	double start_x;
-	double start_y;
-	double width;
-	double height;
-	double center_x;
-	double center_y;
+	float start_x;
+	float start_y;
+	float width;
+	float height;
+	float center_x;
+	float center_y;
 	BoundingBox(){
 		start_x = 0;
 		start_y = 0;
@@ -55,34 +58,34 @@ public:
 	int regressor_stages_;
 	int tree_depth_;
 	int trees_num_per_forest_;
-	std::vector<double> local_radius_by_stage_;
+	std::vector<float> local_radius_by_stage_;
 	int initial_guess_;
-	cv::Mat_<double> mean_shape_;
+	cv::Mat_<float> mean_shape_;
 };
 
-cv::Mat_<double> ProjectShape(const cv::Mat_<double>& shape, const BoundingBox& bbox);
-cv::Mat_<double> ReProjection(const cv::Mat_<double>& shape, const BoundingBox& bbox);
-cv::Mat_<double> GetMeanShape(const std::vector<cv::Mat_<double> >& all_shapes,
+cv::Mat_<float> ProjectShape(const cv::Mat_<float>& shape, const BoundingBox& bbox);
+cv::Mat_<float> ReProjection(const cv::Mat_<float>& shape, const BoundingBox& bbox);
+cv::Mat_<float> GetMeanShape(const std::vector<cv::Mat_<float> >& all_shapes,
 	const std::vector<BoundingBox>& all_bboxes);
-void getSimilarityTransform(const cv::Mat_<double>& shape_to,
-	const cv::Mat_<double>& shape_from,
-	cv::Mat_<double>& rotation, double& scale);
+void getSimilarityTransform(const cv::Mat_<float>& shape_to,
+	const cv::Mat_<float>& shape_from,
+	cv::Mat_<float>& rotation, float& scale);
 
-//cv::Mat_<double> LoadGroundTruthShape(std::string& name);
-cv::Mat_<double> LoadGroundTruthShape(const char* name);
+//cv::Mat_<float> LoadGroundTruthShape(std::string& name);
+cv::Mat_<float> LoadGroundTruthShape(const char* name);
 
-void LoadImages(std::vector<cv::Mat_<uchar> >& images, std::vector<cv::Mat_<double> >& ground_truth_shapes,
+void LoadImages(std::vector<cv::Mat_<uchar> >& images, std::vector<cv::Mat_<float> >& ground_truth_shapes,
 	std::vector<BoundingBox>& bboxes, std::string file_names);
 
-bool ShapeInRect(cv::Mat_<double>& ground_truth_shape, cv::Rect&);
+bool ShapeInRect(cv::Mat_<float>& ground_truth_shape, cv::Rect&);
 
 std::vector<cv::Rect_<int> > DetectFaces(cv::Mat_<uchar>& image);
 std::vector<cv::Rect> DetectFaces(cv::Mat_<uchar>& image, cv::CascadeClassifier& classifier);
 
-double CalculateError(cv::Mat_<double>& ground_truth_shape, cv::Mat_<double>& predicted_shape);
+float CalculateError(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predicted_shape);
 
-void DrawPredictImage(cv::Mat_<uchar>& image, cv::Mat_<double>& shapes);
+void DrawPredictImage(cv::Mat_<uchar>& image, cv::Mat_<float>& shapes);
 
-BoundingBox GetBoundingBox(cv::Mat_<double>& shape, int width, int height);
+BoundingBox GetBoundingBox(cv::Mat_<float>& shape, int width, int height);
 
 #endif

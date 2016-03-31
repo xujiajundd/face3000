@@ -47,33 +47,33 @@ static void info(const char *fmt,...) {}
 class l2r_lr_fun: public function
 {
 public:
-    l2r_lr_fun(const problem *prob, double *C);
+    l2r_lr_fun(const problem *prob, float *C);
     ~l2r_lr_fun();
     
-    double fun(double *w);
-    void grad(double *w, double *g);
-    void Hv(double *s, double *Hs);
+    float fun(float *w);
+    void grad(float *w, float *g);
+    void Hv(float *s, float *Hs);
     
     int get_nr_variable(void);
     
 private:
-    void Xv(double *v, double *Xv);
-    void XTv(double *v, double *XTv);
+    void Xv(float *v, float *Xv);
+    void XTv(float *v, float *XTv);
     
-    double *C;
-    double *z;
-    double *D;
+    float *C;
+    float *z;
+    float *D;
     const problem *prob;
 };
 
-l2r_lr_fun::l2r_lr_fun(const problem *prob, double *C)
+l2r_lr_fun::l2r_lr_fun(const problem *prob, float *C)
 {
     int l=prob->l;
     
     this->prob = prob;
     
-    z = new double[l];
-    D = new double[l];
+    z = new float[l];
+    D = new float[l];
     this->C = C;
 }
 
@@ -84,11 +84,11 @@ l2r_lr_fun::~l2r_lr_fun()
 }
 
 
-double l2r_lr_fun::fun(double *w)
+float l2r_lr_fun::fun(float *w)
 {
     int i;
-    double f=0;
-    double *y=prob->y;
+    float f=0;
+    float *y=prob->y;
     int l=prob->l;
     int w_size=get_nr_variable();
     
@@ -99,7 +99,7 @@ double l2r_lr_fun::fun(double *w)
     f /= 2.0;
     for(i=0;i<l;i++)
     {
-        double yz = y[i]*z[i];
+        float yz = y[i]*z[i];
         if (yz >= 0)
             f += C[i]*log(1 + exp(-yz));
         else
@@ -109,10 +109,10 @@ double l2r_lr_fun::fun(double *w)
     return(f);
 }
 
-void l2r_lr_fun::grad(double *w, double *g)
+void l2r_lr_fun::grad(float *w, float *g)
 {
     int i;
-    double *y=prob->y;
+    float *y=prob->y;
     int l=prob->l;
     int w_size=get_nr_variable();
     
@@ -133,12 +133,12 @@ int l2r_lr_fun::get_nr_variable(void)
     return prob->n;
 }
 
-void l2r_lr_fun::Hv(double *s, double *Hs)
+void l2r_lr_fun::Hv(float *s, float *Hs)
 {
     int i;
     int l=prob->l;
     int w_size=get_nr_variable();
-    double *wa = new double[l];
+    float *wa = new float[l];
     
     Xv(s, wa);
     for(i=0;i<l;i++)
@@ -150,7 +150,7 @@ void l2r_lr_fun::Hv(double *s, double *Hs)
     delete[] wa;
 }
 
-void l2r_lr_fun::Xv(double *v, double *Xv)
+void l2r_lr_fun::Xv(float *v, float *Xv)
 {
     int i;
     int l=prob->l;
@@ -168,7 +168,7 @@ void l2r_lr_fun::Xv(double *v, double *Xv)
     }
 }
 
-void l2r_lr_fun::XTv(double *v, double *XTv)
+void l2r_lr_fun::XTv(float *v, float *XTv)
 {
     int i;
     int l=prob->l;
@@ -191,36 +191,36 @@ void l2r_lr_fun::XTv(double *v, double *XTv)
 class l2r_l2_svc_fun: public function
 {
 public:
-    l2r_l2_svc_fun(const problem *prob, double *C);
+    l2r_l2_svc_fun(const problem *prob, float *C);
     ~l2r_l2_svc_fun();
     
-    double fun(double *w);
-    void grad(double *w, double *g);
-    void Hv(double *s, double *Hs);
+    float fun(float *w);
+    void grad(float *w, float *g);
+    void Hv(float *s, float *Hs);
     
     int get_nr_variable(void);
     
 protected:
-    void Xv(double *v, double *Xv);
-    void subXv(double *v, double *Xv);
-    void subXTv(double *v, double *XTv);
+    void Xv(float *v, float *Xv);
+    void subXv(float *v, float *Xv);
+    void subXTv(float *v, float *XTv);
     
-    double *C;
-    double *z;
-    double *D;
+    float *C;
+    float *z;
+    float *D;
     int *I;
     int sizeI;
     const problem *prob;
 };
 
-l2r_l2_svc_fun::l2r_l2_svc_fun(const problem *prob, double *C)
+l2r_l2_svc_fun::l2r_l2_svc_fun(const problem *prob, float *C)
 {
     int l=prob->l;
     
     this->prob = prob;
     
-    z = new double[l];
-    D = new double[l];
+    z = new float[l];
+    D = new float[l];
     I = new int[l];
     this->C = C;
 }
@@ -232,11 +232,11 @@ l2r_l2_svc_fun::~l2r_l2_svc_fun()
     delete[] I;
 }
 
-double l2r_l2_svc_fun::fun(double *w)
+float l2r_l2_svc_fun::fun(float *w)
 {
     int i;
-    double f=0;
-    double *y=prob->y;
+    float f=0;
+    float *y=prob->y;
     int l=prob->l;
     int w_size=get_nr_variable();
     
@@ -248,7 +248,7 @@ double l2r_l2_svc_fun::fun(double *w)
     for(i=0;i<l;i++)
     {
         z[i] = y[i]*z[i];
-        double d = 1-z[i];
+        float d = 1-z[i];
         if (d > 0)
             f += C[i]*d*d;
     }
@@ -256,10 +256,10 @@ double l2r_l2_svc_fun::fun(double *w)
     return(f);
 }
 
-void l2r_l2_svc_fun::grad(double *w, double *g)
+void l2r_l2_svc_fun::grad(float *w, float *g)
 {
     int i;
-    double *y=prob->y;
+    float *y=prob->y;
     int l=prob->l;
     int w_size=get_nr_variable();
     
@@ -282,11 +282,11 @@ int l2r_l2_svc_fun::get_nr_variable(void)
     return prob->n;
 }
 
-void l2r_l2_svc_fun::Hv(double *s, double *Hs)
+void l2r_l2_svc_fun::Hv(float *s, float *Hs)
 {
     int i;
     int w_size=get_nr_variable();
-    double *wa = new double[sizeI];
+    float *wa = new float[sizeI];
     
     subXv(s, wa);
     for(i=0;i<sizeI;i++)
@@ -298,7 +298,7 @@ void l2r_l2_svc_fun::Hv(double *s, double *Hs)
     delete[] wa;
 }
 
-void l2r_l2_svc_fun::Xv(double *v, double *Xv)
+void l2r_l2_svc_fun::Xv(float *v, float *Xv)
 {
     int i;
     int l=prob->l;
@@ -316,7 +316,7 @@ void l2r_l2_svc_fun::Xv(double *v, double *Xv)
     }
 }
 
-void l2r_l2_svc_fun::subXv(double *v, double *Xv)
+void l2r_l2_svc_fun::subXv(float *v, float *Xv)
 {
     int i;
     feature_node **x=prob->x;
@@ -333,7 +333,7 @@ void l2r_l2_svc_fun::subXv(double *v, double *Xv)
     }
 }
 
-void l2r_l2_svc_fun::subXTv(double *v, double *XTv)
+void l2r_l2_svc_fun::subXTv(float *v, float *XTv)
 {
     int i;
     int w_size=get_nr_variable();
@@ -355,29 +355,29 @@ void l2r_l2_svc_fun::subXTv(double *v, double *XTv)
 class l2r_l2_svr_fun: public l2r_l2_svc_fun
 {
 public:
-    l2r_l2_svr_fun(const problem *prob, double *C, double p);
+    l2r_l2_svr_fun(const problem *prob, float *C, float p);
     
-    double fun(double *w);
-    void grad(double *w, double *g);
+    float fun(float *w);
+    void grad(float *w, float *g);
     
 private:
-    double p;
+    float p;
 };
 
-l2r_l2_svr_fun::l2r_l2_svr_fun(const problem *prob, double *C, double p):
+l2r_l2_svr_fun::l2r_l2_svr_fun(const problem *prob, float *C, float p):
 l2r_l2_svc_fun(prob, C)
 {
     this->p = p;
 }
 
-double l2r_l2_svr_fun::fun(double *w)
+float l2r_l2_svr_fun::fun(float *w)
 {
     int i;
-    double f=0;
-    double *y=prob->y;
+    float f=0;
+    float *y=prob->y;
     int l=prob->l;
     int w_size=get_nr_variable();
-    double d;
+    float d;
     
     Xv(w, z);
     
@@ -396,13 +396,13 @@ double l2r_l2_svr_fun::fun(double *w)
     return(f);
 }
 
-void l2r_l2_svr_fun::grad(double *w, double *g)
+void l2r_l2_svr_fun::grad(float *w, float *g)
 {
     int i;
-    double *y=prob->y;
+    float *y=prob->y;
     int l=prob->l;
     int w_size=get_nr_variable();
-    double d;
+    float d;
     
     sizeI = 0;
     for(i=0;i<l;i++)
@@ -456,21 +456,21 @@ void l2r_l2_svr_fun::grad(double *w, double *g)
 class Solver_MCSVM_CS
 {
 public:
-    Solver_MCSVM_CS(const problem *prob, int nr_class, double *C, double eps=0.1, int max_iter=100000);
+    Solver_MCSVM_CS(const problem *prob, int nr_class, float *C, float eps=0.1, int max_iter=100000);
     ~Solver_MCSVM_CS();
-    void Solve(double *w);
+    void Solve(float *w);
 private:
-    void solve_sub_problem(double A_i, int yi, double C_yi, int active_i, double *alpha_new);
-    bool be_shrunk(int i, int m, int yi, double alpha_i, double minG);
-    double *B, *C, *G;
+    void solve_sub_problem(float A_i, int yi, float C_yi, int active_i, float *alpha_new);
+    bool be_shrunk(int i, int m, int yi, float alpha_i, float minG);
+    float *B, *C, *G;
     int w_size, l;
     int nr_class;
     int max_iter;
-    double eps;
+    float eps;
     const problem *prob;
 };
 
-Solver_MCSVM_CS::Solver_MCSVM_CS(const problem *prob, int nr_class, double *weighted_C, double eps, int max_iter)
+Solver_MCSVM_CS::Solver_MCSVM_CS(const problem *prob, int nr_class, float *weighted_C, float eps, int max_iter)
 {
     this->w_size = prob->n;
     this->l = prob->l;
@@ -478,8 +478,8 @@ Solver_MCSVM_CS::Solver_MCSVM_CS(const problem *prob, int nr_class, double *weig
     this->eps = eps;
     this->max_iter = max_iter;
     this->prob = prob;
-    this->B = new double[nr_class];
-    this->G = new double[nr_class];
+    this->B = new float[nr_class];
+    this->G = new float[nr_class];
     this->C = weighted_C;
 }
 
@@ -489,26 +489,26 @@ Solver_MCSVM_CS::~Solver_MCSVM_CS()
     delete[] G;
 }
 
-int compare_double(const void *a, const void *b)
+int compare_float(const void *a, const void *b)
 {
-    if(*(double *)a > *(double *)b)
+    if(*(float *)a > *(float *)b)
         return -1;
-    if(*(double *)a < *(double *)b)
+    if(*(float *)a < *(float *)b)
         return 1;
     return 0;
 }
 
-void Solver_MCSVM_CS::solve_sub_problem(double A_i, int yi, double C_yi, int active_i, double *alpha_new)
+void Solver_MCSVM_CS::solve_sub_problem(float A_i, int yi, float C_yi, int active_i, float *alpha_new)
 {
     int r;
-    double *D;
+    float *D;
     
     clone(D, B, active_i);
     if(yi < active_i)
         D[yi] += A_i*C_yi;
-    qsort(D, active_i, sizeof(double), compare_double);
+    qsort(D, active_i, sizeof(float), compare_float);
     
-    double beta = D[0] - A_i*C_yi;
+    float beta = D[0] - A_i*C_yi;
     for(r=1;r<active_i && beta<r*D[r];r++)
         beta += D[r];
     beta /= r;
@@ -518,14 +518,14 @@ void Solver_MCSVM_CS::solve_sub_problem(double A_i, int yi, double C_yi, int act
         if(r == yi)
             alpha_new[r] = min(C_yi, (beta-B[r])/A_i);
         else
-            alpha_new[r] = min((double)0, (beta - B[r])/A_i);
+            alpha_new[r] = min((float)0, (beta - B[r])/A_i);
     }
     delete[] D;
 }
 
-bool Solver_MCSVM_CS::be_shrunk(int i, int m, int yi, double alpha_i, double minG)
+bool Solver_MCSVM_CS::be_shrunk(int i, int m, int yi, float alpha_i, float minG)
 {
-    double bound = 0;
+    float bound = 0;
     if(m == yi)
         bound = C[GETI(i)];
     if(alpha_i == bound && G[m] < minG)
@@ -533,21 +533,21 @@ bool Solver_MCSVM_CS::be_shrunk(int i, int m, int yi, double alpha_i, double min
     return false;
 }
 
-void Solver_MCSVM_CS::Solve(double *w)
+void Solver_MCSVM_CS::Solve(float *w)
 {
     int i, m, s;
     int iter = 0;
-    double *alpha =  new double[l*nr_class];
-    double *alpha_new = new double[nr_class];
+    float *alpha =  new float[l*nr_class];
+    float *alpha_new = new float[nr_class];
     int *index = new int[l];
-    double *QD = new double[l];
+    float *QD = new float[l];
     int *d_ind = new int[nr_class];
-    double *d_val = new double[nr_class];
+    float *d_val = new float[nr_class];
     int *alpha_index = new int[nr_class*l];
     int *y_index = new int[l];
     int active_size = l;
     int *active_size_i = new int[l];
-    double eps_shrink = max(10.0*eps, 1.0); // stopping tolerance for shrinking
+    float eps_shrink = max(10.0*eps, 1.0); // stopping tolerance for shrinking
     bool start_from_all = true;
     
     // Initial alpha can be set here. Note that
@@ -568,7 +568,7 @@ void Solver_MCSVM_CS::Solve(double *w)
         QD[i] = 0;
         while(xi->index != -1)
         {
-            double val = xi->value;
+            float val = xi->value;
             QD[i] += val*val;
             
             // Uncomment the for loop if initial alpha isn't zero
@@ -583,7 +583,7 @@ void Solver_MCSVM_CS::Solve(double *w)
     
     while(iter < max_iter)
     {
-        double stopping = -INF;
+        float stopping = -INF;
         for(i=0;i<active_size;i++)
         {
             int j = i+rand()%(active_size-i);
@@ -592,8 +592,8 @@ void Solver_MCSVM_CS::Solve(double *w)
         for(s=0;s<active_size;s++)
         {
             i = index[s];
-            double Ai = QD[i];
-            double *alpha_i = &alpha[i*nr_class];
+            float Ai = QD[i];
+            float *alpha_i = &alpha[i*nr_class];
             int *alpha_index_i = &alpha_index[i*nr_class];
             
             if(Ai > 0)
@@ -606,14 +606,14 @@ void Solver_MCSVM_CS::Solve(double *w)
                 feature_node *xi = prob->x[i];
                 while(xi->index!= -1)
                 {
-                    double *w_i = &w[(xi->index-1)*nr_class];
+                    float *w_i = &w[(xi->index-1)*nr_class];
                     for(m=0;m<active_size_i[i];m++)
                         G[m] += w_i[alpha_index_i[m]]*(xi->value);
                     xi++;
                 }
                 
-                double minG = INF;
-                double maxG = -INF;
+                float minG = INF;
+                float maxG = -INF;
                 for(m=0;m<active_size_i[i];m++)
                 {
                     if(alpha_i[alpha_index_i[m]] < 0 && G[m] < minG)
@@ -668,7 +668,7 @@ void Solver_MCSVM_CS::Solve(double *w)
                 int nz_d = 0;
                 for(m=0;m<active_size_i[i];m++)
                 {
-                    double d = alpha_new[m] - alpha_i[alpha_index_i[m]];
+                    float d = alpha_new[m] - alpha_i[alpha_index_i[m]];
                     alpha_i[alpha_index_i[m]] = alpha_new[m];
                     if(fabs(d) >= 1e-12)
                     {
@@ -681,7 +681,7 @@ void Solver_MCSVM_CS::Solve(double *w)
                 xi = prob->x[i];
                 while(xi->index != -1)
                 {
-                    double *w_i = &w[(xi->index-1)*nr_class];
+                    float *w_i = &w[(xi->index-1)*nr_class];
                     for(m=0;m<nz_d;m++)
                         w_i[d_ind[m]] += d_val[m]*xi->value;
                     xi++;
@@ -718,7 +718,7 @@ void Solver_MCSVM_CS::Solve(double *w)
         info("\nWARNING: reaching max number of iterations\n");
     
     // calculate objective value
-    double v = 0;
+    float v = 0;
     int nSV = 0;
     for(i=0;i<w_size*nr_class;i++)
         v += w[i]*w[i];
@@ -776,29 +776,29 @@ void Solver_MCSVM_CS::Solve(double *w)
 // To support weights for instances, use GETI(i) (i)
 
 static void solve_l2r_l1l2_svc(
-                               const problem *prob, double *w, double eps,
-                               double Cp, double Cn, int solver_type)
+                               const problem *prob, float *w, float eps,
+                               float Cp, float Cn, int solver_type)
 {
     int l = prob->l;
     int w_size = prob->n;
     int i, s, iter = 0;
-    double C, d, G;
-    double *QD = new double[l];
+    float C, d, G;
+    float *QD = new float[l];
     int max_iter = 1000;
     int *index = new int[l];
-    double *alpha = new double[l];
+    float *alpha = new float[l];
     schar *y = new schar[l];
     int active_size = l;
     
     // PG: projected gradient, for shrinking and stopping
-    double PG;
-    double PGmax_old = INF;
-    double PGmin_old = -INF;
-    double PGmax_new, PGmin_new;
+    float PG;
+    float PGmax_old = INF;
+    float PGmin_old = -INF;
+    float PGmax_new, PGmin_new;
     
     // default solver_type: L2R_L2LOSS_SVC_DUAL
-    double diag[3] = {0.5/Cn, 0, 0.5/Cp};
-    double upper_bound[3] = {INF, 0, INF};
+    float diag[3] = {0.5f/Cn, 0.0f, 0.5f/Cp};
+    float upper_bound[3] = {INF, 0, INF};
     if(solver_type == L2R_L1LOSS_SVC_DUAL)
     {
         diag[0] = 0;
@@ -833,7 +833,7 @@ static void solve_l2r_l1l2_svc(
         feature_node *xi = prob->x[i];
         while (xi->index != -1)
         {
-            double val = xi->value;
+            float val = xi->value;
             QD[i] += val*val;
             w[xi->index-1] += y[i]*alpha[i]*val;
             xi++;
@@ -902,8 +902,8 @@ static void solve_l2r_l1l2_svc(
             
             if(fabs(PG) > 1.0e-12)
             {
-                double alpha_old = alpha[i];
-                alpha[i] = min(max(alpha[i] - G/QD[i], 0.0), C);
+                float alpha_old = alpha[i];
+                alpha[i] = fmin(fmax(alpha[i] - G/QD[i], 0.0), C);
                 d = (alpha[i] - alpha_old)*yi;
                 xi = prob->x[i];
                 while (xi->index != -1)
@@ -945,7 +945,7 @@ static void solve_l2r_l1l2_svc(
     
     // calculate objective value
     
-    double v = 0;
+    float v = 0;
     int nSV = 0;
     for(i=0; i<w_size; i++)
         v += w[i]*w[i];
@@ -994,29 +994,29 @@ static void solve_l2r_l1l2_svc(
 // To support weights for instances, use GETI(i) (i)
 
 static void solve_l2r_l1l2_svr(
-                               const problem *prob, double *w, const parameter *param,
+                               const problem *prob, float *w, const parameter *param,
                                int solver_type)
 {
     int l = prob->l;
-    double C = param->C;
-    double p = param->p;
+    float C = param->C;
+    float p = param->p;
     int w_size = prob->n;
-    double eps = param->eps;
+    float eps = param->eps;
     int i, s, iter = 0;
     int max_iter = 1000;
     int active_size = l;
     int *index = new int[l];
     
-    double d, G, H;
-    double Gmax_old = INF;
-    double Gmax_new, Gnorm1_new;
-    double Gnorm1_init = -1.0; // Gnorm1_init is initialized at the first iteration
-    double *beta = new double[l];
-    double *QD = new double[l];
-    double *y = prob->y;
+    float d, G, H;
+    float Gmax_old = INF;
+    float Gmax_new, Gnorm1_new;
+    float Gnorm1_init = -1.0; // Gnorm1_init is initialized at the first iteration
+    float *beta = new float[l];
+    float *QD = new float[l];
+    float *y = prob->y;
     
     // L2R_L2LOSS_SVR_DUAL
-    double lambda[1], upper_bound[1];
+    float lambda[1], upper_bound[1];
     lambda[0] = 0.5/C;
     upper_bound[0] = INF;
     
@@ -1039,7 +1039,7 @@ static void solve_l2r_l1l2_svr(
         feature_node *xi = prob->x[i];
         while(xi->index != -1)
         {
-            double val = xi->value;
+            float val = xi->value;
             QD[i] += val*val;
             w[xi->index-1] += beta[i]*val;
             xi++;
@@ -1070,14 +1070,14 @@ static void solve_l2r_l1l2_svr(
             while(xi->index != -1)
             {
                 int ind = xi->index-1;
-                double val = xi->value;
+                float val = xi->value;
                 G += val*w[ind];
                 xi++;
             }
             
-            double Gp = G+p;
-            double Gn = G-p;
-            double violation = 0;
+            float Gp = G+p;
+            float Gn = G-p;
+            float violation = 0;
             if(beta[i] == 0)
             {
                 if(Gp < 0)
@@ -1135,7 +1135,7 @@ static void solve_l2r_l1l2_svr(
             if(fabs(d) < 1.0e-12)
                 continue;
             
-            double beta_old = beta[i];
+            float beta_old = beta[i];
             beta[i] = min(max(beta[i]+d, -upper_bound[GETI(i)]), upper_bound[GETI(i)]);
             d = beta[i]-beta_old;
             
@@ -1177,7 +1177,7 @@ static void solve_l2r_l1l2_svr(
     //    info("\nWARNING: reaching max number of iterations\nUsing -s 11 may be faster\n\n");
     
     // calculate objective value
-    double v = 0;
+    float v = 0;
     int nSV = 0;
     for(i=0; i<w_size; i++)
         v += w[i]*w[i];
@@ -1220,20 +1220,20 @@ static void solve_l2r_l1l2_svr(
 #define GETI(i) (y[i]+1)
 // To support weights for instances, use GETI(i) (i)
 
-void solve_l2r_lr_dual(const problem *prob, double *w, double eps, double Cp, double Cn)
+void solve_l2r_lr_dual(const problem *prob, float *w, float eps, float Cp, float Cn)
 {
     int l = prob->l;
     int w_size = prob->n;
     int i, s, iter = 0;
-    double *xTx = new double[l];
+    float *xTx = new float[l];
     int max_iter = 1000;
     int *index = new int[l];
-    double *alpha = new double[2*l]; // store alpha and C - alpha
+    float *alpha = new float[2*l]; // store alpha and C - alpha
     schar *y = new schar[l];
     int max_inner_iter = 100; // for inner Newton
-    double innereps = 1e-2;
-    double innereps_min = min(1e-8, eps);
-    double upper_bound[3] = {Cn, 0, Cp};
+    float innereps = 1e-2;
+    float innereps_min = fmin(1e-8, eps);
+    float upper_bound[3] = {Cn, 0, Cp};
     
     for(i=0; i<l; i++)
     {
@@ -1264,7 +1264,7 @@ void solve_l2r_lr_dual(const problem *prob, double *w, double eps, double Cp, do
         feature_node *xi = prob->x[i];
         while (xi->index != -1)
         {
-            double val = xi->value;
+            float val = xi->value;
             xTx[i] += val*val;
             w[xi->index-1] += y[i]*alpha[2*i]*val;
             xi++;
@@ -1280,13 +1280,13 @@ void solve_l2r_lr_dual(const problem *prob, double *w, double eps, double Cp, do
             swap(index[i], index[j]);
         }
         int newton_iter = 0;
-        double Gmax = 0;
+        float Gmax = 0;
         for (s=0; s<l; s++)
         {
             i = index[s];
             schar yi = y[i];
-            double C = upper_bound[GETI(i)];
-            double ywTx = 0, xisq = xTx[i];
+            float C = upper_bound[GETI(i)];
+            float ywTx = 0, xisq = xTx[i];
             feature_node *xi = prob->x[i];
             while (xi->index != -1)
             {
@@ -1294,7 +1294,7 @@ void solve_l2r_lr_dual(const problem *prob, double *w, double eps, double Cp, do
                 xi++;
             }
             ywTx *= y[i];
-            double a = xisq, b = ywTx;
+            float a = xisq, b = ywTx;
             
             // Decide to minimize g_1(z) or g_2(z)
             int ind1 = 2*i, ind2 = 2*i+1, sign = 1;
@@ -1306,22 +1306,22 @@ void solve_l2r_lr_dual(const problem *prob, double *w, double eps, double Cp, do
             }
             
             //  g_t(z) = z*log(z) + (C-z)*log(C-z) + 0.5a(z-alpha_old)^2 + sign*b(z-alpha_old)
-            double alpha_old = alpha[ind1];
-            double z = alpha_old;
+            float alpha_old = alpha[ind1];
+            float z = alpha_old;
             if(C - z < 0.5 * C)
                 z = 0.1*z;
-            double gp = a*(z-alpha_old)+sign*b+log(z/(C-z));
-            Gmax = max(Gmax, fabs(gp));
+            float gp = a*(z-alpha_old)+sign*b+log(z/(C-z));
+            Gmax = fmax(Gmax, fabs(gp));
             
             // Newton method on the sub-problem
-            const double eta = 0.1; // xi in the paper
+            const float eta = 0.1; // xi in the paper
             int inner_iter = 0;
             while (inner_iter <= max_inner_iter)
             {
                 if(fabs(gp) < innereps)
                     break;
-                double gpp = a + C/(C-z)/z;
-                double tmpz = z - gp/gpp;
+                float gpp = a + C/(C-z)/z;
+                float tmpz = z - gp/gpp;
                 if(tmpz <= 0)
                     z *= eta;
                 else // tmpz in (0, C)
@@ -1352,7 +1352,7 @@ void solve_l2r_lr_dual(const problem *prob, double *w, double eps, double Cp, do
             break;
         
         if(newton_iter <= l/10)
-            innereps = max(innereps_min, 0.1*innereps);
+            innereps = fmax(innereps_min, 0.1*innereps);
         
     }
     
@@ -1362,7 +1362,7 @@ void solve_l2r_lr_dual(const problem *prob, double *w, double eps, double Cp, do
     
     // calculate objective value
     
-    double v = 0;
+    float v = 0;
     for(i=0; i<w_size; i++)
         v += w[i] * w[i];
     v *= 0.5;
@@ -1395,8 +1395,8 @@ void solve_l2r_lr_dual(const problem *prob, double *w, double eps, double Cp, do
 // To support weights for instances, use GETI(i) (i)
 
 static void solve_l1r_l2_svc(
-                             problem *prob_col, double *w, double eps,
-                             double Cp, double Cn)
+                             problem *prob_col, float *w, float eps,
+                             float Cp, float Cn)
 {
     int l = prob_col->l;
     int w_size = prob_col->n;
@@ -1405,22 +1405,22 @@ static void solve_l1r_l2_svc(
     int active_size = w_size;
     int max_num_linesearch = 20;
     
-    double sigma = 0.01;
-    double d, G_loss, G, H;
-    double Gmax_old = INF;
-    double Gmax_new, Gnorm1_new;
-    double Gnorm1_init = -1.0; // Gnorm1_init is initialized at the first iteration
-    double d_old, d_diff;
-    double loss_old, loss_new;
-    double appxcond, cond;
+    float sigma = 0.01;
+    float d, G_loss, G, H;
+    float Gmax_old = INF;
+    float Gmax_new, Gnorm1_new;
+    float Gnorm1_init = -1.0; // Gnorm1_init is initialized at the first iteration
+    float d_old, d_diff;
+    float loss_old, loss_new;
+    float appxcond, cond;
     
     int *index = new int[w_size];
     schar *y = new schar[l];
-    double *b = new double[l]; // b = 1-ywTx
-    double *xj_sq = new double[w_size];
+    float *b = new float[l]; // b = 1-ywTx
+    float *xj_sq = new float[w_size];
     feature_node *x;
     
-    double C[3] = {Cn,0,Cp};
+    float C[3] = {Cn,0,Cp};
     
     // Initial w can be set here.
     for(j=0; j<w_size; j++)
@@ -1443,7 +1443,7 @@ static void solve_l1r_l2_svc(
         {
             int ind = x->index-1;
             x->value *= y[ind]; // x->value stores yi*xij
-            double val = x->value;
+            float val = x->value;
             b[ind] -= w[j]*val;
             xj_sq[j] += C[GETI(ind)]*val*val;
             x++;
@@ -1473,8 +1473,8 @@ static void solve_l1r_l2_svc(
                 int ind = x->index-1;
                 if(b[ind] > 0)
                 {
-                    double val = x->value;
-                    double tmp = C[GETI(ind)]*val;
+                    float val = x->value;
+                    float tmp = C[GETI(ind)]*val;
                     G_loss -= tmp*b[ind];
                     H += tmp*val;
                 }
@@ -1484,11 +1484,11 @@ static void solve_l1r_l2_svc(
             
             G = G_loss;
             H *= 2;
-            H = max(H, 1e-12);
+            H = fmax(H, 1e-12);
             
-            double Gp = G+1;
-            double Gn = G-1;
-            double violation = 0;
+            float Gp = G+1;
+            float Gn = G-1;
+            float violation = 0;
             if(w[j] == 0)
             {
                 if(Gp < 0)
@@ -1522,7 +1522,7 @@ static void solve_l1r_l2_svc(
             if(fabs(d) < 1.0e-12)
                 continue;
             
-            double delta = fabs(w[j]+d)-fabs(w[j]) + G*d;
+            float delta = fabs(w[j]+d)-fabs(w[j]) + G*d;
             d_old = 0;
             int num_linesearch;
             for(num_linesearch=0; num_linesearch < max_num_linesearch; num_linesearch++)
@@ -1552,7 +1552,7 @@ static void solve_l1r_l2_svc(
                         int ind = x->index-1;
                         if(b[ind] > 0)
                             loss_old += C[GETI(ind)]*b[ind]*b[ind];
-                        double b_new = b[ind] + d_diff*x->value;
+                        float b_new = b[ind] + d_diff*x->value;
                         b[ind] = b_new;
                         if(b_new > 0)
                             loss_new += C[GETI(ind)]*b_new*b_new;
@@ -1566,7 +1566,7 @@ static void solve_l1r_l2_svc(
                     while(x->index != -1)
                     {
                         int ind = x->index-1;
-                        double b_new = b[ind] + d_diff*x->value;
+                        float b_new = b[ind] + d_diff*x->value;
                         b[ind] = b_new;
                         if(b_new > 0)
                             loss_new += C[GETI(ind)]*b_new*b_new;
@@ -1635,7 +1635,7 @@ static void solve_l1r_l2_svc(
     
     // calculate objective value
     
-    double v = 0;
+    float v = 0;
     int nnz = 0;
     for(j=0; j<w_size; j++)
     {
@@ -1682,8 +1682,8 @@ static void solve_l1r_l2_svc(
 // To support weights for instances, use GETI(i) (i)
 
 static void solve_l1r_lr(
-                         const problem *prob_col, double *w, double eps,
-                         double Cp, double Cn)
+                         const problem *prob_col, float *w, float eps,
+                         float Cp, float Cn)
 {
     int l = prob_col->l;
     int w_size = prob_col->n;
@@ -1694,32 +1694,32 @@ static void solve_l1r_lr(
     int active_size;
     int QP_active_size;
     
-    double nu = 1e-12;
-    double inner_eps = 1;
-    double sigma = 0.01;
-    double w_norm, w_norm_new;
-    double z, G, H;
-    double Gnorm1_init = -1.0; // Gnorm1_init is initialized at the first iteration
-    double Gmax_old = INF;
-    double Gmax_new, Gnorm1_new;
-    double QP_Gmax_old = INF;
-    double QP_Gmax_new, QP_Gnorm1_new;
-    double delta, negsum_xTd, cond;
+    float nu = 1e-12;
+    float inner_eps = 1;
+    float sigma = 0.01;
+    float w_norm, w_norm_new;
+    float z, G, H;
+    float Gnorm1_init = -1.0; // Gnorm1_init is initialized at the first iteration
+    float Gmax_old = INF;
+    float Gmax_new, Gnorm1_new;
+    float QP_Gmax_old = INF;
+    float QP_Gmax_new, QP_Gnorm1_new;
+    float delta, negsum_xTd, cond;
     
     int *index = new int[w_size];
     schar *y = new schar[l];
-    double *Hdiag = new double[w_size];
-    double *Grad = new double[w_size];
-    double *wpd = new double[w_size];
-    double *xjneg_sum = new double[w_size];
-    double *xTd = new double[l];
-    double *exp_wTx = new double[l];
-    double *exp_wTx_new = new double[l];
-    double *tau = new double[l];
-    double *D = new double[l];
+    float *Hdiag = new float[w_size];
+    float *Grad = new float[w_size];
+    float *wpd = new float[w_size];
+    float *xjneg_sum = new float[w_size];
+    float *xTd = new float[l];
+    float *exp_wTx = new float[l];
+    float *exp_wTx_new = new float[l];
+    float *tau = new float[l];
+    float *D = new float[l];
     feature_node *x;
     
-    double C[3] = {Cn,0,Cp};
+    float C[3] = {Cn,0,Cp};
     
     // Initial w can be set here.
     for(j=0; j<w_size; j++)
@@ -1746,7 +1746,7 @@ static void solve_l1r_lr(
         while(x->index != -1)
         {
             int ind = x->index-1;
-            double val = x->value;
+            float val = x->value;
             exp_wTx[ind] += w[j]*val;
             if(y[ind] == -1)
                 xjneg_sum[j] += C[GETI(ind)]*val;
@@ -1756,7 +1756,7 @@ static void solve_l1r_lr(
     for(j=0; j<l; j++)
     {
         exp_wTx[j] = exp(exp_wTx[j]);
-        double tau_tmp = 1/(1+exp_wTx[j]);
+        float tau_tmp = 1/(1+exp_wTx[j]);
         tau[j] = C[GETI(j)]*tau_tmp;
         D[j] = C[GETI(j)]*exp_wTx[j]*tau_tmp*tau_tmp;
     }
@@ -1773,7 +1773,7 @@ static void solve_l1r_lr(
             Hdiag[j] = nu;
             Grad[j] = 0;
             
-            double tmp = 0;
+            float tmp = 0;
             x = prob_col->x[j];
             while(x->index != -1)
             {
@@ -1784,9 +1784,9 @@ static void solve_l1r_lr(
             }
             Grad[j] = -tmp + xjneg_sum[j];
             
-            double Gp = Grad[j]+1;
-            double Gn = Grad[j]-1;
-            double violation = 0;
+            float Gp = Grad[j]+1;
+            float Gn = Grad[j]-1;
+            float violation = 0;
             if(w[j] == 0)
             {
                 if(Gp < 0)
@@ -1850,9 +1850,9 @@ static void solve_l1r_lr(
                     x++;
                 }
                 
-                double Gp = G+1;
-                double Gn = G-1;
-                double violation = 0;
+                float Gp = G+1;
+                float Gn = G-1;
+                float violation = 0;
                 if(wpd[j] == 0)
                 {
                     if(Gp < 0)
@@ -1886,7 +1886,7 @@ static void solve_l1r_lr(
                 
                 if(fabs(z) < 1.0e-12)
                     continue;
-                z = min(max(z,-10.0),10.0);
+                z = min(fmax(z,-10.0),10.0);
                 
                 wpd[j] += z;
                 
@@ -1943,7 +1943,7 @@ static void solve_l1r_lr(
             
             for(int i=0; i<l; i++)
             {
-                double exp_xTd = exp(xTd[i]);
+                float exp_xTd = exp(xTd[i]);
                 exp_wTx_new[i] = exp_wTx[i]*exp_xTd;
                 cond += C[GETI(i)]*log((1+exp_wTx_new[i])/(exp_xTd+exp_wTx_new[i]));
             }
@@ -1956,7 +1956,7 @@ static void solve_l1r_lr(
                 for(int i=0; i<l; i++)
                 {
                     exp_wTx[i] = exp_wTx_new[i];
-                    double tau_tmp = 1/(1+exp_wTx[i]);
+                    float tau_tmp = 1/(1+exp_wTx[i]);
                     tau[i] = C[GETI(i)]*tau_tmp;
                     D[i] = C[GETI(i)]*exp_wTx[i]*tau_tmp*tau_tmp;
                 }
@@ -2015,7 +2015,7 @@ static void solve_l1r_lr(
     
     // calculate objective value
     
-    double v = 0;
+    float v = 0;
     int nnz = 0;
     for(j=0; j<w_size; j++)
         if(w[j] != 0)
@@ -2056,7 +2056,7 @@ static void transpose(const problem *prob, feature_node **x_space_ret, problem *
     feature_node *x_space;
     prob_col->l = l;
     prob_col->n = n;
-    prob_col->y = new double[l];
+    prob_col->y = new float[l];
     prob_col->x = new feature_node*[n];
     
     for(i=0; i<l; i++)
@@ -2178,9 +2178,9 @@ static void group_classes(const problem *prob, int *nr_class_ret, int **label_re
     free(data_label);
 }
 
-static void train_one(const problem *prob, const parameter *param, double *w, double Cp, double Cn)
+static void train_one(const problem *prob, const parameter *param, float *w, float Cp, float Cn)
 {
-    double eps=param->eps;
+    float eps=param->eps;
     int pos = 0;
     int neg = 0;
     for(int i=0;i<prob->l;i++)
@@ -2188,14 +2188,14 @@ static void train_one(const problem *prob, const parameter *param, double *w, do
             pos++;
     neg = prob->l - pos;
     
-    double primal_solver_tol = eps*max(min(pos,neg), 1)/prob->l;
+    float primal_solver_tol = eps*max(min(pos,neg), 1)/prob->l;
     
     function *fun_obj=NULL;
     switch(param->solver_type)
     {
         case L2R_LR:
         {
-            double *C = new double[prob->l];
+            float *C = new float[prob->l];
             for(int i = 0; i < prob->l; i++)
             {
                 if(prob->y[i] > 0)
@@ -2213,7 +2213,7 @@ static void train_one(const problem *prob, const parameter *param, double *w, do
         }
         case L2R_L2LOSS_SVC:
         {
-            double *C = new double[prob->l];
+            float *C = new float[prob->l];
             for(int i = 0; i < prob->l; i++)
             {
                 if(prob->y[i] > 0)
@@ -2262,7 +2262,7 @@ static void train_one(const problem *prob, const parameter *param, double *w, do
             break;
         case L2R_L2LOSS_SVR:
         {
-            double *C = new double[prob->l];
+            float *C = new float[prob->l];
             for(int i = 0; i < prob->l; i++)
                 C[i] = param->C;
             
@@ -2307,7 +2307,7 @@ model* train(const problem *prob, const parameter *param)
     
     if(check_regression_model(model_))
     {
-        model_->w = Malloc(double, w_size);
+        model_->w = Malloc(float, w_size);
         model_->nr_class = 2;
         model_->label = NULL;
         train_one(prob, param, &model_->w[0], 0, 0);
@@ -2329,7 +2329,7 @@ model* train(const problem *prob, const parameter *param)
             model_->label[i] = label[i];
         
         // calculate weighted C
-        double *weighted_C = Malloc(double, nr_class);
+        float *weighted_C = Malloc(float, nr_class);
         for(i=0;i<nr_class;i++)
             weighted_C[i] = param->C;
         for(i=0;i<param->nr_weight;i++)
@@ -2353,7 +2353,7 @@ model* train(const problem *prob, const parameter *param)
         sub_prob.l = l;
         sub_prob.n = n;
         sub_prob.x = Malloc(feature_node *,sub_prob.l);
-        sub_prob.y = Malloc(double,sub_prob.l);
+        sub_prob.y = Malloc(float,sub_prob.l);
         
         for(k=0; k<sub_prob.l; k++)
             sub_prob.x[k] = x[k];
@@ -2361,7 +2361,7 @@ model* train(const problem *prob, const parameter *param)
         // multi-class svm by Crammer and Singer
         if(param->solver_type == MCSVM_CS)
         {
-            model_->w=Malloc(double, n*nr_class);
+            model_->w=Malloc(float, n*nr_class);
             for(i=0;i<nr_class;i++)
                 for(j=start[i];j<start[i]+count[i];j++)
                     sub_prob.y[j] = i;
@@ -2372,7 +2372,7 @@ model* train(const problem *prob, const parameter *param)
         {
             if(nr_class == 2)
             {
-                model_->w=Malloc(double, w_size);
+                model_->w=Malloc(float, w_size);
                 
                 int e0 = start[0]+count[0];
                 k=0;
@@ -2385,8 +2385,8 @@ model* train(const problem *prob, const parameter *param)
             }
             else
             {
-                model_->w=Malloc(double, w_size*nr_class);
-                double *w=Malloc(double, w_size);
+                model_->w=Malloc(float, w_size*nr_class);
+                float *w=Malloc(float, w_size);
                 for(i=0;i<nr_class;i++)
                 {
                     int si = start[i];
@@ -2422,7 +2422,7 @@ model* train(const problem *prob, const parameter *param)
     return model_;
 }
 
-void cross_validation(const problem *prob, const parameter *param, int nr_fold, double *target)
+void cross_validation(const problem *prob, const parameter *param, int nr_fold, float *target)
 {
     int i;
     int *fold_start;
@@ -2454,7 +2454,7 @@ void cross_validation(const problem *prob, const parameter *param, int nr_fold, 
         subprob.n = prob->n;
         subprob.l = l-(end-begin);
         subprob.x = Malloc(struct feature_node*,subprob.l);
-        subprob.y = Malloc(double,subprob.l);
+        subprob.y = Malloc(float,subprob.l);
         
         k=0;
         for(j=0;j<begin;j++)
@@ -2480,7 +2480,7 @@ void cross_validation(const problem *prob, const parameter *param, int nr_fold, 
     free(perm);
 }
 
-double predict_values(const struct model *model_, const struct feature_node *x, double *dec_values)
+float predict_values(const struct model *model_, const struct feature_node *x, float *dec_values)
 {
     int idx;
     int n;
@@ -2488,7 +2488,7 @@ double predict_values(const struct model *model_, const struct feature_node *x, 
         n=model_->nr_feature+1;
     else
         n=model_->nr_feature;
-    double *w=model_->w;
+    float *w=model_->w;
     int nr_class=model_->nr_class;
     int i;
     int nr_w;
@@ -2528,25 +2528,25 @@ double predict_values(const struct model *model_, const struct feature_node *x, 
     }
 }
 
-double predict(const model *model_, const feature_node *x)
+float predict(const model *model_, const feature_node *x)
 {
     //add by xujj
     int idx;
     const feature_node *lx=x;
-    double *w=model_->w;
-    double result = 0.0;
+    float *w=model_->w;
+    float result = 0.0;
     for(; (idx=lx->index)!=-1 && idx < model_->nr_feature; lx++){
         result += w[idx-1]; //为了这儿减少一次减法，在getglobalfeature的地方改了index的初值为0;
     }
     return result;
     
-    double *dec_values = Malloc(double, model_->nr_class);
-    double label=predict_values(model_, x, dec_values);
+    float *dec_values = Malloc(float, model_->nr_class);
+    float label=predict_values(model_, x, dec_values);
     free(dec_values);
     return label;
 }
 
-double predict_probability(const struct model *model_, const struct feature_node *x, double* prob_estimates)
+float predict_probability(const struct model *model_, const struct feature_node *x, float* prob_estimates)
 {
     if(check_probability_model(model_))
     {
@@ -2558,7 +2558,7 @@ double predict_probability(const struct model *model_, const struct feature_node
         else
             nr_w = nr_class;
         
-        double label=predict_values(model_, x, prob_estimates);
+        float label=predict_values(model_, x, prob_estimates);
         for(i=0;i<nr_w;i++)
             prob_estimates[i]=1/(1+exp(-prob_estimates[i]));
         
@@ -2566,7 +2566,7 @@ double predict_probability(const struct model *model_, const struct feature_node
             prob_estimates[1]=1.-prob_estimates[0];
         else
         {
-            double sum=0;
+            float sum=0;
             for(i=0; i<nr_class; i++)
                 sum+=prob_estimates[i];
             
@@ -2652,7 +2652,7 @@ struct model *load_model(const char *model_file_name)
     int nr_feature;
     int n;
     int nr_class;
-    double bias;
+    float bias;
     model *model_ = Malloc(model,1);
     parameter& param = model_->param;
     
@@ -2737,7 +2737,7 @@ struct model *load_model(const char *model_file_name)
     else
         nr_w = nr_class;
     
-    model_->w=Malloc(double, w_size*nr_w);
+    model_->w=Malloc(float, w_size*nr_w);
     for(i=0; i<w_size; i++)
     {
         int j;
@@ -2812,8 +2812,8 @@ int save_model_bin(std::ofstream& fout, const struct model *model_)
 //    }
     
     fout.write((char*)&nr_feature, sizeof(int));
-    fout.write((char*)&model_->bias, sizeof(double));
-    fout.write((char*)model_->w, sizeof(double)*w_size*nr_w);
+    fout.write((char*)&model_->bias, sizeof(float));
+    fout.write((char*)model_->w, sizeof(float)*w_size*nr_w);
     
     setlocale(LC_ALL, old_locale);
     free(old_locale);
@@ -2844,7 +2844,7 @@ struct model *load_model_bin(std::ifstream& fin)
 
     }
     fin.read((char*)&model_->nr_feature, sizeof(int));
-    fin.read((char*)&model_->bias, sizeof(double));
+    fin.read((char*)&model_->bias, sizeof(float));
 
     nr_feature=model_->nr_feature;
     if(model_->bias>=0)
@@ -2858,7 +2858,7 @@ struct model *load_model_bin(std::ifstream& fin)
     else
         nr_w = nr_class;
     
-    model_->w=Malloc(double, w_size*nr_w);
+    model_->w=Malloc(float, w_size*nr_w);
 //    for(i=0; i<w_size; i++)
 //    {
 //        int j;
@@ -2867,7 +2867,7 @@ struct model *load_model_bin(std::ifstream& fin)
 //        fscanf(fp, "\n");
 //    }
     
-    fin.read((char*)model_->w, sizeof(double)*w_size*nr_w);
+    fin.read((char*)model_->w, sizeof(float)*w_size*nr_w);
     setlocale(LC_ALL, old_locale);
     free(old_locale);
     return model_;
@@ -2892,11 +2892,11 @@ void get_labels(const model *model_, int* label)
 }
 
 // use inline here for better performance (around 20% faster than the non-inline one)
-static inline double get_w_value(const struct model *model_, int idx, int label_idx) 
+static inline float get_w_value(const struct model *model_, int idx, int label_idx) 
 {
     int nr_class = model_->nr_class;
     int solver_type = model_->param.solver_type;
-    const double *w = model_->w;
+    const float *w = model_->w;
     
     if(idx < 0 || idx > model_->nr_feature)
         return 0;
@@ -2921,17 +2921,17 @@ static inline double get_w_value(const struct model *model_, int idx, int label_
 // feat_idx: starting from 1 to nr_feature
 // label_idx: starting from 0 to nr_class-1 for classification models;
 //            for regression models, label_idx is ignored.
-double get_decfun_coef(const struct model *model_, int feat_idx, int label_idx)
+float get_decfun_coef(const struct model *model_, int feat_idx, int label_idx)
 {
     if(feat_idx > model_->nr_feature)
         return 0;
     return get_w_value(model_, feat_idx-1, label_idx);
 }
 
-double get_decfun_bias(const struct model *model_, int label_idx)
+float get_decfun_bias(const struct model *model_, int label_idx)
 {
     int bias_idx = model_->nr_feature;
-    double bias = model_->bias;
+    float bias = model_->bias;
     if(bias <= 0)
         return 0;
     else
