@@ -112,15 +112,43 @@ cv::Mat_<float> LoadGroundTruthShape(const char* name){
 	fin.open(name, std::fstream::in);
 	getline(fin, temp);// read first line
 	fin >> temp >> landmarks;
-    landmarks = 17; //add by xujj
+//    landmarks = 17; //add by xujj
 	cv::Mat_<float> shape(landmarks, 2);
 	getline(fin, temp); // read '\n' of the second line
 	getline(fin, temp); // read third line
 	for (int i = 0; i<landmarks; i++){
 		fin >> shape(i, 0) >> shape(i, 1);
 	}
+    //add by xujj, 用于校验的点
+//    shape(68,0) = (shape(37,0) + shape(38,0) + shape(40, 0) + shape(41, 0))/4.0;
+//    shape(68,1) = (shape(37,1) + shape(38,1) + shape(40, 1) + shape(41, 1))/4.0;
+//    shape(69,0) = (shape(43,0) + shape(44,0) + shape(46, 0) + shape(47, 0))/4.0;
+//    shape(69,1) = (shape(43,1) + shape(44,1) + shape(46, 1) + shape(47, 1))/4.0;
 	fin.close();
 	return shape;
+}
+
+cv::Mat_<float> LoadGroundTruthShapeForDetect(const char* name){
+    int landmarks = 0;
+    std::ifstream fin;
+    std::string temp;
+    fin.open(name, std::fstream::in);
+    getline(fin, temp);// read first line
+    fin >> temp >> landmarks;
+    //    landmarks = 17; //add by xujj
+    cv::Mat_<float> shape(landmarks, 2);
+    getline(fin, temp); // read '\n' of the second line
+    getline(fin, temp); // read third line
+    for (int i = 0; i<landmarks; i++){
+        fin >> shape(i, 0) >> shape(i, 1);
+    }
+    fin.close();
+    cv::Mat_<float> shapeDetect(2,2);
+    shapeDetect(0,0) = shape(39,0);
+    shapeDetect(0,1) = shape(39,1);
+    shapeDetect(1,0) = shape(42,0);
+    shapeDetect(1,1) = shape(42,1);
+    return shapeDetect;
 }
 
 bool ShapeInRect(cv::Mat_<float>& shape, cv::Rect& ret){
@@ -296,6 +324,10 @@ void LoadImages(std::vector<cv::Mat_<uchar> >& images,
                         flipped_ground_truth_shape(p,0) = image.cols - ground_truth_shape(65+67-p, 0);
                         flipped_ground_truth_shape(p,1) = ground_truth_shape(65+67-p,1);
                     }
+//                    if ( p >= 68 && p <= 69 ){
+//                        flipped_ground_truth_shape(p,0) = image.cols - ground_truth_shape(68+69-p, 0);
+//                        flipped_ground_truth_shape(p,1) = ground_truth_shape(68+69-p,1);
+//                    }
                 }
                 ground_truth_shapes.push_back(flipped_ground_truth_shape);
                 
@@ -323,6 +355,81 @@ void LoadImages(std::vector<cv::Mat_<uchar> >& images,
 }
 
 
+void LoadImagesForDetect(std::vector<cv::Mat_<uchar> >& images,
+                std::vector<cv::Mat_<float> >& ground_truth_shapes,
+                //const std::vector<cv::Mat_<float> >& current_shapes,
+                std::vector<BoundingBox>& bboxes,
+                std::string file_names){
+    
+    // change this function to satisfy your own needs
+    // for .box files I just use another program before this LoadImage() function
+    // the contents in .box is just the bounding box of a face, including the center point of the box
+    // you can just use the face rectangle detected by opencv with a little effort calculating the center point's position yourself.
+    // you may use some utils function is this utils.cpp file
+    // delete unnecessary lines below, my codes are just an example
+    
+//    std::string fn_haar = "/Users/xujiajun/developer/dataset/haarcascade_frontalface_alt2.xml";
+//    cv::CascadeClassifier haar_cascade;
+//    bool yes = haar_cascade.load(fn_haar);
+//    std::cout << "detector: " << yes << std::endl;
+    
+    std::cout << "loading images\n";
+    std::ifstream fin;
+    fin.open(file_names.c_str(), std::ifstream::in);
+    // train_jpgs.txt contains all the paths for each image, one image per line
+    // for example: in Linux you can use ls *.jpg > train_jpgs.txt to get the paths
+    // the file looks like as below
+    /*
+    	1.jpg
+    	2.jpg
+    	3.jpg
+    	...
+    	1000.jpg
+     */
+    
+    std::string name;
+    int count = 0;
+    //std::cout << name << std::endl;
+    while (fin >> name){
+        //std::cout << "reading file: " << name << std::endl;
+        std::cout << name << std::endl;
+        std::string pts = name.substr(0, name.length() - 3) + "pts";
+        
+        cv::Mat_<uchar> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 0);
+        cv::Mat_<float> ground_truth_shape = LoadGroundTruthShapeForDetect(("/Users/xujiajun/developer/dataset/helen/" + pts).c_str());
+        
+        
+        if (image.cols > 2000){
+            cv::resize(image, image, cv::Size(image.cols / 3, image.rows / 3), 0, 0, cv::INTER_LINEAR);
+            ground_truth_shape /= 3.0;
+        }
+        else if (image.cols > 1400 && image.cols <= 2000){
+            cv::resize(image, image, cv::Size(image.cols / 2, image.rows / 2), 0, 0, cv::INTER_LINEAR);
+            ground_truth_shape /= 2.0;
+        }
+        
+        cv::Rect faceRec;
+
+        images.push_back(image);
+        ground_truth_shapes.push_back(ground_truth_shape);
+        BoundingBox bbox;
+        bbox.start_x = 0;
+        bbox.start_y = 0;
+        bbox.width = image.cols;
+        bbox.height = image.rows;
+        bbox.center_x = bbox.start_x + bbox.width / 2.0;
+        bbox.center_y = bbox.start_y + bbox.height / 2.0;
+        bboxes.push_back(bbox);
+        
+        count++;
+        if (count%100 == 0){
+            std::cout << count << " images loaded\n";
+        }        
+    }
+    std::cout << "get " << bboxes.size() << " faces\n";
+    fin.close();
+}
+
 // float CalculateError(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predicted_shape){
 // 	cv::Mat_<float> temp;
 // 	float sum = 0;
@@ -334,8 +441,13 @@ void LoadImages(std::vector<cv::Mat_<uchar> >& images,
 
 float CalculateError(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predicted_shape){
     cv::Mat_<float> temp;
- //   temp = ground_truth_shape.rowRange(36, 41)-ground_truth_shape.rowRange(42, 47);
-    temp = ground_truth_shape.rowRange(0, 7)-ground_truth_shape.rowRange(9, 16); //add by xujj
+    if ( ground_truth_shape.rows >= 68 ){
+        temp = ground_truth_shape.rowRange(36, 41)-ground_truth_shape.rowRange(42, 47);
+    }
+    else{
+        temp = ground_truth_shape.rowRange(0, 1)-ground_truth_shape.rowRange(1, 2);
+    }
+//    temp = ground_truth_shape.rowRange(0, 7)-ground_truth_shape.rowRange(9, 16); //add by xujj
     float x =mean(temp.col(0))[0];
     float y = mean(temp.col(1))[1];
     float interocular_distance = sqrt(x*x+y*y);

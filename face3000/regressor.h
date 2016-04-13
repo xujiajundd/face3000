@@ -19,8 +19,8 @@ public:
     BoundingBox tmp_bbox;
     cv::Mat_<float> tmp_rotation;
     float tmp_scale;
-    int leaf_index_count[17]; //modi by xujj
-    int feature_node_index[17];
+    int leaf_index_count[68]; //modi by xujj
+    int feature_node_index[68];
     // std::atomic<int> cur_landmark {0};
 
 public:
@@ -34,7 +34,7 @@ public:
 		const std::vector<cv::Mat_<float> >& augmented_current_shapes,
 		const Parameters& params,
 		const int stage);
-    struct feature_node* GetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale);
+    struct feature_node* GetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, int groupNum);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape,
 		BoundingBox& bbox, cv::Mat_<float>& rotation, float scale);
 	void LoadRegressor(std::string ModelName, int stage);
@@ -58,6 +58,10 @@ public:
 	std::vector<BoundingBox> bboxes_;
 	//cv::Mat_<float> mean_shape_;
 	std::vector<Regressor> regressors_;
+    std::vector<float> stage_delta_;
+    float alignment_confidence_;
+    cv::Mat_<float> lastRes;
+    int antiJitter;
 public:
 	CascadeRegressor();
 	void Train(const std::vector<cv::Mat_<uchar> >& images,

@@ -37,7 +37,7 @@ bool faceDetected = false;
 void DrawPredictedImage(cv::Mat_<uchar> image, cv::Mat_<float>& shape){
     for (int i = 0; i < shape.rows; i++){
         cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, (255));
-        if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 )
+        if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
             cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), (255));
     }
     cv::imshow("show image", image);
@@ -46,12 +46,13 @@ void DrawPredictedImage(cv::Mat_<uchar> image, cv::Mat_<float>& shape){
 
 void DrawPredictedImageContinue(cv::Mat image, cv::Mat_<float>& shape){
     for (int i = 0; i < shape.rows; i++){
-        cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, (255));
-        if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 )
+        cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, Scalar(255,255,255));
+        if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!= 48 && i!=68 && i!=69)
             cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), Scalar(0,255,0));
     }
     cv::imshow("show image", image);
-    cv::waitKey( 10);
+    char c = cv::waitKey( 10);
+    
 }
 
 
@@ -96,11 +97,20 @@ void Test(const char* ModelName){
 void TestVideo(const char* ModelName){
     CascadeRegressor rg;
     rg.LoadCascadeRegressor(ModelName);
-    
+    rg.antiJitter = 1;
+//    rg.params_.predict_group_.erase(0);
+//    for (int i = 0; i < rg.params_.regressor_stages_; i++){
+//        rg.regressors_[i].params_ = rg.params_;
+//    }
+//    rg.params_.predict_regressor_stages_ = 3;
     std::string fn_haar = "/Users/xujiajun/developer/dataset/haarcascade_frontalface_alt2.xml";
     cv::CascadeClassifier haar_cascade;
     bool yes = haar_cascade.load(fn_haar);
     std::cout << "detector: " << yes << std::endl;
+    
+    std::string fn_haar_eye = "/Users/xujiajun/developer/dataset/haarcascade_frontalface_alt2.xml";
+    cv::CascadeClassifier haar_eye_cascade;
+    haar_eye_cascade.load(fn_haar_eye);
     
     const string WindowName = "Face Detection example";
     namedWindow(WindowName);
@@ -115,8 +125,8 @@ void TestVideo(const char* ModelName){
     cv::Mat frame;
     Mat_<uchar> image;
     
-//    cv::Mat_<float> last_shape;
-//    bool lastShaped = false;
+    cv::Mat_<float> last_shape;
+    bool lastShaped = false;
     while (true){
         VideoStream >> frame;
         cvtColor(frame, image, COLOR_RGB2GRAY);
@@ -125,7 +135,7 @@ void TestVideo(const char* ModelName){
         struct timeval t1, t2;
         float timeuse;
         gettimeofday(&t1, NULL);
-        std::vector<cv::Rect> faces;
+        std::vector<cv::Rect> faces, eyes;
         haar_cascade.detectMultiScale(image, faces, 1.1, 2, 0
                                       |cv::CASCADE_FIND_BIGGEST_OBJECT
 //                                      |cv::CASCADE_DO_ROUGH_SEARCH
@@ -155,6 +165,18 @@ void TestVideo(const char* ModelName){
         cout << faces.size() << "face detected " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0  << endl;
         
         for (int i = 0; i < faces.size() && i < 1; i++){
+//            gettimeofday(&t1, NULL);
+//            cv::Mat face = image(faces[i]);
+//            haar_eye_cascade.detectMultiScale(face, eyes, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, cv::Size(80,80));
+//            
+//            if (eyes.size())
+//            {
+//                cv::Rect rect = eyes[0] + cv::Point(faces[i].x, faces[i].y);
+////                tpl  = im(rect);
+//            }
+//            gettimeofday(&t2, NULL);
+//            cout << eyes.size() << "eye detected " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0  << endl;
+            
             cv::Rect faceRec = faces[i];
 //            cout << faces[0] << endl;
 //            cv::Rect faceRec;
@@ -179,11 +201,19 @@ void TestVideo(const char* ModelName){
             gettimeofday(&t1, NULL);
             cv::Mat_<float> res = rg.Predict(image, current_shape, bbox);//, ground_truth_shapes[i]);
             gettimeofday(&t2, NULL);
-//            last_shape = res; lastShaped = true;
+//            last_shape = res.clone(); lastShaped = true;
             cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
+            
+//            for ( int d=0; d<rg.params_.predict_regressor_stages_; d++){
+//                cout << rg.stage_delta_[d] << " ";
+//                cv::line(frame, Point2f(20*d+20, 450), Point2f(20*d+20, 450 - 200000*rg.stage_delta_[d]), (255));
+//            }
+//            cout << endl;
+            
             cv::rectangle(image, faceRec, (255), 1);
             //cv::imshow("show image", image);
             //cv::waitKey(0);
+
             DrawPredictedImageContinue(frame, res);
 //            imshow(WindowName, image);
         }
@@ -231,6 +261,7 @@ void TestImage(const char* name, CascadeRegressor& rg){
         cv::Mat_<float> res = rg.Predict(image, current_shape, bbox);//, ground_truth_shapes[i]);
         gettimeofday(&t2, NULL);
         cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
+        
         cv::rectangle(image, faceRec, (255), 1);
         //cv::imshow("show image", image);
         //cv::waitKey(0);
@@ -268,11 +299,11 @@ void Train(const char* ModelName){
 
 	Parameters params;
     params.local_features_num_ = 500;
-	params.landmarks_num_per_face_ = 17;
+	params.landmarks_num_per_face_ = 68;
     params.regressor_stages_ = 5;
 //    params.local_radius_by_stage_.push_back(0.6);
 //    params.local_radius_by_stage_.push_back(0.5);
-	params.local_radius_by_stage_.push_back(0.4);
+	params.local_radius_by_stage_.push_back(0.45);
     params.local_radius_by_stage_.push_back(0.3);
     params.local_radius_by_stage_.push_back(0.2);
 	params.local_radius_by_stage_.push_back(0.1);//0.1
@@ -288,9 +319,53 @@ void Train(const char* ModelName){
 //    params.local_radius_by_stage_.push_back(0.05);
 //    params.local_radius_by_stage_.push_back(0.03);
     
-    params.tree_depth_ = 3;
-    params.trees_num_per_forest_ = 8;
-    params.initial_guess_ = 10;
+    params.tree_depth_ = 4;
+    params.trees_num_per_forest_ = 12;
+    params.initial_guess_ = 5;
+    
+    params.group_num_ = 6;
+    std::vector<int> group1, group2, group3, group4, group5, group6, group7;
+    for ( int i=0; i<17; i++ ) group1.push_back(i);
+//    group1.push_back(-36);
+//    group1.push_back(-45);
+    params.groups_.push_back(group1);
+    
+    for ( int i=17; i<27; i++ ) group2.push_back(i);
+    group2.push_back(-36);
+    group2.push_back(-45);
+    group2.push_back(-39);
+    group2.push_back(-42);
+    params.groups_.push_back(group2);
+    
+    for ( int i=27; i<36; i++ ) group3.push_back(i);
+    group3.push_back(-39);
+    group3.push_back(-42);
+//    group3.push_back(-21);
+//    group3.push_back(-22);
+    group3.push_back(-48);
+    group3.push_back(-54);
+    group3.push_back(-2);
+    group3.push_back(-14);
+    params.groups_.push_back(group3);
+    
+    for ( int i=36; i<48; i++) group4.push_back(i);
+    params.groups_.push_back(group4);
+    
+    for ( int i=48; i<55; i++) group5.push_back(i);
+    for ( int i=60; i<65; i++) group5.push_back(i);
+    params.groups_.push_back(group5);
+    
+    for ( int i= 55; i<60; i++) group6.push_back(i);
+    for ( int i= 65; i<68; i++) group6.push_back(i);
+    group6.push_back(-48);
+//    group6.push_back(-60);
+    group6.push_back(-54);
+//    group6.push_back(-64);
+    params.groups_.push_back(group6);
+    
+//    group7.push_back(68);
+//    group7.push_back(69);
+//    params.groups_.push_back(group7);
 
 	params.mean_shape_ = GetMeanShape(ground_truth_shapes, bboxes);
     
@@ -308,6 +383,95 @@ void Train(const char* ModelName){
 //    }
     
 	return;
+}
+
+void detectTrain(const char* ModelName)
+{
+    std::vector<cv::Mat_<uchar> > images;
+    std::vector<cv::Mat_<float> > ground_truth_shapes;
+    std::vector<BoundingBox> bboxes;
+    std::string file_names = "/Users/xujiajun/developer/dataset/helen/train_jpgs.txt";
+    // train_jpgs.txt contains all the paths for each image, one image per line
+    // for example: in Linux you can use ls *.jpg > train_jpgs.txt to get the paths
+    // the file looks like as below
+    /*
+    	1.jpg
+    	2.jpg
+    	3.jpg
+    	...
+    	1000.jpg
+     */
+    
+    LoadImagesForDetect(images, ground_truth_shapes, bboxes, file_names);
+    
+    Parameters params;
+    params.local_features_num_ = 10000;
+    params.landmarks_num_per_face_ = 2;
+    params.regressor_stages_ = 8;
+    //    params.local_radius_by_stage_.push_back(0.6);
+    //    params.local_radius_by_stage_.push_back(0.5);
+    params.local_radius_by_stage_.push_back(0.5);
+    params.local_radius_by_stage_.push_back(0.5);
+    params.local_radius_by_stage_.push_back(0.5);
+    params.local_radius_by_stage_.push_back(0.5);//0.1
+    params.local_radius_by_stage_.push_back(0.5);//0.08
+    params.local_radius_by_stage_.push_back(0.5);
+    params.local_radius_by_stage_.push_back(0.5);
+    params.local_radius_by_stage_.push_back(0.5);
+    
+    //    params.local_radius_by_stage_.push_back(0.2);
+    //    params.local_radius_by_stage_.push_back(0.15);
+    //    params.local_radius_by_stage_.push_back(0.1);
+    //    params.local_radius_by_stage_.push_back(0.8);
+    //    params.local_radius_by_stage_.push_back(0.05);
+    //    params.local_radius_by_stage_.push_back(0.03);
+    
+    params.tree_depth_ = 8;
+    params.trees_num_per_forest_ = 8;
+    params.initial_guess_ = 0;
+    
+    params.group_num_ = 1;
+    std::vector<int> group1;
+    for ( int i=0; i<2; i++ ) group1.push_back(i);
+    params.groups_.push_back(group1);
+    
+    params.mean_shape_ = GetMeanShape(ground_truth_shapes, bboxes);
+    
+    CascadeRegressor cas_reg;
+    cas_reg.Train(images, ground_truth_shapes, bboxes, params);
+    cas_reg.SaveCascadeRegressor(ModelName);
+    
+    //        cout << buffer << endl;
+    //        cout << "***********************************************" << endl << endl;
+    //    }
+    
+    return;
+}
+
+void detect(const char* ModelName)
+{
+    CascadeRegressor cas_load;
+    cas_load.LoadCascadeRegressor(ModelName);
+    std::vector<cv::Mat_<uchar> > images;
+    std::vector<cv::Mat_<float> > ground_truth_shapes;
+    std::vector<BoundingBox> bboxes;
+    std::string file_names = "/Users/xujiajun/developer/dataset/helen/test_jpgs.txt"; //"./../dataset/helen/train_jpgs.txt";
+    LoadImagesForDetect(images, ground_truth_shapes, bboxes, file_names);
+    struct timeval t1, t2;
+    gettimeofday(&t1, NULL);
+    for (int i = 0; i < images.size(); i++){
+        cv::Mat_<float> current_shape = ReProjection(cas_load.params_.mean_shape_, bboxes[i]);
+        //struct timeval t1, t2;
+        //gettimeofday(&t1, NULL);
+        cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, bboxes[i]);//, ground_truth_shapes[i]);
+        DrawPredictedImage(images[i], res);
+        DrawPredictedImage(images[i], ground_truth_shapes[i]);
+        //if (i == 10) break;
+    }
+    gettimeofday(&t2, NULL);
+    float time_full = t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0;
+    cout << "time full: " << time_full << " : " << time_full/images.size() << endl;
+    return;
 }
 
 void Hello(){
@@ -511,9 +675,25 @@ int main(int argc, char* argv[])
 		}
         if (strcmp(argv[1], "video") == 0)
         {
-            std::cout << "enter test\n";
+            std::cout << "enter video\n";
             if (argc == 3){
                 TestVideo(argv[2]);
+            }
+            return 0;
+        }
+        if (strcmp(argv[1], "detectTrain") == 0)
+        {
+            std::cout << "enter detectTrain\n";
+            if (argc == 3){
+                detectTrain(argv[2]);
+            }
+            return 0;
+        }
+        if (strcmp(argv[1], "detect") == 0)
+        {
+            std::cout << "enter detect\n";
+            if (argc == 3){
+                detect(argv[2]);
             }
             return 0;
         }

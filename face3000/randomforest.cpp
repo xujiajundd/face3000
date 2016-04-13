@@ -2,6 +2,7 @@
 #include <time.h>
 #include <algorithm>
 #include <stack>
+
 Node::Node(){
 	left_child_ = NULL;
 	right_child_ = NULL;
@@ -381,6 +382,8 @@ RandomForest::RandomForest(){
 }
 
 void RandomForest::SaveRandomForest(std::ofstream& fout){
+//    fout.setf(std::ios::fixed, std::ios::floatfield);  // 设定为 fixed 模式，以小数点表示浮点数
+    fout.precision(3);  // 设置精度 2
 	fout << stage_ << " "
 		<< local_features_num_ << " "
 		<< landmark_index_ << " "

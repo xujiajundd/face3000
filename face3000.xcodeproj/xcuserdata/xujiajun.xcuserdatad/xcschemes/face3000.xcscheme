@@ -63,31 +63,31 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "test model_d3n16i10 /Users/xujiajun/Downloads/zzy.jpg"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "train model_17marks"
+            argument = "video model_groups_t5d4n12i5"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "train model_d7n18i20"
+            argument = "video model_groups_t5d5n8i5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "video model_d4_n4"
+            argument = "video model_groups_t5d4n8i5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "test model_d5_n2 /Users/xujiajun/developer/dataset/helen/testset/296814969_3.jpg"
+            argument = "video model_groups_t5d6n4i5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "video model_d3n16i10"
+            argument = "video model_groups_t5d4n16i5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "hello"
+            argument = "video model_groups_t5d5n12i5"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "detect model_detect"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
