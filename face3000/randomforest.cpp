@@ -11,6 +11,7 @@ Node::Node(){
 	leaf_identity = -1;
 	samples_ = -1;
 	thre_changed_ = false;
+    score_ = 0.0; //TODO:模型保存和读取时也要加上
 }
 
 Node::Node(Node* left, Node* right, float thres){
@@ -25,14 +26,25 @@ Node::Node(Node* left, Node* right, float thres, bool leaf){
 	//offset_ = cv::Point2f(0, 0);
 }
 
+int my_cmp(std::pair<float,int> p1, std::pair<float,int> p2)
+{
+    return p1.first < p2.first;
+};
+
 bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_targets,
 	const std::vector<cv::Mat_<uchar> >& images,
 	const std::vector<int>& augmented_images_index,
 	//const std::vector<cv::Mat_<float>>& augmented_ground_truth_shapes,
 	const std::vector<BoundingBox>& augmented_bboxes,
 	const std::vector<cv::Mat_<float> >& augmented_current_shapes,
+    const std::vector<int> & augmented_ground_truth_faces,
+    std::vector<float> & current_fi,
+    std::vector<float> & current_weight,
 	const std::vector<cv::Mat_<float> >& rotations,
 	const std::vector<float>& scales){
+    
+    augmented_ground_truth_faces_ = augmented_ground_truth_faces;
+    current_weight_ = current_weight;
     //std::cout << "build forest of landmark: " << landmark_index_ << " of stage: " << stage_ << std::endl;
 	//regression_targets_ = &regression_targets;
 	time_t current_time;
@@ -109,13 +121,92 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 		//cv::Mat_<int> data = pixel_differences(cv::Range(0, local_features_num_), cv::Range(start_index, end_index));
 		//cv::Mat_<int> sorted_data;
 		//cv::sortIdx(data, sorted_data, cv::SORT_EVERY_ROW + cv::SORT_ASCENDING);
-		std::set<int> selected_indexes;
+		std::set<int> selected_indexes; //这个是用来表示那个feature已经被用过了
 		std::vector<int> images_indexes;
 		for (int j = start_index; j < end_index; j++){
 			images_indexes.push_back(j);
 		}
+        //计算每个训练实例的weight
+        for(int k=0;k<current_weight.size();++k)
+        {
+            current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
+            //current_weight[k]=1;
+            if ( current_weight_[k] > 5000.0 ) current_weight_[k] = 5000.0;
+        }
+        
 		Node* root = BuildTree(selected_indexes, pixel_differences, images_indexes, 0);
 		trees_.push_back(root);
+        
+        //计算每个训练实例的fi
+        for ( int n=0; n<augmented_images_index.size(); n++){
+            float score = 0;
+            //用训练实例去遍历此树得出叶子节点的score
+            cv::Mat_<float> rotation;
+            float scale;
+            getSimilarityTransform(ProjectShape(augmented_current_shapes[n],augmented_bboxes[n]),mean_shape_,rotation,scale);
+            GetBinaryFeatureIndex(i, images[augmented_images_index[n]], augmented_bboxes[n], augmented_current_shapes[n], rotation , scale, &score);
+            current_fi[n] += score;
+        }
+        //开始计算这棵树的detection threshold
+        std::vector<std::pair<float,int>> fiSort;
+        fiSort.clear();
+        for(int n=0;n<current_fi.size();++n)
+        {
+//            if (find_times[augmented_images[n]]<=MAXFINDTIMES)
+            fiSort.push_back(std::pair<float,int>(current_fi[n],n));
+        }
+        // ascent , small fi means false sample
+        sort(fiSort.begin(),fiSort.end(),my_cmp);
+        // compute recall
+        // set threshold
+        float max_recall=0,min_error=1;
+//        int idx_tmp=-1;
+        
+//        std::vector<std::pair<float,float>> precise_recall;
+        for (int n=0;n<fiSort.size();++n)
+        {
+            int true_pos=0;int false_neg=0;
+            int true_neg=0;int false_pos=0;
+            for(int m=0;m<fiSort.size();++m)
+            {
+                int isFace = augmented_ground_truth_faces[fiSort[m].second];
+                // below the threshold as non-face
+                if (m<n)
+                {
+                    if (isFace==1)
+                    {
+                        false_neg++;
+                    }
+                    else
+                    {
+                        true_neg++;
+                    }
+                }
+                // up the threshold as face
+                else
+                {
+                    if (isFace==1)
+                    {
+                        true_pos++;
+                    }
+                    else
+                    {
+                        false_pos++;
+                    }
+                }
+            }
+            
+            if (true_pos/(true_pos+false_neg+FLT_MIN)>=max_recall)
+            {
+                max_recall=true_pos/(true_pos+false_neg+FLT_MIN);
+//                precise_recall.push_back(pair<float,float>(true_pos/(true_pos+false_neg+FLT_MIN),false_pos/(false_pos+true_neg+FLT_MIN)));
+                root->score_ =fiSort[n].first; //跟节点的score作为threshold使用
+                //idx_tmp=n;
+            }
+            else
+                break;
+        }
+        
 	}
 	/*int count = 0;
 	for (int i = 0; i < trees_num_per_forest_; i++){
@@ -137,6 +228,18 @@ Node* RandomForest::BuildTree(std::set<int>& selected_indexes, cv::Mat_<int>& pi
 			node->is_leaf_ = true;
 			node->leaf_identity = all_leaf_nodes_;
 			all_leaf_nodes_++;
+            //计算叶子节点的score
+            float leaf_pos_weight = 0;
+            float leaf_neg_weight = 0;
+            for ( int i=0; i<images_indexes.size(); i++){
+                if ( augmented_ground_truth_faces_[images_indexes[i]] == 1){
+                    leaf_pos_weight += current_weight_[images_indexes[i]];
+                }
+                else{
+                    leaf_neg_weight += current_weight_[images_indexes[i]];
+                }
+            }
+            node->score_ = 0.5*(((leaf_pos_weight-0.0)<FLT_EPSILON)?0:log(leaf_pos_weight))-0.5*(((leaf_neg_weight-0.0)<FLT_EPSILON)?0:log(leaf_neg_weight))/*/log(2.0)*/;
 			return node;
 		}
 
@@ -146,6 +249,18 @@ Node* RandomForest::BuildTree(std::set<int>& selected_indexes, cv::Mat_<int>& pi
 			node->is_leaf_ = true;
 			node->leaf_identity = all_leaf_nodes_;
 			all_leaf_nodes_++;
+            //计算叶子节点的score, 同上
+            float leaf_pos_weight = 0;
+            float leaf_neg_weight = 0;
+            for ( int i=0; i<images_indexes.size(); i++){
+                if ( augmented_ground_truth_faces_[images_indexes[i]] == 1){
+                    leaf_pos_weight += current_weight_[images_indexes[i]];
+                }
+                else{
+                    leaf_neg_weight += current_weight_[images_indexes[i]];
+                }
+            }
+            node->score_ = 0.5*(((leaf_pos_weight-0.0)<FLT_EPSILON)?0:log(leaf_pos_weight))-0.5*(((leaf_neg_weight-0.0)<FLT_EPSILON)?0:log(leaf_neg_weight))/*/log(2.0)*/;
 			return node;
 		}
 
@@ -302,7 +417,7 @@ cv::Mat_<float> RandomForest::GetBinaryFeatures(const cv::Mat_<float>& image,
 }
 
 int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<float>& image,
-	const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale){
+	const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale, float *score){
 	Node* node = trees_[tree_index];
 	while (!node->is_leaf_){
 		FeatureLocations& pos = node->feature_locations_;
@@ -331,6 +446,7 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<float>& i
 			node = node->right_child_;// go right
 		}
 	}
+    *score = node->score_;
 	return node->leaf_identity;
 }
 
@@ -373,7 +489,7 @@ RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std
 	tree_depth_ = param.tree_depth_;
 	trees_num_per_forest_ = param.trees_num_per_forest_;
 	local_radius_ = param.local_radius_by_stage_[stage_];
-	//mean_shape_ = param.mean_shape_;
+	mean_shape_ = param.mean_shape_;
 	regression_targets_ = &regression_targets; // get the address pointer, not reference
 }
 
@@ -408,6 +524,7 @@ void RandomForest::WriteTree(Node* p, std::ofstream& fout){
 			<< p->is_leaf_ << " "
 			<< p->leaf_identity << " "
 			<< p->depth_ << " "
+            << p->score_ << " "
 			<< p->feature_locations_.start.x << " "
 			<< p->feature_locations_.start.y << " "
 			<< p->feature_locations_.end.x << " "
@@ -426,6 +543,7 @@ Node* RandomForest::ReadTree(std::ifstream& fin){
 			>> p->is_leaf_
 			>> p->leaf_identity
 			>> p->depth_
+            >> p->score_
 			>> p->feature_locations_.start.x
 			>> p->feature_locations_.start.y
 			>> p->feature_locations_.end.x

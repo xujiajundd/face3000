@@ -30,13 +30,16 @@ public:
 	std::vector<cv::Mat_<float> > Train(const std::vector<cv::Mat_<uchar> >& images,
 		const std::vector<int>& augmented_images_index,
 		const std::vector<cv::Mat_<float> >& augmented_ground_truth_shapes,
-		const std::vector<BoundingBox>& augmented_bboxes,
-		const std::vector<cv::Mat_<float> >& augmented_current_shapes,
+        const std::vector<int> & augmented_ground_truth_faces,
+        const std::vector<BoundingBox>& augmented_bboxes,
+        const std::vector<cv::Mat_<float> >& augmented_current_shapes,
+        std::vector<float>& current_fi,
+        std::vector<float>& current_weight,
 		const Parameters& params,
 		const int stage);
-    struct feature_node* GetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, int groupNum);
+    struct feature_node* GetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, int groupNum, float &score, bool &is_face);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape,
-		BoundingBox& bbox, cv::Mat_<float>& rotation, float scale);
+		BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face);
 	void LoadRegressor(std::string ModelName, int stage);
 	void SaveRegressor(std::string ModelName, int stage);
     void ConstructLeafCount();
@@ -58,19 +61,20 @@ public:
 	std::vector<BoundingBox> bboxes_;
 	//cv::Mat_<float> mean_shape_;
 	std::vector<Regressor> regressors_;
-    std::vector<float> stage_delta_;
-    float alignment_confidence_;
+//    std::vector<float> stage_delta_;
+//    float alignment_confidence_;
     cv::Mat_<float> lastRes;
     int antiJitter;
 public:
 	CascadeRegressor();
 	void Train(const std::vector<cv::Mat_<uchar> >& images,
 		const std::vector<cv::Mat_<float> >& ground_truth_shapes,
+        const std::vector<int> ground_truth_faces,
 		//const std::vector<cv::Mat_<float> >& current_shapes,
 		const std::vector<BoundingBox>& bboxes,
 		Parameters& params);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& ground_truth_shape);
-	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox);
+	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, bool &is_face);
 	void LoadCascadeRegressor(std::string ModelName);
 	void SaveCascadeRegressor(std::string ModelName);
 

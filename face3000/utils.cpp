@@ -32,15 +32,19 @@ cv::Mat_<float> ReProjection(const cv::Mat_<float>& shape, const BoundingBox& bb
 }
 
 // get the mean shape, [-1, 1]x[-1, 1]
-cv::Mat_<float> GetMeanShape(const std::vector<cv::Mat_<float> >& all_shapes,
+cv::Mat_<float> GetMeanShape(const std::vector<cv::Mat_<float> >& all_shapes, std::vector<int>& ground_truth_faces,
 	const std::vector<BoundingBox>& all_bboxes) {
 
 	cv::Mat_<float> mean_shape = cv::Mat::zeros(all_shapes[0].rows, 2, CV_32FC1);
+    int count=0;
 	for (int i = 0; i < all_shapes.size(); i++)
 	{
-		mean_shape += ProjectShape(all_shapes[i], all_bboxes[i]);
+        if ( ground_truth_faces[i] == 1 ){
+		    mean_shape += ProjectShape(all_shapes[i], all_bboxes[i]);
+            count++;
+        }
 	}
-	mean_shape = 1.0 / all_shapes.size()*mean_shape;
+	mean_shape = 1.0 / count*mean_shape;
 	return mean_shape;
 }
 
@@ -182,6 +186,7 @@ std::vector<cv::Rect> DetectFaces(cv::Mat_<uchar>& image, cv::CascadeClassifier&
 
 void LoadImages(std::vector<cv::Mat_<uchar> >& images,
 	std::vector<cv::Mat_<float> >& ground_truth_shapes,
+    std::vector<int>& ground_truth_faces,
 	//const std::vector<cv::Mat_<float> >& current_shapes,
 	std::vector<BoundingBox>& bboxes,
 	std::string file_names){
@@ -260,6 +265,7 @@ void LoadImages(std::vector<cv::Mat_<uchar> >& images,
 //                images.push_back(outimage);
                 images.push_back(image);
                 ground_truth_shapes.push_back(ground_truth_shape);
+                ground_truth_faces.push_back(1);
                 BoundingBox bbox;
                 bbox.start_x = faceRec.x;
                 bbox.start_y = faceRec.y;
@@ -268,8 +274,21 @@ void LoadImages(std::vector<cv::Mat_<uchar> >& images,
                 bbox.center_x = bbox.start_x + bbox.width / 2.0;
                 bbox.center_y = bbox.start_y + bbox.height / 2.0;
                 bboxes.push_back(bbox);
-                //翻转图片, add by xujj
                 
+                //加负例
+                BoundingBox nbbox;
+                nbbox.start_x = image.cols * 3 / 4;
+                nbbox.start_y = image.rows * 3 / 4;
+                nbbox.width = image.cols / 4 - 10;
+                nbbox.height = image.rows / 4 - 10;
+                nbbox.center_x = nbbox.start_x + nbbox.width / 2.0;
+                nbbox.center_y = nbbox.start_y + nbbox.height / 2.0;
+                images.push_back(image);
+                ground_truth_shapes.push_back(ReProjection(ProjectShape(ground_truth_shape, bbox), nbbox));
+                ground_truth_faces.push_back(-1);
+                bboxes.push_back(nbbox);
+                
+                //翻转图片, add by xujj
                 cv::Mat_<uchar> flippedImage;
                 flip(image, flippedImage, 1);
                 images.push_back(flippedImage);
@@ -330,7 +349,7 @@ void LoadImages(std::vector<cv::Mat_<uchar> >& images,
 //                    }
                 }
                 ground_truth_shapes.push_back(flipped_ground_truth_shape);
-                
+                ground_truth_faces.push_back(1);
                 BoundingBox flipped_bbox;
                 flipped_bbox.start_x = image.cols - (faceRec.x + faceRec.width);
                 flipped_bbox.start_y = faceRec.y;
@@ -339,7 +358,19 @@ void LoadImages(std::vector<cv::Mat_<uchar> >& images,
                 flipped_bbox.center_x = flipped_bbox.start_x + flipped_bbox.width / 2.0;
                 flipped_bbox.center_y = flipped_bbox.start_y + flipped_bbox.height / 2.0;
                 bboxes.push_back(flipped_bbox);
-                
+ 
+                //加负例
+                BoundingBox fbbox;
+                fbbox.start_x = image.cols * 3 / 4;
+                fbbox.start_y = image.rows * 3 / 4;
+                fbbox.width = image.cols / 4 - 10;
+                fbbox.height = image.rows / 4 - 10;
+                fbbox.center_x = fbbox.start_x + fbbox.width / 2.0;
+                fbbox.center_y = fbbox.start_y + fbbox.height / 2.0;
+                images.push_back(flippedImage);
+                ground_truth_shapes.push_back(ReProjection(ProjectShape(flipped_ground_truth_shape, bbox), fbbox));
+                ground_truth_faces.push_back(-1);
+                bboxes.push_back(fbbox);
                 
                 count++;
                 if (count%100 == 0){
@@ -501,3 +532,4 @@ BoundingBox GetBoundingBox(cv::Mat_<float>& shape, int width, int height){
 	bbox.center_y = bbox.start_y + bbox.height / 2.0;
 	return bbox;
 }
+

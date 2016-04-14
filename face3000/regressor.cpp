@@ -15,6 +15,7 @@ CascadeRegressor::CascadeRegressor(){
 
 void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
 	const std::vector<cv::Mat_<float> >& ground_truth_shapes,
+    const std::vector<int> ground_truth_faces,
 	const std::vector<BoundingBox>& bboxes,
 	Parameters& params){
     struct timeval t1, t2;
@@ -28,14 +29,25 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
 	std::vector<int> augmented_images_index; // just index in images_
 	std::vector<BoundingBox> augmented_bboxes;
 	std::vector<cv::Mat_<float> > augmented_ground_truth_shapes;
+    std::vector<int> augmented_ground_truth_faces;
 	std::vector<cv::Mat_<float> > augmented_current_shapes; //
-
+    std::vector<float> current_fi;
+    std::vector<float> current_weight;
+    
 	time_t current_time;
 	current_time = time(0);
 	//cv::RNG *random_generator = new cv::RNG();
 	std::cout << "augment data sets" << std::endl;
 	cv::RNG random_generator(current_time);
 	for (int i = 0; i < images_.size(); i++){
+        augmented_images_index.push_back(i);
+        augmented_ground_truth_shapes.push_back(ground_truth_shapes_[i]);
+        augmented_ground_truth_faces.push_back(ground_truth_faces[i]);
+        augmented_bboxes.push_back(bboxes_[i]);
+        augmented_current_shapes.push_back(ReProjection(params_.mean_shape_, bboxes_[i]));
+        current_fi.push_back(0);
+        current_weight.push_back(1);
+        
 		for (int j = 0; j < params_.initial_guess_; j++)
 		{
 			int index = 0;
@@ -43,33 +55,53 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
 				index = random_generator.uniform(0, images_.size());
 			}while(index == i);
 
-			augmented_images_index.push_back(i);
-			augmented_ground_truth_shapes.push_back(ground_truth_shapes_[i]);
-			augmented_bboxes.push_back(bboxes_[i]);
-			cv::Mat_<float> temp = ground_truth_shapes_[index];
-			temp = ProjectShape(temp, bboxes_[index]);
-			temp = ReProjection(temp, bboxes_[i]);
-			augmented_current_shapes.push_back(temp);
+            if ( ground_truth_faces[i] == -1 ){
+                //TODO:对于不是face的image，是不是可以循环多生成一些负例？需要生成一些随机的box，待做
+                for ( int k=0; k<1; k++){
+                    augmented_images_index.push_back(i);
+                    augmented_ground_truth_shapes.push_back(ground_truth_shapes_[i]);
+                    augmented_ground_truth_faces.push_back(ground_truth_faces[i]);
+                    augmented_bboxes.push_back(bboxes_[i]);
+                    cv::Mat_<float> temp = ground_truth_shapes_[index];
+                    temp = ProjectShape(temp, bboxes_[index]);
+                    temp = ReProjection(temp, bboxes_[i]);
+                    augmented_current_shapes.push_back(temp);
+                    current_fi.push_back(0);
+                    current_weight.push_back(1);
+                }
+            }
+            else{
+                augmented_images_index.push_back(i);
+                augmented_ground_truth_shapes.push_back(ground_truth_shapes_[i]);
+                augmented_ground_truth_faces.push_back(ground_truth_faces[i]);
+                augmented_bboxes.push_back(bboxes_[i]);
+                cv::Mat_<float> temp = ground_truth_shapes_[index];
+                temp = ProjectShape(temp, bboxes_[index]);
+                temp = ReProjection(temp, bboxes_[i]);
+                augmented_current_shapes.push_back(temp);
+                current_fi.push_back(0);
+                current_weight.push_back(1);
+            }
 		}
-        augmented_images_index.push_back(i);
-        augmented_ground_truth_shapes.push_back(ground_truth_shapes_[i]);
-        augmented_bboxes.push_back(bboxes_[i]);
-        augmented_current_shapes.push_back(ReProjection(params_.mean_shape_, bboxes_[i]));
+
 	}
 
     std::cout << "augmented size: " << augmented_current_shapes.size() << std::endl;
 
 	std::vector<cv::Mat_<float> > shape_increaments;
 
-regressors_.resize(params_.regressor_stages_);
+    regressors_.resize(params_.regressor_stages_);
 	for (int i = 0; i < params_.regressor_stages_; i++){
         gettimeofday(&t1, NULL);
 		std::cout << "training stage: " << i << " of " << params_.regressor_stages_  << std::endl;
 		shape_increaments = regressors_[i].Train(images_,
 											augmented_images_index,
 											augmented_ground_truth_shapes,
+                                            augmented_ground_truth_faces,
 											augmented_bboxes,
 											augmented_current_shapes,
+                                            current_fi,
+                                            current_weight,
 											params_,
 											i);
 		std::cout << "update current shapes" << std::endl;
@@ -88,8 +120,11 @@ regressors_.resize(params_.regressor_stages_);
 std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar> >& images,
 	const std::vector<int>& augmented_images_index,
 	const std::vector<cv::Mat_<float> >& augmented_ground_truth_shapes,
+    const std::vector<int> & augmented_ground_truth_faces,
 	const std::vector<BoundingBox>& augmented_bboxes,
 	const std::vector<cv::Mat_<float> >& augmented_current_shapes,
+    std::vector<float>& current_fi,
+    std::vector<float>& current_weight,
 	const Parameters& params,
 	const int stage){
 
@@ -121,12 +156,13 @@ std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar>
 
 	std::cout << "train forest of stage:" << stage_ << std::endl;
 	rd_forests_.resize(params_.landmarks_num_per_face_);
-    #pragma omp parallel for
+//    #pragma omp parallel for
 	for (int i = 0; i < params_.landmarks_num_per_face_; ++i){
         std::cout << "landmark: " << i << std::endl;
 		rd_forests_[i] = RandomForest(params_, i, stage_, regression_targets);
         rd_forests_[i].TrainForest(
 			images,augmented_images_index, augmented_bboxes, augmented_current_shapes,
+            augmented_ground_truth_faces, current_fi, current_weight,
 			rotations_, scales_);
 	}
 	std::cout << "Get Global Binary Features" << std::endl;
@@ -201,6 +237,7 @@ std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar>
         }
         std::cout << "\n";
 
+        //TODO:这里回归的时候，不要回归negtive face实例！
         struct problem* prob = new struct problem;
         prob->l = augmented_current_shapes.size();
         prob->n = num_feature;
@@ -320,14 +357,19 @@ std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar>
 
 
 cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
-	cv::Mat_<float>& current_shape, BoundingBox& bbox){
+	cv::Mat_<float>& current_shape, BoundingBox& bbox, bool &is_face){
 //    cv::Mat_<float> rshape = ProjectShape( current_shape.clone(), bbox);
-    stage_delta_.clear();
+
+    float score = 0;
 	for (int i = 0; i < params_.predict_regressor_stages_; i++){
         cv::Mat_<float> rotation;
 		float scale;
 		getSimilarityTransform(ProjectShape(current_shape, bbox), params_.mean_shape_, rotation, scale);
-		cv::Mat_<float> shape_increaments = regressors_[i].Predict(image, current_shape, bbox, rotation, scale);
+		cv::Mat_<float> shape_increaments = regressors_[i].Predict(image, current_shape, bbox, rotation, scale, score, is_face);
+        if ( !is_face ){
+            std::cout << "检测不是face!!!!!!!!!!!!!!!!!!!!!!"<< std::endl;
+            return current_shape;
+        }
 		current_shape = shape_increaments + ProjectShape(current_shape, bbox);
 		current_shape = ReProjection(current_shape, bbox);
         
@@ -539,7 +581,7 @@ void Regressor::GetFeaThread(){
 //}
 
 struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
-    cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, int groupNum){
+    cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, int groupNum, float &score, bool &is_face){
     int index = 1;
     if ( tmp_binary_features == NULL ){
 //        struct feature_node* binary_features = new feature_node[params_.trees_num_per_forest_*params_.groups_[groupNum].size()+1]; //这条性能可能可以优化
@@ -580,7 +622,12 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                     node = node->right_child_;// go right
                 }
             }
-
+            score += node->score_;
+            if ( score < rd_forests_[j].trees_[k]->score_ ){
+                is_face = false;
+                std::cout <<"stage:"<<stage_ << "j=" << j << " k=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
+                return tmp_binary_features;
+            }
             //int ind = j*params_.trees_num_per_forest_ + k;
             //int ind = feature_node_index[j] + k;
             //binary_features[ind].index = leaf_index_count[j] + node->leaf_identity;
@@ -600,7 +647,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
 }
 
 cv::Mat_<float> Regressor::Predict(cv::Mat_<uchar>& image,
-	cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale){
+	cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face){
 
 	cv::Mat_<float> predict_result(current_shape.rows, current_shape.cols, 0.0);
 //    cv::Mat predict_result(current_shape.rows, current_shape.cols, CV_32F, 0.0);
@@ -610,7 +657,10 @@ cv::Mat_<float> Regressor::Predict(cv::Mat_<uchar>& image,
     for (int g=0; g<params_.group_num_; g++ ){
     //    gettimeofday(&t1, NULL);
         //feature_node* binary_features = GetGlobalBinaryFeaturesThread(image, current_shape, bbox, rotation, scale);
-        feature_node* binary_features = GetGlobalBinaryFeatures(image, current_shape, bbox, rotation, scale, g);
+        feature_node* binary_features = GetGlobalBinaryFeatures(image, current_shape, bbox, rotation, scale, g, score, is_face);
+        if ( !is_face ){
+            return predict_result;
+        }
     //    gettimeofday(&t2, NULL);
     //    std::cout << "getBinaryFeatures " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << std::endl;
     //    feature_node* tmp_binary_features = GetGlobalBinaryFeaturesMP(image, current_shape, bbox, rotation, scale);

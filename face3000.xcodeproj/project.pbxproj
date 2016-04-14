@@ -293,7 +293,7 @@
 				ALWAYS_SEARCH_USER_PATHS = YES;
 				CLANG_X86_VECTOR_INSTRUCTIONS = default;
 				GCC_FAST_MATH = YES;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 0;
 				HEADER_SEARCH_PATHS = (
 					/usr/local/include,
 					/Users/xujiajun/developer/external/eigen,

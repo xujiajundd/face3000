@@ -69,7 +69,7 @@ public:
 
 cv::Mat_<float> ProjectShape(const cv::Mat_<float>& shape, const BoundingBox& bbox);
 cv::Mat_<float> ReProjection(const cv::Mat_<float>& shape, const BoundingBox& bbox);
-cv::Mat_<float> GetMeanShape(const std::vector<cv::Mat_<float> >& all_shapes,
+cv::Mat_<float> GetMeanShape(const std::vector<cv::Mat_<float> >& all_shapes, std::vector<int>& ground_truth_faces,
 	const std::vector<BoundingBox>& all_bboxes);
 void getSimilarityTransform(const cv::Mat_<float>& shape_to,
 	const cv::Mat_<float>& shape_from,
@@ -78,7 +78,7 @@ void getSimilarityTransform(const cv::Mat_<float>& shape_to,
 //cv::Mat_<float> LoadGroundTruthShape(std::string& name);
 cv::Mat_<float> LoadGroundTruthShape(const char* name);
 
-void LoadImages(std::vector<cv::Mat_<uchar> >& images, std::vector<cv::Mat_<float> >& ground_truth_shapes,
+void LoadImages(std::vector<cv::Mat_<uchar> >& images, std::vector<cv::Mat_<float> >& ground_truth_shapes, std::vector<int> & ground_truth_faces,
 	std::vector<BoundingBox>& bboxes, std::string file_names);
 void LoadImagesForDetect(std::vector<cv::Mat_<uchar> >& images, std::vector<cv::Mat_<float> >& ground_truth_shapes,
                 std::vector<BoundingBox>& bboxes, std::string file_names);

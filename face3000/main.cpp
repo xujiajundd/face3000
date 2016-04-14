@@ -61,16 +61,19 @@ void Test(const char* ModelName){
 	cas_load.LoadCascadeRegressor(ModelName);
 	std::vector<cv::Mat_<uchar> > images;
 	std::vector<cv::Mat_<float> > ground_truth_shapes;
+    std::vector<int> ground_truth_faces;
 	std::vector<BoundingBox> bboxes;
 	std::string file_names = "/Users/xujiajun/developer/dataset/helen/test_jpgs.txt"; //"./../dataset/helen/train_jpgs.txt";
-	LoadImages(images, ground_truth_shapes, bboxes, file_names);
+    LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names);
+    
     struct timeval t1, t2;
     gettimeofday(&t1, NULL);
 	for (int i = 0; i < images.size(); i++){
 		cv::Mat_<float> current_shape = ReProjection(cas_load.params_.mean_shape_, bboxes[i]);
         //struct timeval t1, t2;
         //gettimeofday(&t1, NULL);
-        cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, bboxes[i]);//, ground_truth_shapes[i]);
+        bool is_face = true;
+        cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, bboxes[i], is_face);//, ground_truth_shapes[i]);
 
         //cout << res << std::endl;
         //cout << res - ground_truth_shapes[i] << std::endl;
@@ -199,7 +202,8 @@ void TestVideo(const char* ModelName){
             //cv::Mat_<float> tmp = image.clone();
             //DrawPredictedImage(tmp, current_shape);
             gettimeofday(&t1, NULL);
-            cv::Mat_<float> res = rg.Predict(image, current_shape, bbox);//, ground_truth_shapes[i]);
+            bool is_face = true;
+            cv::Mat_<float> res = rg.Predict(image, current_shape, bbox, is_face);//, ground_truth_shapes[i]);
             gettimeofday(&t2, NULL);
 //            last_shape = res.clone(); lastShaped = true;
             cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
@@ -258,7 +262,8 @@ void TestImage(const char* name, CascadeRegressor& rg){
         //cv::Mat_<float> tmp = image.clone();
         //DrawPredictedImage(tmp, current_shape);
         gettimeofday(&t1, NULL);
-        cv::Mat_<float> res = rg.Predict(image, current_shape, bbox);//, ground_truth_shapes[i]);
+        bool is_face = true;
+        cv::Mat_<float> res = rg.Predict(image, current_shape, bbox, is_face);//, ground_truth_shapes[i]);
         gettimeofday(&t2, NULL);
         cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
         
@@ -282,8 +287,10 @@ void Test(const char* ModelName, const char* name){
 void Train(const char* ModelName){
 	std::vector<cv::Mat_<uchar> > images;
 	std::vector<cv::Mat_<float> > ground_truth_shapes;
+    std::vector<int> ground_truth_faces;
 	std::vector<BoundingBox> bboxes;
     std::string file_names = "/Users/xujiajun/developer/dataset/helen/train_jpgs.txt";
+    Parameters params;
     // train_jpgs.txt contains all the paths for each image, one image per line
     // for example: in Linux you can use ls *.jpg > train_jpgs.txt to get the paths
     // the file looks like as below
@@ -295,12 +302,13 @@ void Train(const char* ModelName){
     	1000.jpg
     */
     
-	LoadImages(images, ground_truth_shapes, bboxes, file_names);
-
-	Parameters params;
+	LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names);
+	params.mean_shape_ = GetMeanShape(ground_truth_shapes, ground_truth_faces, bboxes);
+    
+    
     params.local_features_num_ = 500;
 	params.landmarks_num_per_face_ = 68;
-    params.regressor_stages_ = 5;
+    params.regressor_stages_ = 4;
 //    params.local_radius_by_stage_.push_back(0.6);
 //    params.local_radius_by_stage_.push_back(0.5);
 	params.local_radius_by_stage_.push_back(0.45);
@@ -319,9 +327,9 @@ void Train(const char* ModelName){
 //    params.local_radius_by_stage_.push_back(0.05);
 //    params.local_radius_by_stage_.push_back(0.03);
     
-    params.tree_depth_ = 4;
-    params.trees_num_per_forest_ = 12;
-    params.initial_guess_ = 5;
+    params.tree_depth_ = 3;
+    params.trees_num_per_forest_ = 4;
+    params.initial_guess_ = 1;
     
     params.group_num_ = 6;
     std::vector<int> group1, group2, group3, group4, group5, group6, group7;
@@ -367,7 +375,7 @@ void Train(const char* ModelName){
 //    group7.push_back(69);
 //    params.groups_.push_back(group7);
 
-	params.mean_shape_ = GetMeanShape(ground_truth_shapes, bboxes);
+
     
 //    for ( int i = 1; i < 7; i++ ){
 //        char buffer[50];
@@ -375,7 +383,7 @@ void Train(const char* ModelName){
 //        params.tree_depth_ = i;
 //        params.trees_num_per_forest_ = 1<<(6-i);
         CascadeRegressor cas_reg;
-        cas_reg.Train(images, ground_truth_shapes, bboxes, params);
+        cas_reg.Train(images, ground_truth_shapes, ground_truth_faces, bboxes, params);
         cas_reg.SaveCascadeRegressor(ModelName);
         
 //        cout << buffer << endl;
@@ -384,95 +392,97 @@ void Train(const char* ModelName){
     
 	return;
 }
-
-void detectTrain(const char* ModelName)
-{
-    std::vector<cv::Mat_<uchar> > images;
-    std::vector<cv::Mat_<float> > ground_truth_shapes;
-    std::vector<BoundingBox> bboxes;
-    std::string file_names = "/Users/xujiajun/developer/dataset/helen/train_jpgs.txt";
-    // train_jpgs.txt contains all the paths for each image, one image per line
-    // for example: in Linux you can use ls *.jpg > train_jpgs.txt to get the paths
-    // the file looks like as below
-    /*
-    	1.jpg
-    	2.jpg
-    	3.jpg
-    	...
-    	1000.jpg
-     */
-    
-    LoadImagesForDetect(images, ground_truth_shapes, bboxes, file_names);
-    
-    Parameters params;
-    params.local_features_num_ = 10000;
-    params.landmarks_num_per_face_ = 2;
-    params.regressor_stages_ = 8;
-    //    params.local_radius_by_stage_.push_back(0.6);
-    //    params.local_radius_by_stage_.push_back(0.5);
-    params.local_radius_by_stage_.push_back(0.5);
-    params.local_radius_by_stage_.push_back(0.5);
-    params.local_radius_by_stage_.push_back(0.5);
-    params.local_radius_by_stage_.push_back(0.5);//0.1
-    params.local_radius_by_stage_.push_back(0.5);//0.08
-    params.local_radius_by_stage_.push_back(0.5);
-    params.local_radius_by_stage_.push_back(0.5);
-    params.local_radius_by_stage_.push_back(0.5);
-    
-    //    params.local_radius_by_stage_.push_back(0.2);
-    //    params.local_radius_by_stage_.push_back(0.15);
-    //    params.local_radius_by_stage_.push_back(0.1);
-    //    params.local_radius_by_stage_.push_back(0.8);
-    //    params.local_radius_by_stage_.push_back(0.05);
-    //    params.local_radius_by_stage_.push_back(0.03);
-    
-    params.tree_depth_ = 8;
-    params.trees_num_per_forest_ = 8;
-    params.initial_guess_ = 0;
-    
-    params.group_num_ = 1;
-    std::vector<int> group1;
-    for ( int i=0; i<2; i++ ) group1.push_back(i);
-    params.groups_.push_back(group1);
-    
-    params.mean_shape_ = GetMeanShape(ground_truth_shapes, bboxes);
-    
-    CascadeRegressor cas_reg;
-    cas_reg.Train(images, ground_truth_shapes, bboxes, params);
-    cas_reg.SaveCascadeRegressor(ModelName);
-    
-    //        cout << buffer << endl;
-    //        cout << "***********************************************" << endl << endl;
-    //    }
-    
-    return;
-}
-
-void detect(const char* ModelName)
-{
-    CascadeRegressor cas_load;
-    cas_load.LoadCascadeRegressor(ModelName);
-    std::vector<cv::Mat_<uchar> > images;
-    std::vector<cv::Mat_<float> > ground_truth_shapes;
-    std::vector<BoundingBox> bboxes;
-    std::string file_names = "/Users/xujiajun/developer/dataset/helen/test_jpgs.txt"; //"./../dataset/helen/train_jpgs.txt";
-    LoadImagesForDetect(images, ground_truth_shapes, bboxes, file_names);
-    struct timeval t1, t2;
-    gettimeofday(&t1, NULL);
-    for (int i = 0; i < images.size(); i++){
-        cv::Mat_<float> current_shape = ReProjection(cas_load.params_.mean_shape_, bboxes[i]);
-        //struct timeval t1, t2;
-        //gettimeofday(&t1, NULL);
-        cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, bboxes[i]);//, ground_truth_shapes[i]);
-        DrawPredictedImage(images[i], res);
-        DrawPredictedImage(images[i], ground_truth_shapes[i]);
-        //if (i == 10) break;
-    }
-    gettimeofday(&t2, NULL);
-    float time_full = t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0;
-    cout << "time full: " << time_full << " : " << time_full/images.size() << endl;
-    return;
-}
+//
+//void detectTrain(const char* ModelName)
+//{
+//    std::vector<cv::Mat_<uchar> > images;
+//    std::vector<cv::Mat_<float> > ground_truth_shapes;
+//    std::vector<int> ground_truth_faces;
+//    std::vector<BoundingBox> bboxes;
+//    std::string file_names = "/Users/xujiajun/developer/dataset/helen/train_jpgs.txt";
+//    // train_jpgs.txt contains all the paths for each image, one image per line
+//    // for example: in Linux you can use ls *.jpg > train_jpgs.txt to get the paths
+//    // the file looks like as below
+//    /*
+//    	1.jpg
+//    	2.jpg
+//    	3.jpg
+//    	...
+//    	1000.jpg
+//     */
+//    
+//    LoadImagesForDetect(images, ground_truth_shapes, bboxes, file_names);
+//    
+//    Parameters params;
+//    params.local_features_num_ = 10000;
+//    params.landmarks_num_per_face_ = 2;
+//    params.regressor_stages_ = 8;
+//    //    params.local_radius_by_stage_.push_back(0.6);
+//    //    params.local_radius_by_stage_.push_back(0.5);
+//    params.local_radius_by_stage_.push_back(0.5);
+//    params.local_radius_by_stage_.push_back(0.5);
+//    params.local_radius_by_stage_.push_back(0.5);
+//    params.local_radius_by_stage_.push_back(0.5);//0.1
+//    params.local_radius_by_stage_.push_back(0.5);//0.08
+//    params.local_radius_by_stage_.push_back(0.5);
+//    params.local_radius_by_stage_.push_back(0.5);
+//    params.local_radius_by_stage_.push_back(0.5);
+//    
+//    //    params.local_radius_by_stage_.push_back(0.2);
+//    //    params.local_radius_by_stage_.push_back(0.15);
+//    //    params.local_radius_by_stage_.push_back(0.1);
+//    //    params.local_radius_by_stage_.push_back(0.8);
+//    //    params.local_radius_by_stage_.push_back(0.05);
+//    //    params.local_radius_by_stage_.push_back(0.03);
+//    
+//    params.tree_depth_ = 8;
+//    params.trees_num_per_forest_ = 8;
+//    params.initial_guess_ = 0;
+//    
+//    params.group_num_ = 1;
+//    std::vector<int> group1;
+//    for ( int i=0; i<2; i++ ) group1.push_back(i);
+//    params.groups_.push_back(group1);
+//    
+//    params.mean_shape_ = GetMeanShape(ground_truth_shapes, bboxes);
+//    
+//    CascadeRegressor cas_reg;
+//    cas_reg.Train(images, ground_truth_shapes, ground_truth_faces, bboxes, params);
+//    cas_reg.SaveCascadeRegressor(ModelName);
+//    
+//    //        cout << buffer << endl;
+//    //        cout << "***********************************************" << endl << endl;
+//    //    }
+//    
+//    return;
+//}
+//
+//void detect(const char* ModelName)
+//{
+//    CascadeRegressor cas_load;
+//    cas_load.LoadCascadeRegressor(ModelName);
+//    std::vector<cv::Mat_<uchar> > images;
+//    std::vector<cv::Mat_<float> > ground_truth_shapes;
+//    std::vector<BoundingBox> bboxes;
+//    std::string file_names = "/Users/xujiajun/developer/dataset/helen/test_jpgs.txt"; //"./../dataset/helen/train_jpgs.txt";
+//    LoadImagesForDetect(images, ground_truth_shapes, bboxes, file_names);
+//    struct timeval t1, t2;
+//    gettimeofday(&t1, NULL);
+//    for (int i = 0; i < images.size(); i++){
+//        cv::Mat_<float> current_shape = ReProjection(cas_load.params_.mean_shape_, bboxes[i]);
+//        //struct timeval t1, t2;
+//        //gettimeofday(&t1, NULL);
+//                bool is_face = true;
+//        cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, bboxes[i], is_face);//, ground_truth_shapes[i]);
+//        DrawPredictedImage(images[i], res);
+//        DrawPredictedImage(images[i], ground_truth_shapes[i]);
+//        //if (i == 10) break;
+//    }
+//    gettimeofday(&t2, NULL);
+//    float time_full = t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0;
+//    cout << "time full: " << time_full << " : " << time_full/images.size() << endl;
+//    return;
+//}
 
 void Hello(){
     int dim = 68000;
@@ -681,22 +691,22 @@ int main(int argc, char* argv[])
             }
             return 0;
         }
-        if (strcmp(argv[1], "detectTrain") == 0)
-        {
-            std::cout << "enter detectTrain\n";
-            if (argc == 3){
-                detectTrain(argv[2]);
-            }
-            return 0;
-        }
-        if (strcmp(argv[1], "detect") == 0)
-        {
-            std::cout << "enter detect\n";
-            if (argc == 3){
-                detect(argv[2]);
-            }
-            return 0;
-        }
+//        if (strcmp(argv[1], "detectTrain") == 0)
+//        {
+//            std::cout << "enter detectTrain\n";
+//            if (argc == 3){
+//                detectTrain(argv[2]);
+//            }
+//            return 0;
+//        }
+//        if (strcmp(argv[1], "detect") == 0)
+//        {
+//            std::cout << "enter detect\n";
+//            if (argc == 3){
+//                detect(argv[2]);
+//            }
+//            return 0;
+//        }
 	}
     else if ( argc == 2){
         if (strcmp(argv[1], "hello") == 0)
