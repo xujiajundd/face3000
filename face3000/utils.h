@@ -61,6 +61,7 @@ public:
     int group_num_;
     std::vector<std::vector<int>> groups_;
 	std::vector<float> local_radius_by_stage_;
+    std::vector<float> detect_factor_by_stage_;
 	int initial_guess_;
 	cv::Mat_<float> mean_shape_;
     int predict_regressor_stages_;

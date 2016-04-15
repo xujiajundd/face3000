@@ -327,17 +327,22 @@ void Train(const char* ModelName){
 //    params.local_radius_by_stage_.push_back(0.05);
 //    params.local_radius_by_stage_.push_back(0.03);
     
+    params.detect_factor_by_stage_.push_back(0.8);
+    params.detect_factor_by_stage_.push_back(0.6);
+    params.detect_factor_by_stage_.push_back(0.4);
+    params.detect_factor_by_stage_.push_back(0.2);
+    params.detect_factor_by_stage_.push_back(0.1);
+    params.detect_factor_by_stage_.push_back(0.1);
+    params.detect_factor_by_stage_.push_back(0.1);
+    params.detect_factor_by_stage_.push_back(0.1);
+    
     params.tree_depth_ = 3;
     params.trees_num_per_forest_ = 4;
     params.initial_guess_ = 1;
     
     params.group_num_ = 6;
     std::vector<int> group1, group2, group3, group4, group5, group6, group7;
-    for ( int i=0; i<17; i++ ) group1.push_back(i);
-//    group1.push_back(-36);
-//    group1.push_back(-45);
-    params.groups_.push_back(group1);
-    
+
     for ( int i=17; i<27; i++ ) group2.push_back(i);
     group2.push_back(-36);
     group2.push_back(-45);
@@ -375,7 +380,12 @@ void Train(const char* ModelName){
 //    group7.push_back(69);
 //    params.groups_.push_back(group7);
 
-
+    //这个放到最后，是希望detect的时候先用脸内部的特征
+    for ( int i=0; i<17; i++ ) group1.push_back(i);
+    //    group1.push_back(-36);
+    //    group1.push_back(-45);
+    params.groups_.push_back(group1);
+    
     
 //    for ( int i = 1; i < 7; i++ ){
 //        char buffer[50];

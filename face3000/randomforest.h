@@ -27,6 +27,7 @@ public:
 	int tree_depth_;
 	int trees_num_per_forest_;
 	float local_radius_;
+    float detect_factor_;
 	int all_leaf_nodes_;
 	cv::Mat_<float> mean_shape_;
 	std::vector<Node*> trees_;

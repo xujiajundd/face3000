@@ -277,7 +277,7 @@ Node* RandomForest::BuildTree(std::set<int>& selected_indexes, cv::Mat_<int>& pi
 
 int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_indexes, 
 	cv::Mat_<int>& pixel_differences, std::vector<int>& images_indexes, std::vector<int>& left_indexes, std::vector<int>& right_indexes){
-	std::vector<int> val;
+//	std::vector<int> val;
 	//cv::Mat_<int> sorted_fea;
 	time_t current_time;
 	current_time = time(0);
@@ -294,126 +294,126 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_indexes,
 	//int j = 0, tmp_index;
 	for (int j = 0; j < local_features_num_; j++){
 		if (selected_indexes.find(j) == selected_indexes.end()){
-//			tmp_left_indexes.clear();
-//			tmp_right_indexes.clear();
-            
-            int num_l_shapes = 0, num_r_shapes = 0;
-			float var_lc = 0.0, var_rc = 0.0, var_red = 0.0;
-			float Ex_2_lc = 0.0, Ex_lc = 0.0, Ey_2_lc = 0.0, Ey_lc = 0.0;
-			float Ex_2_rc = 0.0, Ex_rc = 0.0, Ey_2_rc = 0.0, Ey_rc = 0.0;
-            
-            int num_l_pos_faces = 0, num_l_neg_faces = 0, num_r_pos_faces = 0, num_r_neg_faces;
-            float total_l_pos_weight = 0.0, total_l_neg_weight = 0.0;
-            float total_r_pos_weight = 0.0, total_r_neg_weight = 0.0;
-            
-			// random generate threshold
-			std::vector<int> data;
-			data.reserve(images_indexes.size());
-			for (int i = 0; i < images_indexes.size(); i++){
-				data.push_back(pixel_differences(j, images_indexes[i]));
-			}
-			std::sort(data.begin(), data.end());
-			int tmp_index = floor((int)(images_indexes.size()*(0.5 + 0.9*(rd.uniform(0.0, 1.0) - 0.5))));
-			int tmp_threshold = data[tmp_index];
-			for (int i = 0; i < images_indexes.size(); i++){
-				int index = images_indexes[i];
-				if (pixel_differences(j, index) < tmp_threshold){
-//					tmp_left_indexes.push_back(index);
-                    if ( augmented_ground_truth_faces_[index] == 1){
-                        // do with regression target
-                        num_l_shapes++;
-                        float value = regression_targets_->at(index)(landmark_index_, 0);
-                        Ex_2_lc += pow(value, 2);
-                        Ex_lc += value;
-                        value = regression_targets_->at(index)(landmark_index_, 1);
-                        Ey_2_lc += pow(value, 2);
-                        Ey_lc += value;
-                        
-                        num_l_pos_faces++;
-                        total_l_pos_weight += current_weight_[index];
-                    }
-                    else{ //负样本
-                        num_l_neg_faces++;
-                        total_l_neg_weight += current_weight_[index];
-                    }
-				}
-				else{
-//					tmp_right_indexes.push_back(index);
-                    if ( augmented_ground_truth_faces_[index] == 1){
-                        num_r_shapes++;
-                        float value = regression_targets_->at(index)(landmark_index_, 0);
-                        Ex_2_rc += pow(value, 2);
-                        Ex_rc += value;
-                        value = regression_targets_->at(index)(landmark_index_, 1);
-                        Ey_2_rc += pow(value, 2);
-                        Ey_rc += value;
-                        
-                        num_r_pos_faces++;
-                        total_r_pos_weight += current_weight_[index];
-                    }
-                    else{ //负样本
-                        num_r_neg_faces++;
-                        total_r_neg_weight += current_weight_[index];
-                    }
-				}
-			}
-			if (num_l_shapes == 0){
-				var_lc = 0.0;
-			} else{
-				var_lc = Ex_2_lc / num_l_shapes - pow(Ex_lc / num_l_shapes, 2)
-					+ Ey_2_lc / num_l_shapes - pow(Ey_lc / num_l_shapes, 2);
-			}
-			if (num_r_shapes == 0){
-				var_rc = 0.0;
-			} else{
-				var_rc = Ex_2_rc / num_r_shapes - pow(Ex_rc / num_r_shapes, 2)
-					+ Ey_2_rc / num_r_shapes - pow(Ey_rc / num_r_shapes, 2);
-			}
-//			var_red = -var_lc*num_l_shapes - var_rc*num_r_shapes;
-            var_red = var_lc*num_l_shapes + var_rc*num_r_shapes;
-            thresholds.push_back(std::pair<int,int>(tmp_threshold, j));
-            vars.push_back(var_red);
-            
-            
-            int left_sample_num = num_l_pos_faces + num_l_neg_faces;
-            int right_sample_num = num_r_pos_faces + num_r_neg_faces;
-//            int total_sample_num =  left_sample_num + right_sample_num;
-            
-            float total_l_weight = total_l_pos_weight + total_l_neg_weight;
-            float total_r_weight = total_r_pos_weight + total_r_neg_weight;
-            float total_weight = total_l_weight + total_r_weight;
-            
-            float entropy = 0.0, entropy_lc = 0.0, entropy_rc = 0.0;
-            
-            if ( left_sample_num == 0 ){
-                entropy_lc = 0.0;
+            std::vector<int> data;
+            data.reserve(images_indexes.size());
+            for (int i = 0; i < images_indexes.size(); i++){
+                data.push_back(pixel_differences(j, images_indexes[i]));
             }
-            else{
-                float entropy_tmp = total_l_pos_weight / ( total_l_weight + FLT_MIN );
-                if ( (entropy_tmp-0.0) < FLT_EPSILON){
+            std::sort(data.begin(), data.end());
+            
+            //重复循环三次，尝试取不同的threshhold，总共的次数为t*local_feature_num。看看能否使得分类和回归的同时最优可能增加一些
+            for ( int t=0; t<2; t++ ){
+                int num_l_shapes = 0, num_r_shapes = 0;
+                float var_lc = 0.0, var_rc = 0.0, var_red = 0.0;
+                float Ex_2_lc = 0.0, Ex_lc = 0.0, Ey_2_lc = 0.0, Ey_lc = 0.0;
+                float Ex_2_rc = 0.0, Ex_rc = 0.0, Ey_2_rc = 0.0, Ey_rc = 0.0;
+                
+                int num_l_pos_faces = 0, num_l_neg_faces = 0, num_r_pos_faces = 0, num_r_neg_faces;
+                float total_l_pos_weight = 0.0, total_l_neg_weight = 0.0;
+                float total_r_pos_weight = 0.0, total_r_neg_weight = 0.0;
+                
+                // random generate threshold
+                int tmp_index = floor((int)(images_indexes.size()*(0.5 + 0.9*(rd.uniform(0.0, 1.0) - 0.5))));
+                int tmp_threshold = data[tmp_index];
+                for (int i = 0; i < images_indexes.size(); i++){
+                    int index = images_indexes[i];
+                    if (pixel_differences(j, index) < tmp_threshold){
+    //					tmp_left_indexes.push_back(index);
+                        if ( augmented_ground_truth_faces_[index] == 1){
+                            // do with regression target
+                            num_l_shapes++;
+                            float value = regression_targets_->at(index)(landmark_index_, 0);
+                            Ex_2_lc += pow(value, 2);
+                            Ex_lc += value;
+                            value = regression_targets_->at(index)(landmark_index_, 1);
+                            Ey_2_lc += pow(value, 2);
+                            Ey_lc += value;
+                            
+                            num_l_pos_faces++;
+                            total_l_pos_weight += current_weight_[index];
+                        }
+                        else{ //负样本
+                            num_l_neg_faces++;
+                            total_l_neg_weight += current_weight_[index];
+                        }
+                    }
+                    else{
+    //					tmp_right_indexes.push_back(index);
+                        if ( augmented_ground_truth_faces_[index] == 1){
+                            num_r_shapes++;
+                            float value = regression_targets_->at(index)(landmark_index_, 0);
+                            Ex_2_rc += pow(value, 2);
+                            Ex_rc += value;
+                            value = regression_targets_->at(index)(landmark_index_, 1);
+                            Ey_2_rc += pow(value, 2);
+                            Ey_rc += value;
+                            
+                            num_r_pos_faces++;
+                            total_r_pos_weight += current_weight_[index];
+                        }
+                        else{ //负样本
+                            num_r_neg_faces++;
+                            total_r_neg_weight += current_weight_[index];
+                        }
+                    }
+                }
+                if (num_l_shapes == 0){
+                    var_lc = 0.0;
+                } else{
+                    var_lc = Ex_2_lc / num_l_shapes - pow(Ex_lc / num_l_shapes, 2)
+                        + Ey_2_lc / num_l_shapes - pow(Ey_lc / num_l_shapes, 2);
+                }
+                if (num_r_shapes == 0){
+                    var_rc = 0.0;
+                } else{
+                    var_rc = Ex_2_rc / num_r_shapes - pow(Ex_rc / num_r_shapes, 2)
+                        + Ey_2_rc / num_r_shapes - pow(Ey_rc / num_r_shapes, 2);
+                }
+    //			var_red = -var_lc*num_l_shapes - var_rc*num_r_shapes;
+                var_red = var_lc*num_l_shapes + var_rc*num_r_shapes;
+                thresholds.push_back(std::pair<int,int>(tmp_threshold, j));
+                vars.push_back(var_red);
+                
+                
+                int left_sample_num = num_l_pos_faces + num_l_neg_faces;
+                int right_sample_num = num_r_pos_faces + num_r_neg_faces;
+    //            int total_sample_num =  left_sample_num + right_sample_num;
+                
+                float total_l_weight = total_l_pos_weight + total_l_neg_weight;
+                float total_r_weight = total_r_pos_weight + total_r_neg_weight;
+                float total_weight = total_l_weight + total_r_weight;
+                
+                float entropy = 0.0, entropy_lc = 0.0, entropy_rc = 0.0;
+                
+                if ( left_sample_num == 0 ){
                     entropy_lc = 0.0;
                 }
                 else{
-                    entropy_lc = - ( total_l_weight / ( total_weight + FLT_MIN)) * ((entropy_tmp + FLT_MIN) * log(entropy_tmp + FLT_MIN)/log(2.0) + ( 1 - entropy_tmp + FLT_MIN) * log(1-entropy_tmp + FLT_MIN)/log(2.0));
+                    float entropy_tmp = total_l_pos_weight / ( total_l_weight + FLT_MIN );
+                    if ( (entropy_tmp-0.0) < FLT_EPSILON){
+                        entropy_lc = 0.0;
+                    }
+                    else{
+                        entropy_lc = - ( total_l_weight / ( total_weight + FLT_MIN)) * ((entropy_tmp + FLT_MIN) * log(entropy_tmp + FLT_MIN)/log(2.0) + ( 1 - entropy_tmp + FLT_MIN) * log(1-entropy_tmp + FLT_MIN)/log(2.0));
+                    }
                 }
-            }
-            
-            if ( right_sample_num == 0 ){
-                entropy_rc = 0.0;
-            }
-            else{
-                float entropy_tmp = total_r_pos_weight / ( total_r_weight + FLT_MIN );
-                if ( (entropy_tmp-0.0) < FLT_EPSILON){
+                
+                if ( right_sample_num == 0 ){
                     entropy_rc = 0.0;
                 }
                 else{
-                    entropy_rc = - ( total_r_weight / ( total_weight + FLT_MIN)) * ((entropy_tmp + FLT_MIN) * log(entropy_tmp + FLT_MIN)/log(2.0) + ( 1 - entropy_tmp + FLT_MIN) * log(1-entropy_tmp + FLT_MIN)/log(2.0));
+                    float entropy_tmp = total_r_pos_weight / ( total_r_weight + FLT_MIN );
+                    if ( (entropy_tmp-0.0) < FLT_EPSILON){
+                        entropy_rc = 0.0;
+                    }
+                    else{
+                        entropy_rc = - ( total_r_weight / ( total_weight + FLT_MIN)) * ((entropy_tmp + FLT_MIN) * log(entropy_tmp + FLT_MIN)/log(2.0) + ( 1 - entropy_tmp + FLT_MIN) * log(1-entropy_tmp + FLT_MIN)/log(2.0));
+                    }
                 }
+                
+                entropy = entropy_lc + entropy_rc;
+                entropys.push_back(entropy);
             }
-            
-            entropy = entropy_lc + entropy_rc;
-            entropys.push_back(entropy);
-            
 //			if (var_red > var){
 //				var = var_red;
 //				threshold = tmp_threshold;
@@ -441,7 +441,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_indexes,
     for ( int i=0; i<vars.size(); i++){
         float tmpvar = ( vars[i] - minvar ) / (maxvar - minvar);
         float tmpent = ( entropys[i] - minent ) / (maxent - minent);
-        float tmpsum = tmpvar + tmpent; //这个可以根据stage用不同的系数
+        float tmpsum = (1.0 - detect_factor_) * tmpvar + detect_factor_ * tmpent; //这个可以根据stage用不同的系数，TODO:要不要根据depth也调整？
         if ( tmpsum < summin ){
             summin = tmpsum;
             indexmin = i;
@@ -604,6 +604,7 @@ RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std
 	trees_num_per_forest_ = param.trees_num_per_forest_;
 	local_radius_ = param.local_radius_by_stage_[stage_];
 	mean_shape_ = param.mean_shape_;
+    detect_factor_ = param.detect_factor_by_stage_[stage_];
 	regression_targets_ = &regression_targets; // get the address pointer, not reference
 }
 
