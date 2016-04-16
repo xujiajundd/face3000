@@ -11,7 +11,7 @@ Node::Node(){
 	leaf_identity = -1;
 	samples_ = -1;
 	thre_changed_ = false;
-    score_ = 0.0; //TODO:模型保存和读取时也要加上
+    score_ = 0.0;
 }
 
 Node::Node(Node* left, Node* right, float thres){

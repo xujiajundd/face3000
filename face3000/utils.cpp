@@ -184,7 +184,7 @@ std::vector<cv::Rect> DetectFaces(cv::Mat_<uchar>& image, cv::CascadeClassifier&
 }
 
 
-void LoadImages(std::vector<cv::Mat_<uchar> >& images,
+int LoadImages(std::vector<cv::Mat_<uchar> >& images,
 	std::vector<cv::Mat_<float> >& ground_truth_shapes,
     std::vector<int>& ground_truth_faces,
 	//const std::vector<cv::Mat_<float> >& current_shapes,
@@ -218,6 +218,8 @@ void LoadImages(std::vector<cv::Mat_<uchar> >& images,
 	
 	std::string name;
 	int count = 0;
+    int pos_num = 0;
+
 	//std::cout << name << std::endl;
 	while (fin >> name){
 		//std::cout << "reading file: " << name << std::endl;
@@ -259,10 +261,6 @@ void LoadImages(std::vector<cv::Mat_<uchar> >& images,
             
             if (ShapeInRect(ground_truth_shape, faceRec)){ 
             	// check if the detected face rectangle is in the ground_truth_shape
-                //add by xujj, 看看双边滤波后的图像
-//                cv::Mat_<uchar> outimage;
-//                cv::bilateralFilter(image, outimage, 11, 11*2, 11/2);
-//                images.push_back(outimage);
                 images.push_back(image);
                 ground_truth_shapes.push_back(ground_truth_shape);
                 ground_truth_faces.push_back(1);
@@ -274,20 +272,21 @@ void LoadImages(std::vector<cv::Mat_<uchar> >& images,
                 bbox.center_x = bbox.start_x + bbox.width / 2.0;
                 bbox.center_y = bbox.start_y + bbox.height / 2.0;
                 bboxes.push_back(bbox);
+                pos_num++;
                 
-                //加负例
-                BoundingBox nbbox;
-                nbbox.start_x = image.cols * 3 / 4;
-                nbbox.start_y = image.rows * 3 / 4;
-                nbbox.width = image.cols / 4 - 10;
-                nbbox.height = image.rows / 4 - 10;
-                nbbox.center_x = nbbox.start_x + nbbox.width / 2.0;
-                nbbox.center_y = nbbox.start_y + nbbox.height / 2.0;
-                images.push_back(image);
-                ground_truth_shapes.push_back(ReProjection(ProjectShape(ground_truth_shape, bbox), nbbox));
-                ground_truth_faces.push_back(-1);
-                bboxes.push_back(nbbox);
-                
+//                //加负例
+//                BoundingBox nbbox;
+//                nbbox.start_x = image.cols * 3 / 4;
+//                nbbox.start_y = image.rows * 3 / 4;
+//                nbbox.width = image.cols / 4 - 10;
+//                nbbox.height = image.rows / 4 - 10;
+//                nbbox.center_x = nbbox.start_x + nbbox.width / 2.0;
+//                nbbox.center_y = nbbox.start_y + nbbox.height / 2.0;
+//                images.push_back(image);
+//                ground_truth_shapes.push_back(ReProjection(ProjectShape(ground_truth_shape, bbox), nbbox));
+//                ground_truth_faces.push_back(-1);
+//                bboxes.push_back(nbbox);
+
                 //翻转图片, add by xujj
                 cv::Mat_<uchar> flippedImage;
                 flip(image, flippedImage, 1);
@@ -358,20 +357,21 @@ void LoadImages(std::vector<cv::Mat_<uchar> >& images,
                 flipped_bbox.center_x = flipped_bbox.start_x + flipped_bbox.width / 2.0;
                 flipped_bbox.center_y = flipped_bbox.start_y + flipped_bbox.height / 2.0;
                 bboxes.push_back(flipped_bbox);
- 
-                //加负例
-                BoundingBox fbbox;
-                fbbox.start_x = image.cols * 3 / 4;
-                fbbox.start_y = image.rows * 3 / 4;
-                fbbox.width = image.cols / 4 - 10;
-                fbbox.height = image.rows / 4 - 10;
-                fbbox.center_x = fbbox.start_x + fbbox.width / 2.0;
-                fbbox.center_y = fbbox.start_y + fbbox.height / 2.0;
-                images.push_back(flippedImage);
-                ground_truth_shapes.push_back(ReProjection(ProjectShape(flipped_ground_truth_shape, bbox), fbbox));
-                ground_truth_faces.push_back(-1);
-                bboxes.push_back(fbbox);
-                
+                pos_num++;
+
+//                //加负例
+//                BoundingBox fbbox;
+//                fbbox.start_x = image.cols * 3 / 4;
+//                fbbox.start_y = image.rows * 3 / 4;
+//                fbbox.width = image.cols / 4 - 10;
+//                fbbox.height = image.rows / 4 - 10;
+//                fbbox.center_x = fbbox.start_x + fbbox.width / 2.0;
+//                fbbox.center_y = fbbox.start_y + fbbox.height / 2.0;
+//                images.push_back(flippedImage);
+//                ground_truth_shapes.push_back(ReProjection(ProjectShape(flipped_ground_truth_shape, bbox), fbbox));
+//                ground_truth_faces.push_back(-1);
+//                bboxes.push_back(fbbox);
+
                 count++;
                 if (count%100 == 0){
                     std::cout << count << " images loaded\n";
@@ -383,83 +383,28 @@ void LoadImages(std::vector<cv::Mat_<uchar> >& images,
 	}
 	std::cout << "get " << bboxes.size() << " faces\n";
 	fin.close();
-}
 
-
-void LoadImagesForDetect(std::vector<cv::Mat_<uchar> >& images,
-                std::vector<cv::Mat_<float> >& ground_truth_shapes,
-                //const std::vector<cv::Mat_<float> >& current_shapes,
-                std::vector<BoundingBox>& bboxes,
-                std::string file_names){
-    
-    // change this function to satisfy your own needs
-    // for .box files I just use another program before this LoadImage() function
-    // the contents in .box is just the bounding box of a face, including the center point of the box
-    // you can just use the face rectangle detected by opencv with a little effort calculating the center point's position yourself.
-    // you may use some utils function is this utils.cpp file
-    // delete unnecessary lines below, my codes are just an example
-    
-//    std::string fn_haar = "/Users/xujiajun/developer/dataset/haarcascade_frontalface_alt2.xml";
-//    cv::CascadeClassifier haar_cascade;
-//    bool yes = haar_cascade.load(fn_haar);
-//    std::cout << "detector: " << yes << std::endl;
-    
-    std::cout << "loading images\n";
-    std::ifstream fin;
-    fin.open(file_names.c_str(), std::ifstream::in);
-    // train_jpgs.txt contains all the paths for each image, one image per line
-    // for example: in Linux you can use ls *.jpg > train_jpgs.txt to get the paths
-    // the file looks like as below
-    /*
-    	1.jpg
-    	2.jpg
-    	3.jpg
-    	...
-    	1000.jpg
-     */
-    
-    std::string name;
-    int count = 0;
-    //std::cout << name << std::endl;
-    while (fin >> name){
-        //std::cout << "reading file: " << name << std::endl;
-        std::cout << name << std::endl;
-        std::string pts = name.substr(0, name.length() - 3) + "pts";
-        
-        cv::Mat_<uchar> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 0);
-        cv::Mat_<float> ground_truth_shape = LoadGroundTruthShapeForDetect(("/Users/xujiajun/developer/dataset/helen/" + pts).c_str());
-        
-        
-        if (image.cols > 2000){
-            cv::resize(image, image, cv::Size(image.cols / 3, image.rows / 3), 0, 0, cv::INTER_LINEAR);
-            ground_truth_shape /= 3.0;
-        }
-        else if (image.cols > 1400 && image.cols <= 2000){
-            cv::resize(image, image, cv::Size(image.cols / 2, image.rows / 2), 0, 0, cv::INTER_LINEAR);
-            ground_truth_shape /= 2.0;
-        }
-        
-        cv::Rect faceRec;
-
+    for ( int i=0; i<pos_num; i++){
+        cv::Mat_<uchar> image = images[i];
+        cv::Mat_<float> ground_truth_shape = ground_truth_shapes[i];
+        BoundingBox bbox = bboxes[i];
+        //加负例
+        BoundingBox nbbox;
+        nbbox.start_x = image.cols * 3 / 4;
+        nbbox.start_y = image.rows * 3 / 4;
+        nbbox.width = image.cols / 4 - 10;
+        nbbox.height = image.rows / 4 - 10;
+        nbbox.center_x = nbbox.start_x + nbbox.width / 2.0;
+        nbbox.center_y = nbbox.start_y + nbbox.height / 2.0;
         images.push_back(image);
-        ground_truth_shapes.push_back(ground_truth_shape);
-        BoundingBox bbox;
-        bbox.start_x = 0;
-        bbox.start_y = 0;
-        bbox.width = image.cols;
-        bbox.height = image.rows;
-        bbox.center_x = bbox.start_x + bbox.width / 2.0;
-        bbox.center_y = bbox.start_y + bbox.height / 2.0;
-        bboxes.push_back(bbox);
-        
-        count++;
-        if (count%100 == 0){
-            std::cout << count << " images loaded\n";
-        }        
+        ground_truth_shapes.push_back(ReProjection(ProjectShape(ground_truth_shape, bbox), nbbox));
+        ground_truth_faces.push_back(-1);
+        bboxes.push_back(nbbox);
     }
-    std::cout << "get " << bboxes.size() << " faces\n";
-    fin.close();
+
+    return pos_num;
 }
+
 
 // float CalculateError(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predicted_shape){
 // 	cv::Mat_<float> temp;

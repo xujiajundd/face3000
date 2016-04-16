@@ -302,7 +302,7 @@ void Train(const char* ModelName){
     	1000.jpg
     */
     
-	LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names);
+	int pos_num = LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names);
 	params.mean_shape_ = GetMeanShape(ground_truth_shapes, ground_truth_faces, bboxes);
     
     
@@ -393,7 +393,7 @@ void Train(const char* ModelName){
 //        params.tree_depth_ = i;
 //        params.trees_num_per_forest_ = 1<<(6-i);
         CascadeRegressor cas_reg;
-        cas_reg.Train(images, ground_truth_shapes, ground_truth_faces, bboxes, params);
+        cas_reg.Train(images, ground_truth_shapes, ground_truth_faces, bboxes, params, pos_num);
         cas_reg.SaveCascadeRegressor(ModelName);
         
 //        cout << buffer << endl;
@@ -402,97 +402,7 @@ void Train(const char* ModelName){
     
 	return;
 }
-//
-//void detectTrain(const char* ModelName)
-//{
-//    std::vector<cv::Mat_<uchar> > images;
-//    std::vector<cv::Mat_<float> > ground_truth_shapes;
-//    std::vector<int> ground_truth_faces;
-//    std::vector<BoundingBox> bboxes;
-//    std::string file_names = "/Users/xujiajun/developer/dataset/helen/train_jpgs.txt";
-//    // train_jpgs.txt contains all the paths for each image, one image per line
-//    // for example: in Linux you can use ls *.jpg > train_jpgs.txt to get the paths
-//    // the file looks like as below
-//    /*
-//    	1.jpg
-//    	2.jpg
-//    	3.jpg
-//    	...
-//    	1000.jpg
-//     */
-//    
-//    LoadImagesForDetect(images, ground_truth_shapes, bboxes, file_names);
-//    
-//    Parameters params;
-//    params.local_features_num_ = 10000;
-//    params.landmarks_num_per_face_ = 2;
-//    params.regressor_stages_ = 8;
-//    //    params.local_radius_by_stage_.push_back(0.6);
-//    //    params.local_radius_by_stage_.push_back(0.5);
-//    params.local_radius_by_stage_.push_back(0.5);
-//    params.local_radius_by_stage_.push_back(0.5);
-//    params.local_radius_by_stage_.push_back(0.5);
-//    params.local_radius_by_stage_.push_back(0.5);//0.1
-//    params.local_radius_by_stage_.push_back(0.5);//0.08
-//    params.local_radius_by_stage_.push_back(0.5);
-//    params.local_radius_by_stage_.push_back(0.5);
-//    params.local_radius_by_stage_.push_back(0.5);
-//    
-//    //    params.local_radius_by_stage_.push_back(0.2);
-//    //    params.local_radius_by_stage_.push_back(0.15);
-//    //    params.local_radius_by_stage_.push_back(0.1);
-//    //    params.local_radius_by_stage_.push_back(0.8);
-//    //    params.local_radius_by_stage_.push_back(0.05);
-//    //    params.local_radius_by_stage_.push_back(0.03);
-//    
-//    params.tree_depth_ = 8;
-//    params.trees_num_per_forest_ = 8;
-//    params.initial_guess_ = 0;
-//    
-//    params.group_num_ = 1;
-//    std::vector<int> group1;
-//    for ( int i=0; i<2; i++ ) group1.push_back(i);
-//    params.groups_.push_back(group1);
-//    
-//    params.mean_shape_ = GetMeanShape(ground_truth_shapes, bboxes);
-//    
-//    CascadeRegressor cas_reg;
-//    cas_reg.Train(images, ground_truth_shapes, ground_truth_faces, bboxes, params);
-//    cas_reg.SaveCascadeRegressor(ModelName);
-//    
-//    //        cout << buffer << endl;
-//    //        cout << "***********************************************" << endl << endl;
-//    //    }
-//    
-//    return;
-//}
-//
-//void detect(const char* ModelName)
-//{
-//    CascadeRegressor cas_load;
-//    cas_load.LoadCascadeRegressor(ModelName);
-//    std::vector<cv::Mat_<uchar> > images;
-//    std::vector<cv::Mat_<float> > ground_truth_shapes;
-//    std::vector<BoundingBox> bboxes;
-//    std::string file_names = "/Users/xujiajun/developer/dataset/helen/test_jpgs.txt"; //"./../dataset/helen/train_jpgs.txt";
-//    LoadImagesForDetect(images, ground_truth_shapes, bboxes, file_names);
-//    struct timeval t1, t2;
-//    gettimeofday(&t1, NULL);
-//    for (int i = 0; i < images.size(); i++){
-//        cv::Mat_<float> current_shape = ReProjection(cas_load.params_.mean_shape_, bboxes[i]);
-//        //struct timeval t1, t2;
-//        //gettimeofday(&t1, NULL);
-//                bool is_face = true;
-//        cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, bboxes[i], is_face);//, ground_truth_shapes[i]);
-//        DrawPredictedImage(images[i], res);
-//        DrawPredictedImage(images[i], ground_truth_shapes[i]);
-//        //if (i == 10) break;
-//    }
-//    gettimeofday(&t2, NULL);
-//    float time_full = t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0;
-//    cout << "time full: " << time_full << " : " << time_full/images.size() << endl;
-//    return;
-//}
+
 
 void Hello(){
     int dim = 68000;
@@ -701,22 +611,6 @@ int main(int argc, char* argv[])
             }
             return 0;
         }
-//        if (strcmp(argv[1], "detectTrain") == 0)
-//        {
-//            std::cout << "enter detectTrain\n";
-//            if (argc == 3){
-//                detectTrain(argv[2]);
-//            }
-//            return 0;
-//        }
-//        if (strcmp(argv[1], "detect") == 0)
-//        {
-//            std::cout << "enter detect\n";
-//            if (argc == 3){
-//                detect(argv[2]);
-//            }
-//            return 0;
-//        }
 	}
     else if ( argc == 2){
         if (strcmp(argv[1], "hello") == 0)
@@ -730,62 +624,3 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-
-
-/*
-string fn_haar = "D:\\Program Files\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt2.xml";
-cv::CascadeClassifier haar_cascade;
-bool yes = haar_cascade.load(fn_haar);
-cv::Mat img = cv::imread("helen/trainset/103770709_1.jpg");// "helen/trainset/232194_1.jpg");
-cv::Mat gray;
-float scale = 1.3f;
-cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
-Mat smallImg(cvRound(img.rows / scale), cvRound(img.cols / scale), CV_8UC1);
-resize(gray, smallImg, smallImg.size(), 0, 0, INTER_LINEAR);
-equalizeHist(smallImg, smallImg);
-
-std::vector<cv::Rect_<int> > faces;
-haar_cascade.detectMultiScale(gray, faces,
-1.1, 2, 0, Size(30,30));
-printf_s("number of faces: %d\n", faces.size());
-for (int i = 0; i < faces.size(); i++)
-{
-cv::Rect face_i = faces[i];
-cv::Rect ret;
-ret.x = face_i.x*scale;
-ret.y = face_i.y*scale;
-ret.width = (face_i.width - 1)*scale;
-ret.height = (face_i.height - 1)*scale;
-cv::Mat face = gray(face_i);
-rectangle(img, face_i, (255, 255, 255), 1);
-//rectangle(img, ret, (0, 0, 255), 1);
-}
-//imshow("ppµÄö¦ÕÕ", img);
-//waitKey();
-
-//return 0;
-
-int * pResults = NULL;
-pResults = facedetect_frontal((unsigned char*)(gray.ptr(0)), gray.cols, gray.rows, gray.step,
-1.2f, 2, 24);
-printf("%d frontal faces detected.\n", (pResults ? *pResults : 0));
-//print the detection results
-for (int i = 0; i < (pResults ? *pResults : 0); i++)
-{
-short * p = ((short*)(pResults + 1)) + 6 * i;
-int x = p[0];
-int y = p[1];
-int w = p[2];
-int h = p[3];
-int neighbors = p[4];
-
-printf("face_rect=[%d, %d, %d, %d], neighbors=%d\n", x, y, w, h, neighbors);
-cv::Rect faceRec(x,y,w,h);
-cv::rectangle(img, faceRec, (0, 255, 0), 1);
-}
-
-
-cv::imshow("ppµÄö¦ÕÕ", img);
-cv::waitKey();
-
-*/

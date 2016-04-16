@@ -72,7 +72,8 @@ public:
         const std::vector<int> ground_truth_faces,
 		//const std::vector<cv::Mat_<float> >& current_shapes,
 		const std::vector<BoundingBox>& bboxes,
-		Parameters& params);
+		Parameters& params,
+        int pos_num);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& ground_truth_shape);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, bool &is_face);
 	void LoadCascadeRegressor(std::string ModelName);

@@ -17,7 +17,9 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
 	const std::vector<cv::Mat_<float> >& ground_truth_shapes,
     const std::vector<int> ground_truth_faces,
 	const std::vector<BoundingBox>& bboxes,
-	Parameters& params){
+	Parameters& params,
+    int pos_num ){
+
     struct timeval t1, t2;
     gettimeofday(&t1, NULL);
 	std::cout << "Start training..." << std::endl;
@@ -39,7 +41,7 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
 	//cv::RNG *random_generator = new cv::RNG();
 	std::cout << "augment data sets" << std::endl;
 	cv::RNG random_generator(current_time);
-	for (int i = 0; i < images_.size(); i++){
+    for (int i = 0; i < pos_num; i++){
         augmented_images_index.push_back(i);
         augmented_ground_truth_shapes.push_back(ground_truth_shapes_[i]);
         augmented_ground_truth_faces.push_back(ground_truth_faces[i]);
@@ -52,8 +54,43 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
 		{
 			int index = 0;
 			do {
-				index = random_generator.uniform(0, images_.size());
+				index = random_generator.uniform(0, pos_num);
 			}while(index == i);
+
+            if ( ground_truth_faces[i] == -1 ){
+                std::cout << "Error..." << std::endl;
+            }
+            else{
+                augmented_images_index.push_back(i);
+                augmented_ground_truth_shapes.push_back(ground_truth_shapes_[i]);
+                augmented_ground_truth_faces.push_back(ground_truth_faces[i]);
+                augmented_bboxes.push_back(bboxes_[i]);
+                cv::Mat_<float> temp = ground_truth_shapes_[index];
+                temp = ProjectShape(temp, bboxes_[index]);
+                temp = ReProjection(temp, bboxes_[i]);
+                augmented_current_shapes.push_back(temp);
+                current_fi.push_back(0);
+                current_weight.push_back(1);
+            }
+		}
+
+	}
+
+    for ( int i = pos_num; i < images_.size(); i++ ){
+        augmented_images_index.push_back(i);
+        augmented_ground_truth_shapes.push_back(ground_truth_shapes_[i]);
+        augmented_ground_truth_faces.push_back(ground_truth_faces[i]);
+        augmented_bboxes.push_back(bboxes_[i]);
+        augmented_current_shapes.push_back(ReProjection(params_.mean_shape_, bboxes_[i]));
+        current_fi.push_back(0);
+        current_weight.push_back(1);
+
+        for (int j = 0; j < params_.initial_guess_; j++)
+        {
+            int index = 0;
+            do {
+                index = random_generator.uniform(pos_num, images_.size());
+            }while(index == i);
 
             if ( ground_truth_faces[i] == -1 ){
                 //TODO:对于不是face的image，是不是可以循环多生成一些负例？需要生成一些随机的box，待做
@@ -71,20 +108,10 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
                 }
             }
             else{
-                augmented_images_index.push_back(i);
-                augmented_ground_truth_shapes.push_back(ground_truth_shapes_[i]);
-                augmented_ground_truth_faces.push_back(ground_truth_faces[i]);
-                augmented_bboxes.push_back(bboxes_[i]);
-                cv::Mat_<float> temp = ground_truth_shapes_[index];
-                temp = ProjectShape(temp, bboxes_[index]);
-                temp = ReProjection(temp, bboxes_[i]);
-                augmented_current_shapes.push_back(temp);
-                current_fi.push_back(0);
-                current_weight.push_back(1);
+                std::cout << "Error..." << std::endl;
             }
-		}
-
-	}
+        }
+    }
 
     std::cout << "augmented size: " << augmented_current_shapes.size() << std::endl;
 
@@ -106,14 +133,18 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
 											i);
 		std::cout << "update current shapes" << std::endl;
 		float error = 0.0;
+        int count = 0;
 		for (int j = 0; j < shape_increaments.size(); j++){
 			augmented_current_shapes[j] = shape_increaments[j] + ProjectShape(augmented_current_shapes[j], augmented_bboxes[j]);
 			augmented_current_shapes[j] = ReProjection(augmented_current_shapes[j], augmented_bboxes[j]);
-			error += CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
+            if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
+			    error += CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
+                count++;
+            }
 		}
 
         gettimeofday(&t1, NULL);
-        std::cout << "regression error: " <<  error << ": " << error/shape_increaments.size() << " time:" << t1.tv_sec << std::endl;
+        std::cout << "regression error: " <<  error << ": " << error/count << " time:" << t1.tv_sec << std::endl;
 	}
 }
 
@@ -193,7 +224,6 @@ std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar>
             for (int jj = 0; jj < params_.groups_[g].size(); ++jj){
                 int j = abs(params_.groups_[g][jj]);
                 for (int k = 0; k < params_.trees_num_per_forest_; ++k){
-
                     Node* node = rd_forests_[j].trees_[k];
                     while (!node->is_leaf_){
                         FeatureLocations& pos = node->feature_locations_;
@@ -238,6 +268,7 @@ std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar>
         std::cout << "\n";
 
         //TODO:这里回归的时候，不要回归negtive face实例！
+        //重新生成回归用的binary feature和targets
         struct problem* prob = new struct problem;
         prob->l = augmented_current_shapes.size();
         prob->n = num_feature;
@@ -288,6 +319,7 @@ std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar>
     predict_regression_targets.resize(augmented_current_shapes.size());
     
     #pragma omp parallel for
+    //TODO：如果是negtive sample，直接返回0或? 者允许negtive计算，但在算误差时去掉
     for (int i = 0; i < augmented_current_shapes.size(); i++){
         cv::Mat_<float> a(params_.landmarks_num_per_face_, 2, 0.0);
         for (int g = 0; g < params_.group_num_; g++){
