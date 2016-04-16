@@ -36,7 +36,8 @@ public:
         std::vector<float>& current_fi,
         std::vector<float>& current_weight,
 		const Parameters& params,
-		const int stage);
+		const int stage,
+        const int pos_num);
     struct feature_node* GetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, int groupNum, float &score, bool &is_face);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape,
 		BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face);

@@ -301,7 +301,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_indexes,
             }
             std::sort(data.begin(), data.end());
             
-            //重复循环三次，尝试取不同的threshhold，总共的次数为t*local_feature_num。看看能否使得分类和回归的同时最优可能增加一些
+            //重复循环t次，尝试取不同的threshhold，总共的次数为t*local_feature_num。看看能否使得分类和回归的同时最优可能增加一些
             for ( int t=0; t<2; t++ ){
                 int num_l_shapes = 0, num_r_shapes = 0;
                 float var_lc = 0.0, var_rc = 0.0, var_red = 0.0;

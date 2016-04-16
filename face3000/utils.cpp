@@ -390,16 +390,37 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
         BoundingBox bbox = bboxes[i];
         //加负例
         BoundingBox nbbox;
-        nbbox.start_x = image.cols * 3 / 4;
-        nbbox.start_y = image.rows * 3 / 4;
-        nbbox.width = image.cols / 4 - 10;
-        nbbox.height = image.rows / 4 - 10;
+        nbbox.width = std::max(image.cols / 4 - 10, image.rows / 4 - 10);
+        nbbox.height = nbbox.width;
+        
+        nbbox.start_x = image.cols - nbbox.width - 50;
+        nbbox.start_y = image.rows - nbbox.height - 50;
+
         nbbox.center_x = nbbox.start_x + nbbox.width / 2.0;
         nbbox.center_y = nbbox.start_y + nbbox.height / 2.0;
         images.push_back(image);
         ground_truth_shapes.push_back(ReProjection(ProjectShape(ground_truth_shape, bbox), nbbox));
         ground_truth_faces.push_back(-1);
         bboxes.push_back(nbbox);
+        
+        { //再添一个比较接近人脸的
+            time_t current_time;
+            current_time = time(0);
+            cv::RNG rd(current_time);
+            BoundingBox nbbox;
+            nbbox.width = bbox.width + rd.uniform(-50, 50);
+            nbbox.height = nbbox.width;
+            
+            nbbox.start_x = 20;
+            nbbox.start_y = 20;
+            
+            nbbox.center_x = nbbox.start_x + nbbox.width / 2.0;
+            nbbox.center_y = nbbox.start_y + nbbox.height / 2.0;
+            images.push_back(image);
+            ground_truth_shapes.push_back(ReProjection(ProjectShape(ground_truth_shape, bbox), nbbox));
+            ground_truth_faces.push_back(-1);
+            bboxes.push_back(nbbox);
+        }
     }
 
     return pos_num;

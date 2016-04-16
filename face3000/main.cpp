@@ -267,12 +267,64 @@ void TestImage(const char* name, CascadeRegressor& rg){
         gettimeofday(&t2, NULL);
         cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
         
-        cv::rectangle(image, faceRec, (255), 1);
+        cv::Mat_<uchar> img = image.clone();
+        cv::rectangle(img, faceRec, (255), 1);
         //cv::imshow("show image", image);
         //cv::waitKey(0);
-        DrawPredictedImage(image, res);
+        DrawPredictedImage(img, res);
         break;
     }
+    
+    float scale = 1.1;
+    float shuffle = 0.2;
+    int minSize = 100;
+    int order = -1;
+    int currentSize;
+    bool biggest_only;
+    
+    if ( order == 1 ){
+        currentSize = minSize;
+    }
+    else{
+        currentSize = std::min(image.cols, image.rows);
+    }
+    
+    while ( currentSize >= minSize && currentSize <= std::min(image.cols, image.rows)){
+        for ( int i=0; i<image.cols-currentSize; i+= currentSize*shuffle){
+            for ( int j=0; j<image.rows-currentSize; j+=currentSize*shuffle){
+                BoundingBox box;
+                box.start_x = i;
+                box.start_y = j;
+                box.width = currentSize;
+                box.height = currentSize;
+                box.center_x = box.start_x + box.width/2.0;
+                box.center_y = box.start_y + box.width/2.0;
+                bool is_face = true;
+                cv::Mat_<float> current_shape = ReProjection(rg.params_.mean_shape_, box);
+                cv::Mat_<float> res = rg.Predict(image, current_shape, box, is_face);
+                if ( is_face){
+                    cv::Mat_<uchar> img = image.clone();
+                    cv::Rect rect;
+                    rect.x = box.start_x;
+                    rect.y = box.start_y;
+                    rect.width = box.width;
+                    rect.height = box.height;
+                    cv::rectangle(img, rect, (255), 1);
+                    DrawPredictedImage(img, res);
+                }
+            }
+        }
+        
+        if ( order == 1 ){
+            currentSize *= scale;
+        }
+        else{
+            currentSize /= scale;
+        }
+    }
+    
+    
+    
 	return;
 }
 
@@ -308,7 +360,7 @@ void Train(const char* ModelName){
     
     params.local_features_num_ = 500;
 	params.landmarks_num_per_face_ = 68;
-    params.regressor_stages_ = 4;
+    params.regressor_stages_ = 5;
 //    params.local_radius_by_stage_.push_back(0.6);
 //    params.local_radius_by_stage_.push_back(0.5);
 	params.local_radius_by_stage_.push_back(0.45);
@@ -329,20 +381,20 @@ void Train(const char* ModelName){
     
     params.detect_factor_by_stage_.push_back(0.8);
     params.detect_factor_by_stage_.push_back(0.6);
-    params.detect_factor_by_stage_.push_back(0.4);
+    params.detect_factor_by_stage_.push_back(0.5);
+    params.detect_factor_by_stage_.push_back(0.3);
     params.detect_factor_by_stage_.push_back(0.2);
     params.detect_factor_by_stage_.push_back(0.1);
     params.detect_factor_by_stage_.push_back(0.1);
     params.detect_factor_by_stage_.push_back(0.1);
-    params.detect_factor_by_stage_.push_back(0.1);
     
-    params.tree_depth_ = 3;
-    params.trees_num_per_forest_ = 4;
-    params.initial_guess_ = 1;
+    params.tree_depth_ = 4;
+    params.trees_num_per_forest_ = 8;
+    params.initial_guess_ = 2;
     
     params.group_num_ = 6;
     std::vector<int> group1, group2, group3, group4, group5, group6, group7;
-
+    
     for ( int i=17; i<27; i++ ) group2.push_back(i);
     group2.push_back(-36);
     group2.push_back(-45);
@@ -379,13 +431,12 @@ void Train(const char* ModelName){
 //    group7.push_back(68);
 //    group7.push_back(69);
 //    params.groups_.push_back(group7);
-
-    //这个放到最后，是希望detect的时候先用脸内部的特征
+    
+    //调整数序，让face内部的点先计算
     for ( int i=0; i<17; i++ ) group1.push_back(i);
     //    group1.push_back(-36);
     //    group1.push_back(-45);
     params.groups_.push_back(group1);
-    
     
 //    for ( int i = 1; i < 7; i++ ){
 //        char buffer[50];

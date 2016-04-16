@@ -113,6 +113,8 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
         }
     }
 
+    pos_num += pos_num * params_.initial_guess_;
+    
     std::cout << "augmented size: " << augmented_current_shapes.size() << std::endl;
 
 	std::vector<cv::Mat_<float> > shape_increaments;
@@ -130,7 +132,8 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
                                             current_fi,
                                             current_weight,
 											params_,
-											i);
+											i,
+                                            pos_num);
 		std::cout << "update current shapes" << std::endl;
 		float error = 0.0;
         int count = 0;
@@ -157,7 +160,8 @@ std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar>
     std::vector<float>& current_fi,
     std::vector<float>& current_weight,
 	const Parameters& params,
-	const int stage){
+	const int stage,
+    const int pos_num){
 
 	stage_ = stage;
 	params_ = params;
@@ -188,7 +192,17 @@ std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar>
 	std::cout << "train forest of stage:" << stage_ << std::endl;
 	rd_forests_.resize(params_.landmarks_num_per_face_);
 //    #pragma omp parallel for
-	for (int i = 0; i < params_.landmarks_num_per_face_; ++i){
+    
+    std::vector<int> landmarks;
+    for (int g=0; g<params_.group_num_; g++){
+        for ( int j=0; j<params_.groups_[g].size(); j++ ){
+            if ( params_.groups_[g][j] >= 0 ){
+                landmarks.push_back(params_.groups_[g][j]);
+            }
+        }
+    }
+	for (int ii = 0; ii < landmarks.size(); ++ii){
+        int i = landmarks[ii];
         std::cout << "landmark: " << i << std::endl;
 		rd_forests_[i] = RandomForest(params_, i, stage_, regression_targets);
         rd_forests_[i].TrainForest(
@@ -270,35 +284,35 @@ std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar>
         //TODO:这里回归的时候，不要回归negtive face实例！
         //重新生成回归用的binary feature和targets
         struct problem* prob = new struct problem;
-        prob->l = augmented_current_shapes.size();
+        prob->l = pos_num; //augmented_current_shapes.size();
         prob->n = num_feature;
         prob->x = global_binary_features[g];
         prob->bias = -1;
 
         struct parameter* regression_params = new struct parameter;
         regression_params-> solver_type = L2R_L2LOSS_SVR_DUAL;
-        regression_params->C = 1.0/augmented_current_shapes.size();
+        regression_params->C = 1.0/pos_num; //augmented_current_shapes.size();
         regression_params->p = 0;
 
         std::cout << "Global Regression of stage " << stage_ << std::endl;
 
         float** targets = new float*[params_.groups_[g].size()];
         for (int i = 0; i < params_.groups_[g].size(); ++i){
-            targets[i] = new float[augmented_current_shapes.size()];
+            targets[i] = new float[pos_num];
         }
         #pragma omp parallel for
         for (int ii = 0; ii < params_.groups_[g].size(); ++ii){
             int i = params_.groups_[g][ii];
             if ( i < 0 ) continue;
             std::cout << "regress landmark " << i << std::endl;
-            for(int j = 0; j< augmented_current_shapes.size();j++){
+            for(int j = 0; j< pos_num;j++){
                 targets[ii][j] = regression_targets[j](i, 0);
             }
             prob->y = targets[ii];
             check_parameter(prob, regression_params);
             struct model* regression_model = train(prob, regression_params);
             linear_model_x_[i] = regression_model;
-            for(int j = 0; j < augmented_current_shapes.size(); j++){
+            for(int j = 0; j < pos_num; j++){
                 targets[ii][j] = regression_targets[j](i, 1);
             }
             prob->y = targets[ii];
@@ -654,11 +668,13 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                     node = node->right_child_;// go right
                 }
             }
-            score += node->score_;
-            if ( score < rd_forests_[j].trees_[k]->score_ ){
-                is_face = false;
-                std::cout <<"stage:"<<stage_ << "j=" << j << " k=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
-                return tmp_binary_features;
+            if ( params_.groups_[groupNum][jj] >= 0 ){ //如果是负值节点，只是为了训练相关性，所以不做face score累加和判断。
+                score += node->score_;
+                if ( score < rd_forests_[j].trees_[k]->score_ ){
+                    is_face = false;
+                    std::cout <<"stage:"<<stage_ << "j=" << j << " k=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
+                    return tmp_binary_features;
+                }
             }
             //int ind = j*params_.trees_num_per_forest_ + k;
             //int ind = feature_node_index[j] + k;
