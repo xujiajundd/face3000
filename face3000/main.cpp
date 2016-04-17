@@ -10,28 +10,28 @@
 #ifdef __linux__
 #include <omp.h>
 #endif
-//#include <Accelerate/Accelerate.h>
+#include <Accelerate/Accelerate.h>
 
 #ifndef DLIB_NO_GUI_SUPPORT
 #define DLIB_NO_GUI_SUPPORT
 #endif
-#include <dlib/config.h>
-#include <dlib/opencv.h>
-#include <dlib/image_processing/frontal_face_detector.h>
-//#include <dlib/image_processing/render_face_detections.h>
-#include <dlib/image_processing.h>
-//#include <dlib/gui_widgets.h>
-#include <dlib/all/source.cpp>
+//#include <dlib/config.h>
+//#include <dlib/opencv.h>
+//#include <dlib/image_processing/frontal_face_detector.h>
+////#include <dlib/image_processing/render_face_detections.h>
+//#include <dlib/image_processing.h>
+////#include <dlib/gui_widgets.h>
+//#include <dlib/all/source.cpp>
 
 //#include <sys/time.h>
 //#include "facedetect-dll.h"
 //#pragma comment(lib,"libfacedetect.lib")
 using namespace cv;
 using namespace std;
-using namespace dlib;
+//using namespace dlib;
 
-frontal_face_detector detector;
-correlation_tracker tracker;
+//frontal_face_detector detector;
+//correlation_tracker tracker;
 bool faceDetected = false;
 
 void DrawPredictedImage(cv::Mat_<uchar> image, cv::Mat_<float>& shape){
@@ -453,29 +453,46 @@ void Train(const char* ModelName){
     
 	return;
 }
-
+//TODO:研究下回归数据要不要用short型存放，节省模型空间。是否还是搞成全局回归，改数据结构，用数组提高性能。（研究运算cache优化）
+//回归的模式中，有没有可能看出detect的特征规律？
+//用其他的特征？
+//
 
 void Hello(){
-    int dim = 68000;
+    int stride = 1;
+    int dim = 12;
     float x[dim], y[dim], z[dim];
     for ( int i=0; i<dim; i++ ){
         x[i] = i;
         y[i] = (float)i/2.0;
     }
-    int rn = 10;
+    int rn = 1000000;
+    float sum;
     
     struct timeval t1, t2;
-    /*
+
     gettimeofday(&t1, NULL);
     float done = 1.0;
-    int ione = 1;
+    int ione = stride;
+
     for ( int r=0; r<rn; r++){
-//        cblas_saxpy(dim, done, x, ione, y, ione);
-        vDSP_vadd(x, 1, y, 1, z, 1, dim);
+        float *xx = &x[0], *yy=&y[0];
+        cblas_saxpy(dim, done, xx, ione, yy, ione);
+//        vDSP_vadd(x, 1, y, 1, z, 1, dim);
     }
     gettimeofday(&t2, NULL);
-    cout << "time: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
-    
+    sum = 0;
+    for ( int i=0; i<dim; i++){
+        sum += y[i];
+    }
+    cout << sum << endl;
+    cout << "time1: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
+
+
+
+    for ( int i=0; i<dim; i++){
+        y[i] = (float)i/2.0;
+    }
     gettimeofday(&t1, NULL);
     for ( int r=0; r<rn; r++){
         for ( int i=0; i<dim; i++){
@@ -483,8 +500,17 @@ void Hello(){
         }
     }
     gettimeofday(&t2, NULL);
-    cout << "time: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
-    
+    sum = 0;
+    for ( int i=0; i<dim; i++){
+        sum += y[i];
+    }
+    cout << sum << endl;
+    cout << "time2: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
+
+
+
+
+/*
     for ( int i=0; i<68; i++ ){
         std::cout << y[i] << ", ";
     }
@@ -556,83 +582,83 @@ void Hello(){
     gettimeofday(&t2, NULL);
     cout << "time array: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << "   " << pixel << endl;
     */
-    time_t current_time;
-    current_time = time(0);
-    cv::RNG random_generator(current_time);
-    int r = random_generator.uniform(0, 10000);
-    random_generator.uniform(0.0, 10.0);
-    
-    struct feature_node* binary_features = new feature_node[1089];
-    std::vector<struct model*> linear;
-    linear.resize(68);
-//    model  linear[68];
-
-    
-    for (int i=0; i<68; i++){
-        linear[i] = new model;
-        float *w = (float *)malloc(1088*8);
-        for ( int j=0; j<1088*8; j++){
-            w[j] = random_generator.uniform(0.0, 10.0);
-        }
-        linear[i]->w = w;
-    }
- 
-    gettimeofday(&t1, NULL);
-
-    float sumw[68], sum;
-    for ( int k=0; k<10; k++){
-        for (int i=0; i<1088; i++){
-            for ( int j=0; j<5; j++){
-                binary_features[i].index = 8*i;
-                binary_features[i].value = 1;
-            }
-        }
-        cv::Mat_<float> predict_result(68,2, 0.0);
-        binary_features[1088].index = -1;
-        binary_features[1088].value = 0;
-        for ( int i=0; i<68; i++){
-            int idx;
-            const feature_node *lx = binary_features;
-            float *w=linear[i]->w;
-            float result = 0.0;
-            for(; (idx=lx->index)!=-1 && idx < 1088; lx++){
-                sumw[i] += w[idx]; //为了这儿减少一次减法，在getglobalfeature的地方改了index的初值为0;
-            }
-            predict_result(i,0) = sumw[i];
-            predict_result(i,1) = sumw[i];
-//            for ( int j=0; j<1088; j++){
-//                sumw[i] += linear[i].w[binary_features[j].index];
+//    time_t current_time;
+//    current_time = time(0);
+//    cv::RNG random_generator(current_time);
+//    int r = random_generator.uniform(0, 10000);
+//    random_generator.uniform(0.0, 10.0);
+//    
+//    struct feature_node* binary_features = new feature_node[1089];
+//    std::vector<struct model*> linear;
+//    linear.resize(68);
+////    model  linear[68];
+//
+//    
+//    for (int i=0; i<68; i++){
+//        linear[i] = new model;
+//        float *w = (float *)malloc(1088*8);
+//        for ( int j=0; j<1088*8; j++){
+//            w[j] = random_generator.uniform(0.0, 10.0);
+//        }
+//        linear[i]->w = w;
+//    }
+// 
+//    gettimeofday(&t1, NULL);
+//
+//    float sumw[68];
+//    for ( int k=0; k<10; k++){
+//        for (int i=0; i<1088; i++){
+//            for ( int j=0; j<5; j++){
+//                binary_features[i].index = 8*i;
+//                binary_features[i].value = 1;
 //            }
-        }
-        
-    }
+//        }
+//        cv::Mat_<float> predict_result(68,2, 0.0);
+//        binary_features[1088].index = -1;
+//        binary_features[1088].value = 0;
+//        for ( int i=0; i<68; i++){
+//            int idx;
+//            const feature_node *lx = binary_features;
+//            float *w=linear[i]->w;
+//            float result = 0.0;
+//            for(; (idx=lx->index)!=-1 && idx < 1088; lx++){
+//                sumw[i] += w[idx]; //为了这儿减少一次减法，在getglobalfeature的地方改了index的初值为0;
+//            }
+//            predict_result(i,0) = sumw[i];
+//            predict_result(i,1) = sumw[i];
+////            for ( int j=0; j<1088; j++){
+////                sumw[i] += linear[i].w[binary_features[j].index];
+////            }
+//        }
+//        
+//    }
+//
+//    gettimeofday(&t2, NULL);
+//    cout << "time sumw1: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
+//    
 
-    gettimeofday(&t2, NULL);
-    cout << "time sumw1: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
-    
-    
-    gettimeofday(&t1, NULL);
-
-    for ( int k=0; k<10; k++){
-        for (int i=0; i<1088; i++){
-            for ( int j=0; j<5; j++){
-                binary_features[i].index = 8*i;
-                binary_features[i].value = 1.0;
-            }
-        }
-        for ( int j=0; j<1088; j++){
-            for ( int i=0; i<68; i++){
-                sumw[i] += linear[i]->w[binary_features[j].index];
-            }
-        }
-    }
-    gettimeofday(&t2, NULL);
-    cout << "time sumw: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0  << endl;
+//    gettimeofday(&t1, NULL);
+//
+//    for ( int k=0; k<10; k++){
+//        for (int i=0; i<1088; i++){
+//            for ( int j=0; j<5; j++){
+//                binary_features[i].index = 8*i;
+//                binary_features[i].value = 1.0;
+//            }
+//        }
+//        for ( int j=0; j<1088; j++){
+//            for ( int i=0; i<68; i++){
+//                sumw[i] += linear[i]->w[binary_features[j].index];
+//            }
+//        }
+//    }
+//    gettimeofday(&t2, NULL);
+//    cout << "time sumw: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0  << endl;
 }
 
 int main(int argc, char* argv[])
 {
-    detector = get_frontal_face_detector();
+//    detector = get_frontal_face_detector();
     
 	if (argc >= 3)
 	{

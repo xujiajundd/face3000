@@ -195,7 +195,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                     }
                 }
             }
-            
+            //TODO：这个地方这样貌似取了最大召回率，应该再核对一下错误率。
+            //
             if (true_pos/(true_pos+false_neg+FLT_MIN)>=max_recall)
             {
                 max_recall=true_pos/(true_pos+false_neg+FLT_MIN);

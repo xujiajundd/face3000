@@ -1,16 +1,16 @@
 #include "utils.h"
-#include <dlib/config.h>
-#include <dlib/opencv.h>
-#include <dlib/image_processing/frontal_face_detector.h>
-//#include <dlib/image_processing/render_face_detections.h>
-#include <dlib/image_processing.h>
+//#include <dlib/config.h>
+//#include <dlib/opencv.h>
+//#include <dlib/image_processing/frontal_face_detector.h>
+////#include <dlib/image_processing/render_face_detections.h>
+//#include <dlib/image_processing.h>
 
 //#include "facedetect-dll.h"
 //#pragma comment(lib,"libfacedetect.lib")
 
 // project the global shape coordinates to [-1, 1]x[-1, 1]
 
-dlib::frontal_face_detector fdetector = dlib::get_frontal_face_detector();;
+//dlib::frontal_face_detector fdetector = dlib::get_frontal_face_detector();;
 
 cv::Mat_<float> ProjectShape(const cv::Mat_<float>& shape, const BoundingBox& bbox){
 	cv::Mat_<float> results(shape.rows, 2);
