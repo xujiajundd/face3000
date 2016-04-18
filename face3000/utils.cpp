@@ -421,6 +421,8 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
             ground_truth_faces.push_back(-1);
             bboxes.push_back(nbbox);
         }
+        
+        //TODO：据说添加4倍左右的负例比较好，还需要继续生成
     }
 
     return pos_num;

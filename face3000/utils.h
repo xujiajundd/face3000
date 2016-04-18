@@ -14,7 +14,7 @@
 //using namespace cv;
 
 
-
+#define MAXFINDTIMES 10000
 
 //std::mutex m;
 class BoundingBox {
@@ -38,13 +38,19 @@ public:
 class FeatureLocations
 {
 public:
+    int lmark1;
+    int lmark2;
 	cv::Point2d start;
 	cv::Point2d end;
-	FeatureLocations(cv::Point2d a, cv::Point2d b){
+	FeatureLocations(int landmark1, int landmark2, cv::Point2d a, cv::Point2d b){
+        lmark1 = landmark1;
+        lmark2 = landmark2;
 		start = a;
 		end = b;
 	}
 	FeatureLocations(){
+        lmark1 = 0;
+        lmark2 = 0;
 		start = cv::Point2d(0.0, 0.0);
 		end = cv::Point2d(0.0, 0.0);
 	};

@@ -23,6 +23,7 @@ class RandomForest {
 public:
 	int stage_;
 	int local_features_num_;
+    int landmark_num_;
 	int landmark_index_;
 	int tree_depth_;
 	int trees_num_per_forest_;
@@ -42,9 +43,10 @@ public:
 		//const std::vector<cv::Mat_<float> >& augmented_ground_truth_shapes,
 		const std::vector<BoundingBox>& augmented_bboxes,
 		const std::vector<cv::Mat_<float> >& augmented_current_shapes,
-        const std::vector<int> & augmented_ground_truth_faces,
+        std::vector<int> & augmented_ground_truth_faces,
         std::vector<float> & current_fi,
         std::vector<float> & current_weight,
+        std::vector<int> & find_times,
 		const std::vector<cv::Mat_<float> >& rotations,
 		const std::vector<float>& scales);
 	Node* BuildTree(std::set<int>& selected_indexes, cv::Mat_<int>& pixel_differences, std::vector<int>& images_indexes, int current_depth);

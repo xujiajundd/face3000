@@ -100,7 +100,7 @@ void Test(const char* ModelName){
 void TestVideo(const char* ModelName){
     CascadeRegressor rg;
     rg.LoadCascadeRegressor(ModelName);
-    rg.antiJitter = 1;
+    rg.antiJitter = -1;
 //    rg.params_.predict_group_.erase(0);
 //    for (int i = 0; i < rg.params_.regressor_stages_; i++){
 //        rg.regressors_[i].params_ = rg.params_;
@@ -357,8 +357,7 @@ void Train(const char* ModelName){
 	int pos_num = LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names);
 	params.mean_shape_ = GetMeanShape(ground_truth_shapes, ground_truth_faces, bboxes);
     
-    
-    params.local_features_num_ = 500;
+    params.local_features_num_ = 1000;
 	params.landmarks_num_per_face_ = 68;
     params.regressor_stages_ = 5;
 //    params.local_radius_by_stage_.push_back(0.6);
@@ -389,8 +388,8 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.1);
     
     params.tree_depth_ = 4;
-    params.trees_num_per_forest_ = 8;
-    params.initial_guess_ = 2;
+    params.trees_num_per_forest_ = 4;
+    params.initial_guess_ = 1;
     
     params.group_num_ = 6;
     std::vector<int> group1, group2, group3, group4, group5, group6, group7;

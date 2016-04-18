@@ -35,6 +35,7 @@ public:
         const std::vector<cv::Mat_<float> >& augmented_current_shapes,
         std::vector<float>& current_fi,
         std::vector<float>& current_weight,
+        std::vector<int>& find_times,
 		const Parameters& params,
 		const int stage,
         const int pos_num);

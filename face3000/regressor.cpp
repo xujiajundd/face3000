@@ -35,6 +35,7 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
 	std::vector<cv::Mat_<float> > augmented_current_shapes; //
     std::vector<float> current_fi;
     std::vector<float> current_weight;
+    std::vector<int> find_times;
     
 	time_t current_time;
 	current_time = time(0);
@@ -49,6 +50,7 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
         augmented_current_shapes.push_back(ReProjection(params_.mean_shape_, bboxes_[i]));
         current_fi.push_back(0);
         current_weight.push_back(1);
+        find_times.push_back(0);
         
 		for (int j = 0; j < params_.initial_guess_; j++)
 		{
@@ -71,6 +73,7 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
                 augmented_current_shapes.push_back(temp);
                 current_fi.push_back(0);
                 current_weight.push_back(1);
+                find_times.push_back(0);
             }
 		}
 
@@ -84,6 +87,7 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
         augmented_current_shapes.push_back(ReProjection(params_.mean_shape_, bboxes_[i]));
         current_fi.push_back(0);
         current_weight.push_back(1);
+        find_times.push_back(0);
 
         for (int j = 0; j < params_.initial_guess_; j++)
         {
@@ -105,6 +109,7 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
                     augmented_current_shapes.push_back(temp);
                     current_fi.push_back(0);
                     current_weight.push_back(1);
+                    find_times.push_back(0);
                 }
             }
             else{
@@ -131,6 +136,7 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
 											augmented_current_shapes,
                                             current_fi,
                                             current_weight,
+                                            find_times,
 											params_,
 											i,
                                             pos_num);
@@ -159,6 +165,7 @@ std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar>
 	const std::vector<cv::Mat_<float> >& augmented_current_shapes,
     std::vector<float>& current_fi,
     std::vector<float>& current_weight,
+    std::vector<int>& find_times,
 	const Parameters& params,
 	const int stage,
     const int pos_num){
@@ -207,7 +214,7 @@ std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar>
 		rd_forests_[i] = RandomForest(params_, i, stage_, regression_targets);
         rd_forests_[i].TrainForest(
 			images,augmented_images_index, augmented_bboxes, augmented_current_shapes,
-            augmented_ground_truth_faces, current_fi, current_weight,
+            augmented_ground_truth_faces, current_fi, current_weight, find_times,
 			rotations_, scales_);
 	}
 	std::cout << "Get Global Binary Features" << std::endl;
@@ -245,8 +252,10 @@ std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar>
                         float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
                         delta_x = scale*delta_x*bbox.width / 2.0;
                         delta_y = scale*delta_y*bbox.height / 2.0;
-                        int real_x = delta_x + current_shape(j, 0);
-                        int real_y = delta_y + current_shape(j, 1);
+//                        int real_x = delta_x + current_shape(j, 0);
+//                        int real_y = delta_y + current_shape(j, 1);
+                        int real_x = delta_x + current_shape(pos.lmark1, 0);
+                        int real_y = delta_y + current_shape(pos.lmark1, 1);
                         real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
                         real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
                         int tmp = (int)image(real_y, real_x); //real_y at first
@@ -255,8 +264,8 @@ std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar>
                         delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
                         delta_x = scale*delta_x*bbox.width / 2.0;
                         delta_y = scale*delta_y*bbox.height / 2.0;
-                        real_x = delta_x + current_shape(j, 0);
-                        real_y = delta_y + current_shape(j, 1);
+                        real_x = delta_x + current_shape(pos.lmark2, 0);
+                        real_y = delta_y + current_shape(pos.lmark2, 1);
                         real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
                         real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
                         if ((tmp - (int)image(real_y, real_x)) < node->threshold_){
@@ -647,8 +656,8 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
                 delta_x = ss * delta_x; //scale*delta_x*bbox.width / 2.0;
                 delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
-                int real_x = delta_x + current_shape(j, 0);
-                int real_y = delta_y + current_shape(j, 1);
+                int real_x = delta_x + current_shape(pos.lmark1, 0);
+                int real_y = delta_y + current_shape(pos.lmark1, 1);
                 real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
                 real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
                 int tmp = (int)image(real_y, real_x); //real_y at first
@@ -657,8 +666,8 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
                 delta_x = ss * delta_x; //scale*delta_x*bbox.width / 2.0;
                 delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
-                real_x = delta_x + current_shape(j, 0);
-                real_y = delta_y + current_shape(j, 1);
+                real_x = delta_x + current_shape(pos.lmark2, 0);
+                real_y = delta_y + current_shape(pos.lmark2, 1);
                 real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
                 real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
                 if ( (tmp - (int)image(real_y, real_x)) < node->threshold_){
