@@ -13,7 +13,7 @@ CascadeRegressor::CascadeRegressor(){
     lastRes = cv::Mat_<float>(68,2,0.0);
 }
 
-void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
+void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 	std::vector<cv::Mat_<float> >& ground_truth_shapes,
     std::vector<int> ground_truth_faces,
 	std::vector<BoundingBox>& bboxes,
@@ -139,7 +139,8 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
                                             find_times,
 											params_,
 											i,
-                                            pos_num);
+                                            pos_num,
+                                            this);
 		std::cout << "update current shapes" << std::endl;
 		float error = 0.0;
         int count = 0;
@@ -157,7 +158,7 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
 	}
 }
 
-std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar> >& images,
+std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& images,
 	std::vector<int>& augmented_images_index,
 	std::vector<cv::Mat_<float> >& augmented_ground_truth_shapes,
     std::vector<int> & augmented_ground_truth_faces,
@@ -168,7 +169,8 @@ std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar>
     std::vector<int>& find_times,
 	const Parameters& params,
 	const int stage,
-    const int pos_num){
+    const int pos_num,
+    CascadeRegressor *casRegressor){
 
 	stage_ = stage;
 	params_ = params;
@@ -211,7 +213,7 @@ std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar>
 	for (int ii = 0; ii < landmarks.size(); ++ii){
         int i = landmarks[ii];
         std::cout << "landmark: " << i << std::endl;
-		rd_forests_[i] = RandomForest(params_, i, stage_, regression_targets);
+		rd_forests_[i] = RandomForest(params_, i, stage_, regression_targets, casRegressor);
         rd_forests_[i].TrainForest(
 			images,augmented_images_index, augmented_ground_truth_shapes, augmented_bboxes, augmented_current_shapes,
             augmented_ground_truth_faces, current_fi, current_weight, find_times,

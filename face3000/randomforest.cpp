@@ -2,6 +2,7 @@
 #include <time.h>
 #include <algorithm>
 #include <stack>
+#include "regressor.h"
 
 Node::Node(){
 	left_child_ = NULL;
@@ -32,7 +33,7 @@ int my_cmp(std::pair<float,int> p1, std::pair<float,int> p2)
 };
 
 bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_targets,
-	const std::vector<cv::Mat_<uchar> >& images,
+	std::vector<cv::Mat_<uchar> >& images,
 	std::vector<int>& augmented_images_index,
 	std::vector<cv::Mat_<float>>& augmented_ground_truth_shapes,
 	std::vector<BoundingBox>& augmented_bboxes,
@@ -249,9 +250,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                         bool tmp_isface=true;
                         float tmp_fi=0;
                         
-                        for (int nd_stage=0; nd_stage <= stage_; nd_stage++ ){
-                            
-                        }
+                        casRegressor_->Predict(images[augmented_images_index[idx]], augmented_current_shapes[idx], new_box, tmp_isface);
+
                     }
                     
                 }
@@ -651,7 +651,7 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<float>& i
 //
 //}
 
-RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std::vector<cv::Mat_<float> >& regression_targets){
+RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std::vector<cv::Mat_<float> >& regression_targets, CascadeRegressor *casRegressor){
 	stage_ = stage;
 	local_features_num_ = param.local_features_num_;
 	landmark_index_ = landmark_index;
@@ -662,6 +662,7 @@ RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std
 	mean_shape_ = param.mean_shape_;
     detect_factor_ = param.detect_factor_by_stage_[stage_];
 	regression_targets_ = &regression_targets; // get the address pointer, not reference
+    casRegressor_ = casRegressor;
 }
 
 RandomForest::RandomForest(){

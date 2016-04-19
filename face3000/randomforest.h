@@ -2,6 +2,9 @@
 #define RANDOMFOREST_H
 #include "utils.h"
 #include <set>
+//#include "regressor.h"
+class CascadeRegressor;
+
 class Node {
 public:
 	int leaf_identity; // used only when it is leaf node, and is unique among the tree
@@ -36,9 +39,10 @@ public:
 	std::vector<cv::Mat_<float> >* regression_targets_;
     std::vector<int> augmented_ground_truth_faces_;
     std::vector<float> current_weight_;
+    CascadeRegressor *casRegressor_;
     
 	bool TrainForest(//std::vector<cv::Mat_<float> >& regression_targets, 
-		const std::vector<cv::Mat_<uchar> >& images,
+		std::vector<cv::Mat_<uchar> >& images,
 		std::vector<int>& augmented_images_index,
 		std::vector<cv::Mat_<float> >& augmented_ground_truth_shapes,
 		std::vector<BoundingBox>& augmented_bboxes,
@@ -61,7 +65,7 @@ public:
 	int GetBinaryFeatureIndex(int tree_index, const cv::Mat_<float>& image,
 	const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale, float *score);
 	RandomForest();
-	RandomForest(Parameters& param, int landmark_index, int stage, std::vector<cv::Mat_<float> >& regression_targets);
+	RandomForest(Parameters& param, int landmark_index, int stage, std::vector<cv::Mat_<float> >& regression_targets, CascadeRegressor *casRegressor);
 	void WriteTree(Node* p, std::ofstream& fout);
 	Node* ReadTree(std::ifstream& fin);
 	void SaveRandomForest(std::ofstream& fout);

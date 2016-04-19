@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "randomforest.h"
 
+class CascadeRegressor;
 
 class Regressor {
 public:
@@ -27,7 +28,7 @@ public:
 	Regressor();
 	~Regressor();
     Regressor(const Regressor&);
-	std::vector<cv::Mat_<float> > Train(const std::vector<cv::Mat_<uchar> >& images,
+	std::vector<cv::Mat_<float> > Train(std::vector<cv::Mat_<uchar> >& images,
 		std::vector<int>& augmented_images_index,
 		std::vector<cv::Mat_<float> >& augmented_ground_truth_shapes,
         std::vector<int> & augmented_ground_truth_faces,
@@ -38,7 +39,8 @@ public:
         std::vector<int>& find_times,
 		const Parameters& params,
 		const int stage,
-        const int pos_num);
+        const int pos_num,
+        CascadeRegressor *casRegressor);
     struct feature_node* GetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, int groupNum, float &score, bool &is_face);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape,
 		BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face);
@@ -69,7 +71,7 @@ public:
     int antiJitter;
 public:
 	CascadeRegressor();
-	void Train(const std::vector<cv::Mat_<uchar> >& images,
+	void Train(std::vector<cv::Mat_<uchar> >& images,
 		std::vector<cv::Mat_<float> >& ground_truth_shapes,
         std::vector<int> ground_truth_faces,
 		//const std::vector<cv::Mat_<float> >& current_shapes,
