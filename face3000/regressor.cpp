@@ -14,9 +14,9 @@ CascadeRegressor::CascadeRegressor(){
 }
 
 void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
-	const std::vector<cv::Mat_<float> >& ground_truth_shapes,
-    const std::vector<int> ground_truth_faces,
-	const std::vector<BoundingBox>& bboxes,
+	std::vector<cv::Mat_<float> >& ground_truth_shapes,
+    std::vector<int> ground_truth_faces,
+	std::vector<BoundingBox>& bboxes,
 	Parameters& params,
     int pos_num ){
 
@@ -158,11 +158,11 @@ void CascadeRegressor::Train(const std::vector<cv::Mat_<uchar> >& images,
 }
 
 std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar> >& images,
-	const std::vector<int>& augmented_images_index,
-	const std::vector<cv::Mat_<float> >& augmented_ground_truth_shapes,
-    const std::vector<int> & augmented_ground_truth_faces,
-	const std::vector<BoundingBox>& augmented_bboxes,
-	const std::vector<cv::Mat_<float> >& augmented_current_shapes,
+	std::vector<int>& augmented_images_index,
+	std::vector<cv::Mat_<float> >& augmented_ground_truth_shapes,
+    std::vector<int> & augmented_ground_truth_faces,
+	std::vector<BoundingBox>& augmented_bboxes,
+	std::vector<cv::Mat_<float> >& augmented_current_shapes,
     std::vector<float>& current_fi,
     std::vector<float>& current_weight,
     std::vector<int>& find_times,
@@ -213,7 +213,7 @@ std::vector<cv::Mat_<float> > Regressor::Train(const std::vector<cv::Mat_<uchar>
         std::cout << "landmark: " << i << std::endl;
 		rd_forests_[i] = RandomForest(params_, i, stage_, regression_targets);
         rd_forests_[i].TrainForest(
-			images,augmented_images_index, augmented_bboxes, augmented_current_shapes,
+			images,augmented_images_index, augmented_ground_truth_shapes, augmented_bboxes, augmented_current_shapes,
             augmented_ground_truth_faces, current_fi, current_weight, find_times,
 			rotations_, scales_);
 	}
