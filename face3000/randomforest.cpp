@@ -221,20 +221,20 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         }
         
         //TODO:这个地方要开始删除fi分值小于阀值的负例
+        //TODO:如果负例不够了，要挖掘一些。挖掘应该指的的找一些图片，按训练到目前为止的模型判定为face但实际非face的东东
         int deleteNumber = 0;
+        int mineHardNegNumber = 0;
         for ( int n=0; n<fiSort.size(); ++n){
             if ( fiSort[n].first < root->score_ ){
                 deleteNumber++;
                 find_times[fiSort[n].second] = MAXFINDTIMES;
+                
             }
             else{
                 break;
             }
         }
         std::cout << "fi<threshold delete number:" << deleteNumber << " threshold:" << root->score_ << std::endl;
-        
-        //TODO:如果负例不够了，要挖掘一些。挖掘应该指的的找一些图片，按训练到目前为止的模型判定为face但实际非face的东东
-        
         
 	}
 	/*int count = 0;
@@ -457,7 +457,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_indexes,
 	}
     
     
-    //这里把var和entropy做归一化，然后取其和的最小值，这样可以做到分类和回归在同一个feature上都做到较优。
+    //这里把var和entropy做归一化，然后取其和的最小值，这样可以做到分类和回归在同一个feature上都做到较优。用一个factor来控制影响比例
     //这个方法和原论文的方法不同，原论文按照概率值来选择偏向分类还是回归树
     
     float minvar = *std::min_element(std::begin(vars), std::end(vars));
