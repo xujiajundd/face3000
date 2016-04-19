@@ -28,11 +28,11 @@ public:
 	~Regressor();
     Regressor(const Regressor&);
 	std::vector<cv::Mat_<float> > Train(const std::vector<cv::Mat_<uchar> >& images,
-		const std::vector<int>& augmented_images_index,
-		const std::vector<cv::Mat_<float> >& augmented_ground_truth_shapes,
-        const std::vector<int> & augmented_ground_truth_faces,
-        const std::vector<BoundingBox>& augmented_bboxes,
-        const std::vector<cv::Mat_<float> >& augmented_current_shapes,
+		std::vector<int>& augmented_images_index,
+		std::vector<cv::Mat_<float> >& augmented_ground_truth_shapes,
+        std::vector<int> & augmented_ground_truth_faces,
+        std::vector<BoundingBox>& augmented_bboxes,
+        std::vector<cv::Mat_<float> >& augmented_current_shapes,
         std::vector<float>& current_fi,
         std::vector<float>& current_weight,
         std::vector<int>& find_times,
@@ -70,10 +70,10 @@ public:
 public:
 	CascadeRegressor();
 	void Train(const std::vector<cv::Mat_<uchar> >& images,
-		const std::vector<cv::Mat_<float> >& ground_truth_shapes,
-        const std::vector<int> ground_truth_faces,
+		std::vector<cv::Mat_<float> >& ground_truth_shapes,
+        std::vector<int> ground_truth_faces,
 		//const std::vector<cv::Mat_<float> >& current_shapes,
-		const std::vector<BoundingBox>& bboxes,
+		std::vector<BoundingBox>& bboxes,
 		Parameters& params,
         int pos_num);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& ground_truth_shape);

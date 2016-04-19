@@ -33,10 +33,10 @@ int my_cmp(std::pair<float,int> p1, std::pair<float,int> p2)
 
 bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_targets,
 	const std::vector<cv::Mat_<uchar> >& images,
-	const std::vector<int>& augmented_images_index,
-	//const std::vector<cv::Mat_<float>>& augmented_ground_truth_shapes,
-	const std::vector<BoundingBox>& augmented_bboxes,
-	const std::vector<cv::Mat_<float> >& augmented_current_shapes,
+	std::vector<int>& augmented_images_index,
+	std::vector<cv::Mat_<float>>& augmented_ground_truth_shapes,
+	std::vector<BoundingBox>& augmented_bboxes,
+	std::vector<cv::Mat_<float> >& augmented_current_shapes,
     std::vector<int> & augmented_ground_truth_faces,
     std::vector<float> & current_fi,
     std::vector<float> & current_weight,
@@ -125,7 +125,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         {
             current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
             //current_weight[k]=1;
-            if ( current_weight_[k] > 5000.0 ) {
+            if ( current_weight_[k] > 10000.0 ) {
                 find_times[k] = MAXFINDTIMES+8;
                 augmented_ground_truth_faces[k] = -1; //这种情况等于把这个训练数据抛弃了。。。
             }
@@ -227,8 +227,34 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         for ( int n=0; n<fiSort.size(); ++n){
             if ( fiSort[n].first < root->score_ ){
                 deleteNumber++;
-                find_times[fiSort[n].second] = MAXFINDTIMES;
+                int idx = fiSort[n].second;
+                find_times[idx] = MAXFINDTIMES;
                 
+                //接下来开始挖掘hard neg example
+                if ( augmented_ground_truth_faces[idx] == -1 ){
+                    BoundingBox new_box;
+                    for ( int slide_win = 0; i<images[augmented_images_index[idx]].cols/10; i+=10){
+                        new_box.start_x=slide_win;
+                        new_box.start_y=0;
+                        new_box.width=images[augmented_images_index[idx]].cols/5;
+                        new_box.height=new_box.width;
+                        new_box.center_x=new_box.start_x + new_box.width/2.0;
+                        new_box.center_y=new_box.start_y + new_box.height/2.0;
+                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[idx], augmented_bboxes[idx]);
+                        augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
+                        cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[idx], augmented_bboxes[idx]);
+                        augmented_current_shapes[idx]=ReProjection(temp2, new_box);
+                        augmented_bboxes[idx]=new_box;
+                        //cout<<"xixi";
+                        bool tmp_isface=true;
+                        float tmp_fi=0;
+                        
+                        for (int nd_stage=0; nd_stage <= stage_; nd_stage++ ){
+                            
+                        }
+                    }
+                    
+                }
             }
             else{
                 break;

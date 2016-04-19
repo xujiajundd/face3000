@@ -357,7 +357,7 @@ void Train(const char* ModelName){
 	int pos_num = LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names);
 	params.mean_shape_ = GetMeanShape(ground_truth_shapes, ground_truth_faces, bboxes);
     
-    params.local_features_num_ = 1000;
+    params.local_features_num_ = 2000;
 	params.landmarks_num_per_face_ = 68;
     params.regressor_stages_ = 5;
 //    params.local_radius_by_stage_.push_back(0.6);
