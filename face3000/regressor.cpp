@@ -424,7 +424,7 @@ cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
 		getSimilarityTransform(ProjectShape(current_shape, bbox), params_.mean_shape_, rotation, scale);
 		cv::Mat_<float> shape_increaments = regressors_[i].Predict(image, current_shape, bbox, rotation, scale, score, is_face);
         if ( !is_face ){
-            std::cout << "检测不是face!!!!!!!!!!!!!!!!!!!!!!"<< std::endl;
+            //std::cout << "检测不是face!!!!!!!!!!!!!!!!!!!!!!"<< std::endl;
             return current_shape;
         }
 		current_shape = shape_increaments + ProjectShape(current_shape, bbox);
@@ -478,6 +478,43 @@ cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
     }
 
 	return res;
+}
+
+cv::Mat_<float> CascadeRegressor::NegMinePredict(cv::Mat_<uchar>& image,
+                                          cv::Mat_<float>& current_shape, BoundingBox& bbox, bool &is_face, float &fi, int stage, int landmark, int tree){
+    //    cv::Mat_<float> rshape = ProjectShape( current_shape.clone(), bbox);
+    
+    float score = 0;
+    for (int i = 0; i <= stage; i++){
+        cv::Mat_<float> rotation;
+        float scale;
+        getSimilarityTransform(ProjectShape(current_shape, bbox), params_.mean_shape_, rotation, scale);
+        cv::Mat_<float> shape_increaments = regressors_[i].NegMinePredict(image, current_shape, bbox, rotation, scale, score, is_face, stage, i, landmark, tree);
+        if ( !is_face ){
+//            std::cout << "挖掘负例，不是face!!!!!!!!!!!!!!!!!!!!!!"<< std::endl;
+            return current_shape;
+        }
+        current_shape = shape_increaments + ProjectShape(current_shape, bbox);
+        current_shape = ReProjection(current_shape, bbox);
+        
+        //        for (int ii = 0; ii < current_shape.rows; ii++){
+        //            cv::circle(image, cv::Point2f(current_shape(ii, 0), current_shape(ii, 1)), 2, (255));
+        //            if ( ii > 0 && ii != 17 && ii != 22 && ii != 27 && ii!= 36 && ii != 42 && ii!= 48 )
+        //                cv::line(image, cv::Point2f(current_shape(ii-1, 0), current_shape(ii-1, 1)), cv::Point2f(current_shape(ii, 0), current_shape(ii, 1)), cvScalar(30*i,255,0));
+        //        }
+        //        cv::imshow("show image", image);
+        //        cv::waitKey(0);
+        
+        //        cv::Mat_<float> temp = current_shape.rowRange(36, 41)-current_shape.rowRange(42, 47);
+        //        float x =mean(temp.col(0))[0];
+        //        float y = mean(temp.col(1))[1];
+        //        float interocular_distance = sqrt(x*x+y*y);
+        //        float delta = norm(shape_increaments)/(current_shape.rows*interocular_distance * params_.local_radius_by_stage_[i]);
+        //        stage_delta_.push_back(delta);
+    }
+    cv::Mat_<float> res = current_shape;
+    fi = score;
+    return res;
 }
 
 Regressor::Regressor(){
@@ -683,7 +720,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 score += node->score_;
                 if ( score < rd_forests_[j].trees_[k]->score_ ){
                     is_face = false;
-                    std::cout <<"stage:"<<stage_ << "j=" << j << " k=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
+                    //std::cout <<"stage:"<<stage_ << "j=" << j << " k=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
                     return tmp_binary_features;
                 }
             }
@@ -697,6 +734,79 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
         }
 
         index += rd_forests_[j].all_leaf_nodes_;
+    }
+    //std::cout << "\n";
+    //std::cout << index << ":" << params_.trees_num_per_forest_*params_.landmarks_num_per_face_ << std::endl;
+    tmp_binary_features[params_.trees_num_per_forest_*params_.groups_[groupNum].size()].index = -1;
+    tmp_binary_features[params_.trees_num_per_forest_*params_.groups_[groupNum].size()].value = -1.0;
+    return tmp_binary_features;
+}
+
+struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
+                                                        cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, int groupNum, float &score, bool &is_face, int stage, int currentStage, int landmark, int tree, bool &stop){
+    int index = 1;
+    if ( tmp_binary_features == NULL ){
+        //        struct feature_node* binary_features = new feature_node[params_.trees_num_per_forest_*params_.groups_[groupNum].size()+1]; //这条性能可能可以优化
+        tmp_binary_features = new feature_node[params_.trees_num_per_forest_*params_.landmarks_num_per_face_ +1];
+    }
+    int ind = 0;
+    float ss = scale * bbox.width / 2.0; //add by xujj
+    for (int jj = 0; jj < params_.groups_[groupNum].size(); ++jj)
+    {
+        int j = abs(params_.groups_[groupNum][jj]);
+        if ( stage == currentStage && params_.groups_[groupNum][jj] < 0 ) continue; //如果就在本stage，负的rf其实还没有生成，根据trainning时的顺序，也不用去计算。
+        for (int k = 0; k < params_.trees_num_per_forest_; ++k)
+        {
+            Node* node = rd_forests_[j].trees_[k];
+            while (!node->is_leaf_){
+                FeatureLocations& pos = node->feature_locations_;
+                float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
+                float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
+                delta_x = ss * delta_x; //scale*delta_x*bbox.width / 2.0;
+                delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
+                int real_x = delta_x + current_shape(pos.lmark1, 0);
+                int real_y = delta_y + current_shape(pos.lmark1, 1);
+                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
+                int tmp = (int)image(real_y, real_x); //real_y at first
+                
+                delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
+                delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
+                delta_x = ss * delta_x; //scale*delta_x*bbox.width / 2.0;
+                delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
+                real_x = delta_x + current_shape(pos.lmark2, 0);
+                real_y = delta_y + current_shape(pos.lmark2, 1);
+                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
+                if ( (tmp - (int)image(real_y, real_x)) < node->threshold_){
+                    node = node->left_child_;// go left
+                }
+                else{
+                    node = node->right_child_;// go right
+                }
+            }
+            if ( params_.groups_[groupNum][jj] >= 0 ){ //如果是负值节点，只是为了训练相关性，所以不做face score累加和判断。
+                score += node->score_;
+                if ( score < rd_forests_[j].trees_[k]->score_ ){
+                    is_face = false;
+                    //std::cout <<"stage:"<<stage_ << "j=" << j << " k=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
+                    return tmp_binary_features;
+                }
+            }
+            //int ind = j*params_.trees_num_per_forest_ + k;
+            //int ind = feature_node_index[j] + k;
+            //binary_features[ind].index = leaf_index_count[j] + node->leaf_identity;
+            tmp_binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
+            tmp_binary_features[ind].value = 1.0;
+            ind++;
+            //std::cout << binary_features[ind].index << " ";
+            if ( stage == currentStage && landmark == j && tree == k){
+                stop = true;
+                return tmp_binary_features;
+            }
+        }
+        index += rd_forests_[j].all_leaf_nodes_;
+        
     }
     //std::cout << "\n";
     //std::cout << index << ":" << params_.trees_num_per_forest_*params_.landmarks_num_per_face_ << std::endl;
@@ -763,6 +873,54 @@ cv::Mat_<float> Regressor::Predict(cv::Mat_<uchar>& image,
     
     //delete[] tmp_binary_features;
 	return scale*predict_result*rot;
+}
+
+cv::Mat_<float> Regressor::NegMinePredict(cv::Mat_<uchar>& image,
+                                   cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face,  int stage, int currentStage, int landmark, int tree){
+    
+    cv::Mat_<float> predict_result(current_shape.rows, current_shape.cols, 0.0);
+    
+    for (int g=0; g<params_.group_num_; g++ ){
+        bool stop = false;
+        feature_node* binary_features = NegMineGetGlobalBinaryFeatures(image, current_shape, bbox, rotation, scale, g, score, is_face, stage, currentStage, landmark, tree, stop);
+        if ( !is_face ){
+            return predict_result;
+        }
+        if ( stop ){
+            return predict_result;
+        }
+        if ( stage == currentStage ) continue; //如果已经测试到当前的stage，不用做shape回归了。
+        
+        for (int ii = 0; ii < params_.groups_[g].size(); ii++){
+            int i = params_.groups_[g][ii];
+            if ( i < 0 || !params_.predict_group_.count(i) ) continue;
+            //		predict_result(i, 0) = predict(linear_model_x_[i], binary_features);
+            //        predict_result(i, 1) = predict(linear_model_y_[i], binary_features);
+            
+            int idx;
+            const feature_node *lx=binary_features;
+            float *wx =linear_model_x_[i]->w;
+            float *wy = linear_model_y_[i]->w;
+            //        float resultx = 0.0, resulty = 0.0;
+            for(; (idx=lx->index)!=-1 && idx < linear_model_x_[i]->nr_feature; lx++){
+                idx--;
+                predict_result(i,0) += wx[idx];
+                predict_result(i,1) += wy[idx];
+            }
+            //        predict_result(i,0) = resultx;
+            //        predict_result(i,1) = resulty;
+            
+        }
+        //   gettimeofday(&t2, NULL);
+        //   std::cout << "linear " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << std::endl;
+        //   delete[] binary_features;
+    }
+    
+    cv::Mat_<float> rot;
+    cv::transpose(rotation, rot);
+    
+    //delete[] tmp_binary_features;
+    return scale*predict_result*rot;
 }
 
 void CascadeRegressor::LoadCascadeRegressor(std::string ModelName){

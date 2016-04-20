@@ -42,8 +42,11 @@ public:
         const int pos_num,
         CascadeRegressor *casRegressor);
     struct feature_node* GetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, int groupNum, float &score, bool &is_face);
+    struct feature_node* NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, int groupNum, float &score, bool &is_face, int stage, int currentStage, int landmark, int tree, bool &stop);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape,
 		BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face);
+    cv::Mat_<float> NegMinePredict(cv::Mat_<uchar>& image,
+                                              cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face, int stage, int currentStage, int landmark, int tree);
 	void LoadRegressor(std::string ModelName, int stage);
 	void SaveRegressor(std::string ModelName, int stage);
     void ConstructLeafCount();
@@ -80,6 +83,8 @@ public:
         int pos_num);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& ground_truth_shape);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, bool &is_face);
+    cv::Mat_<float> NegMinePredict(cv::Mat_<uchar>& image,
+                                   cv::Mat_<float>& current_shape, BoundingBox& bbox, bool &is_face, float &fi, int stage, int landmark, int tree);
 	void LoadCascadeRegressor(std::string ModelName);
 	void SaveCascadeRegressor(std::string ModelName);
 

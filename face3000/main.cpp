@@ -89,6 +89,56 @@ void Test(const char* ModelName){
         DrawPredictedImage(images[i], res);
 
         
+        float scale = 1.1;
+        float shuffle = 0.1;
+        int minSize = 100;
+        int order = -1;
+        int currentSize;
+        bool biggest_only;
+        
+        if ( order == 1 ){
+            currentSize = minSize;
+        }
+        else{
+            currentSize = std::min(images[i].cols, images[i].rows);
+        }
+        
+        while ( currentSize >= minSize && currentSize <= std::min(images[i].cols, images[i].rows)){
+            for ( int ix=0; ix<images[i].cols-currentSize; ix+= currentSize*shuffle){
+                for ( int jy=0; jy<images[i].rows-currentSize; jy+=currentSize*shuffle){
+                    BoundingBox box;
+                    box.start_x = ix;
+                    box.start_y = jy;
+                    box.width = currentSize;
+                    box.height = currentSize;
+                    box.center_x = box.start_x + box.width/2.0;
+                    box.center_y = box.start_y + box.width/2.0;
+                    bool is_face = true;
+                    cv::Mat_<float> current_shape = ReProjection(cas_load.params_.mean_shape_, box);
+                    cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, box, is_face);
+                    if ( is_face){
+                        cv::Mat_<uchar> img = images[i].clone();
+                        cv::Rect rect;
+                        rect.x = box.start_x;
+                        rect.y = box.start_y;
+                        rect.width = box.width;
+                        rect.height = box.height;
+                        cv::rectangle(img, rect, (255), 1);
+                        DrawPredictedImage(img, res);
+                    }
+                }
+            }
+            
+            if ( order == 1 ){
+                currentSize *= scale;
+            }
+            else{
+                currentSize /= scale;
+            }
+        }
+        
+        
+        
 		//if (i == 10) break;
 	}
     gettimeofday(&t2, NULL);
@@ -388,7 +438,7 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.1);
     
     params.tree_depth_ = 4;
-    params.trees_num_per_forest_ = 4;
+    params.trees_num_per_forest_ = 8;
     params.initial_guess_ = 1;
     
     params.group_num_ = 6;

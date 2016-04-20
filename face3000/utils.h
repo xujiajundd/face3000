@@ -14,7 +14,7 @@
 //using namespace cv;
 
 
-#define MAXFINDTIMES 10000
+#define MAXFINDTIMES 100000
 
 //std::mutex m;
 class BoundingBox {

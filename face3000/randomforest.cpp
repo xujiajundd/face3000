@@ -84,6 +84,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 	//std::cout << "get pixel differences" << std::endl;
 	cv::Mat_<int> pixel_differences(local_features_num_, augmented_images_index.size()); // matrix: features*images
 	
+#pragma omp parallel for
 	for (int i = 0; i < augmented_images_index.size(); i++){
 		
 		cv::Mat_<float> rotation = rotations[i];
@@ -127,8 +128,10 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
             current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
             //current_weight[k]=1;
             if ( current_weight_[k] > 10000.0 ) {
-                find_times[k] = MAXFINDTIMES+8;
-                augmented_ground_truth_faces[k] = -1; //这种情况等于把这个训练数据抛弃了。。。
+                current_weight_[k] = 10000.0;
+                //这个地方如果按照参考的搞法，会丢弃太多example
+//                find_times[k] = MAXFINDTIMES+8;
+//                augmented_ground_truth_faces[k] = -1; //这种情况等于把这个训练数据抛弃了。。。
             }
         }
         
@@ -229,38 +232,58 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
             if ( fiSort[n].first < root->score_ ){
                 deleteNumber++;
                 int idx = fiSort[n].second;
-                find_times[idx] = MAXFINDTIMES;
+                bool faceFound = false;
                 
                 //接下来开始挖掘hard neg example
-                if ( augmented_ground_truth_faces[idx] == -1 ){
+                if ( augmented_ground_truth_faces[idx] == -1 && find_times[idx] < MAXFINDTIMES ){
                     BoundingBox new_box;
-                    for ( int slide_win = 0; i<images[augmented_images_index[idx]].cols/10; i+=10){
-                        new_box.start_x=slide_win;
-                        new_box.start_y=0;
-                        new_box.width=images[augmented_images_index[idx]].cols/5;
-                        new_box.height=new_box.width;
-                        new_box.center_x=new_box.start_x + new_box.width/2.0;
-                        new_box.center_y=new_box.start_y + new_box.height/2.0;
-                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[idx], augmented_bboxes[idx]);
-                        augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
-                        cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[idx], augmented_bboxes[idx]);
-                        augmented_current_shapes[idx]=ReProjection(temp2, new_box);
-                        augmented_bboxes[idx]=new_box;
-                        //cout<<"xixi";
-                        bool tmp_isface=true;
-                        float tmp_fi=0;
-                        
-                        casRegressor_->Predict(images[augmented_images_index[idx]], augmented_current_shapes[idx], new_box, tmp_isface);
+                    int start = find_times[idx];
+                    for ( int sw_x = start; sw_x<images[augmented_images_index[idx]].cols * 9 / 10; sw_x+=5){
+                        for ( int sw_y = 0; sw_y<images[augmented_images_index[idx]].rows - images[augmented_images_index[idx]].cols / 10; sw_y+=5){
+                            new_box.start_x=sw_x;
+                            new_box.start_y=sw_y;
+                            new_box.width=images[augmented_images_index[idx]].cols/10;
+                            new_box.height=new_box.width;
+                            new_box.center_x=new_box.start_x + new_box.width/2.0;
+                            new_box.center_y=new_box.start_y + new_box.height/2.0;
+                            cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[idx], augmented_bboxes[idx]);
+                            augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
+                            cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[idx], augmented_bboxes[idx]);
+                            augmented_current_shapes[idx]=ReProjection(temp2, new_box);
+                            augmented_bboxes[idx]=new_box;
 
+                            bool tmp_isface=true;
+                            float tmp_fi=0;
+                            
+                            //这个时候，自己在第stage_, landmark_index_的i树上
+                            casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
+                                                          augmented_current_shapes[idx], new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
+                            if ( tmp_isface){
+                                faceFound = true;
+                                current_fi[idx] = tmp_fi;
+                                current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
+                                find_times[idx] += sw_x;
+                                break;
+                            }
+                        }
+                        if ( faceFound ){
+                            break;
+                        }
                     }
-                    
+                    //针对hard neg很难挖掘出来的问题，这儿要不要搞个在正例附近找比较相似的负例？偏移+scale的方法
+                }
+                if ( !faceFound ){
+                    find_times[idx] = MAXFINDTIMES;
+                }
+                else{
+                    mineHardNegNumber++;
                 }
             }
             else{
                 break;
             }
         }
-        std::cout << "fi<threshold delete number:" << deleteNumber << " threshold:" << root->score_ << std::endl;
+        std::cout << "fi<threshold delete number:" << deleteNumber << " threshold:" << root->score_  <<" mine:" << mineHardNegNumber << std::endl;
         
 	}
 	/*int count = 0;
