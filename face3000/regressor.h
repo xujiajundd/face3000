@@ -96,7 +96,7 @@ public:
 	void SaveCascadeRegressor(std::string ModelName);
     std::vector<cv::Rect> detectMultiScale(cv::Mat_<uchar>& image,
                                                              std::vector<cv::Mat_<float>>& shapes, float scaleFactor, int minNeighbors=3, int flags=0,
-                                                             cv::Size minSize=cv::Size(50,50) );
+                                                             int minSize=50 );
 };
 
 #endif

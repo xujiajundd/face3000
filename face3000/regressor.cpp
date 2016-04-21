@@ -429,37 +429,7 @@ cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
         }
 		current_shape = shape_increaments + ProjectShape(current_shape, bbox);
 		current_shape = ReProjection(current_shape, bbox);
-        
-//        for (int ii = 0; ii < current_shape.rows; ii++){
-//            cv::circle(image, cv::Point2f(current_shape(ii, 0), current_shape(ii, 1)), 2, (255));
-//            if ( ii > 0 && ii != 17 && ii != 22 && ii != 27 && ii!= 36 && ii != 42 && ii!= 48 )
-//                cv::line(image, cv::Point2f(current_shape(ii-1, 0), current_shape(ii-1, 1)), cv::Point2f(current_shape(ii, 0), current_shape(ii, 1)), cvScalar(30*i,255,0));
-//        }
-//        cv::imshow("show image", image);
-//        cv::waitKey(0);
-        
-//        cv::Mat_<float> temp = current_shape.rowRange(36, 41)-current_shape.rowRange(42, 47);
-//        float x =mean(temp.col(0))[0];
-//        float y = mean(temp.col(1))[1];
-//        float interocular_distance = sqrt(x*x+y*y);
-//        float delta = norm(shape_increaments)/(current_shape.rows*interocular_distance * params_.local_radius_by_stage_[i]);
-//        stage_delta_.push_back(delta);
 	}
-    
-    //最小二乘法算出斜率，方差等
-//    float xiyi, yy, xi2;
-//    for ( int i=0; i<params_.predict_regressor_stages_; i++ ){
-//        xiyi += i*stage_delta_[i];
-//        yy += stage_delta_[i];
-//    }
-//    xi2 = 30.0; yy = yy / params_.predict_regressor_stages_;
-//    float b = ( xiyi - params_.predict_regressor_stages_ * 2 * yy ) / (30 - params_.predict_regressor_stages_ * 4);
-//    float a = yy - b * 2;
-//    float c;
-//    for ( int i=0; i<params_.predict_regressor_stages_; i++){
-//        c += ( stage_delta_[i] - a - b*i ) * ( stage_delta_[i] - a - b*i );
-//    }
-//    std::cout << a << " " << b << " " << c << std::endl;
 
     cv::Mat_<float> res = current_shape;
     
@@ -483,9 +453,62 @@ cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
 
 std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
                                                          std::vector<cv::Mat_<float>>& shapes, float scaleFactor, int minNeighbors, int flags,
-                                                         cv::Size minSize){
+                                                         int minSize){
     std::vector<cv::Rect> faces;
-    
+    float shuffle = 0.15;
+    int order = flags | CASCADE_FLAG_SEARCH_MAX_TO_MIN;
+    int biggest = flags | CASCADE_FLAG_BIGGEST_ONLY;
+    int track_mode = flags | CASCADE_FLAG_TRACK_MODE;
+    int currentSize;
+
+    int faceFound = 0;
+    int nonface = 0;
+    if ( order == CASCADE_FLAG_SEARCH_MAX_TO_MIN ){
+        currentSize = std::min(image.cols, image.rows);
+    }
+    else{
+        currentSize = minSize;
+    }
+
+    while ( currentSize >= minSize && currentSize <= std::min(image.cols, image.rows)){
+        for ( int i=0; i<image.cols-currentSize; i+= currentSize*shuffle){
+            for ( int j=0; j<image.rows-currentSize; j+=currentSize*shuffle){
+                BoundingBox box;
+                box.start_x = i;
+                box.start_y = j;
+                box.width = currentSize;
+                box.height = currentSize;
+                box.center_x = box.start_x + box.width/2.0;
+                box.center_y = box.start_y + box.width/2.0;
+                bool is_face = true;
+                cv::Mat_<float> current_shape = ReProjection(params_.mean_shape_, box);
+                float score = 0;
+                cv::Mat_<float> res = Predict(image, current_shape, box, is_face, score);
+                if ( is_face){
+                    faceFound++;
+                    //                    std::cout << "score:" << score << std::endl;
+                    //                    cv::Mat_<uchar> img = image.clone();
+                    //                    cv::Rect rect;
+                    //                    rect.x = box.start_x;
+                    //                    rect.y = box.start_y;
+                    //                    rect.width = box.width;
+                    //                    rect.height = box.height;
+                    //                    cv::rectangle(img, rect, (255), 1);
+                    //                    DrawPredictedImage(img, res);
+                }
+                else{
+                    nonface++;
+                }
+            }
+        }
+        
+        if ( order == CASCADE_FLAG_SEARCH_MAX_TO_MIN ){
+            currentSize /= scaleFactor;
+        }
+        else{
+            currentSize *= scaleFactor;
+        }
+    }
     
     return faces;
 }
@@ -750,7 +773,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 score += node->score_;
                 if ( score < rd_forests_[j].trees_[k]->score_ ){
                     is_face = false;
-                    //std::cout <<"stage:"<<stage_ << "j=" << j << " k=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
+                    //std::cout <<"stage:"<<stage_ << "lmark=" << j << " tree=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
                     return tmp_binary_features;
                 }
             }
@@ -875,7 +898,7 @@ cv::Mat_<float> Regressor::Predict(cv::Mat_<uchar>& image,
 
         for (int ii = 0; ii < params_.groups_[g].size(); ii++){
             int i = params_.groups_[g][ii];
-            if ( i < 0 || !params_.predict_group_.count(i) ) continue;
+            if ( i < 0 || !params_.predict_group_.count(i) ) continue; //TODO，这个地方可能是不对的，每个点都得回归，否则下一stage就不对了。。。
     //		predict_result(i, 0) = predict(linear_model_x_[i], binary_features);
     //        predict_result(i, 1) = predict(linear_model_y_[i], binary_features);
             
@@ -893,6 +916,18 @@ cv::Mat_<float> Regressor::Predict(cv::Mat_<uchar>& image,
     //        predict_result(i,1) = resulty;
 
         }
+        //performance test
+//        int idx;
+//        const feature_node *lx=binary_features;
+//        for(; (idx=lx->index)!=-1 ; lx++){
+//            idx--;
+//            for (int ii = 0; ii < params_.groups_[g].size(); ii++){
+//                int i = params_.groups_[g][ii];
+//
+//            }
+//        }
+
+
      //   gettimeofday(&t2, NULL);
      //   std::cout << "linear " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << std::endl;
      //   delete[] binary_features;
