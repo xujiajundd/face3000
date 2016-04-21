@@ -15,13 +15,14 @@ public:
     std::vector<struct model*> linear_model_y_;
 
     struct feature_node* tmp_binary_features;
-    cv::Mat_<uchar> tmp_image;
-    cv::Mat_<float> tmp_current_shape;
-    BoundingBox tmp_bbox;
-    cv::Mat_<float> tmp_rotation;
-    float tmp_scale;
-    int leaf_index_count[68]; //modi by xujj
-    int feature_node_index[68];
+
+//    cv::Mat_<uchar> tmp_image;
+//    cv::Mat_<float> tmp_current_shape;
+//    BoundingBox tmp_bbox;
+//    cv::Mat_<float> tmp_rotation;
+//    float tmp_scale;
+//    int leaf_index_count[68]; //modi by xujj
+//    int feature_node_index[68];
     // std::atomic<int> cur_landmark {0};
 
 public:
@@ -41,15 +42,15 @@ public:
 		const int stage,
         const int pos_num,
         CascadeRegressor *casRegressor);
-    struct feature_node* GetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, int groupNum, float &score, bool &is_face);
-    struct feature_node* NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, int groupNum, float &score, bool &is_face, int stage, int currentStage, int landmark, int tree, bool &stop);
+    struct feature_node* GetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face);
+    struct feature_node* NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face, int stage, int currentStage, int landmark, int tree, bool &stop);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape,
 		BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face);
     cv::Mat_<float> NegMinePredict(cv::Mat_<uchar>& image,
                                               cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face, int stage, int currentStage, int landmark, int tree);
 	void LoadRegressor(std::string ModelName, int stage);
 	void SaveRegressor(std::string ModelName, int stage);
-    void ConstructLeafCount();
+//    void ConstructLeafCount();
     // struct feature_node* GetGlobalBinaryFeaturesThread(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale);
     struct feature_node* GetGlobalBinaryFeaturesMP(cv::Mat_<uchar>& image,
         cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale);
@@ -68,15 +69,8 @@ public:
 	Parameters params_;
 	std::vector<cv::Mat_<uchar> > images_;
 	std::vector<cv::Mat_<float> > ground_truth_shapes_;
-
-    //std::vector<struct model*> linear_model_x_;
-    //std::vector<struct model*> linear_model_y_;
-    //std::vector<cv::Mat_<float> > current_shapes_;
 	std::vector<BoundingBox> bboxes_;
-	//cv::Mat_<float> mean_shape_;
 	std::vector<Regressor> regressors_;
-//    std::vector<float> stage_delta_;
-//    float alignment_confidence_;
     cv::Mat_<float> lastRes;
     int antiJitter;
 public:
@@ -84,7 +78,6 @@ public:
 	void Train(std::vector<cv::Mat_<uchar> >& images,
 		std::vector<cv::Mat_<float> >& ground_truth_shapes,
         std::vector<int> ground_truth_faces,
-		//const std::vector<cv::Mat_<float> >& current_shapes,
 		std::vector<BoundingBox>& bboxes,
 		Parameters& params,
         int pos_num);

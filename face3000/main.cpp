@@ -454,64 +454,55 @@ void Train(const char* ModelName){
     params.trees_num_per_forest_ = 12;
     params.initial_guess_ = 1;
     
-    params.group_num_ = 6;
-    std::vector<int> group1, group2, group3, group4, group5, group6, group7;
-    
-    for ( int i=17; i<27; i++ ) group2.push_back(i);
-    group2.push_back(-36);
-    group2.push_back(-45);
-    group2.push_back(-39);
-    group2.push_back(-42);
-    params.groups_.push_back(group2);
-    
-    for ( int i=27; i<36; i++ ) group3.push_back(i);
-    group3.push_back(-39);
-    group3.push_back(-42);
-//    group3.push_back(-21);
-//    group3.push_back(-22);
-    group3.push_back(-48);
-    group3.push_back(-54);
-    group3.push_back(-2);
-    group3.push_back(-14);
-    params.groups_.push_back(group3);
-    
-    for ( int i=36; i<48; i++) group4.push_back(i);
-    params.groups_.push_back(group4);
-    
-    for ( int i=48; i<55; i++) group5.push_back(i);
-    for ( int i=60; i<65; i++) group5.push_back(i);
-    params.groups_.push_back(group5);
-    
-    for ( int i= 55; i<60; i++) group6.push_back(i);
-    for ( int i= 65; i<68; i++) group6.push_back(i);
-    group6.push_back(-48);
-//    group6.push_back(-60);
-    group6.push_back(-54);
-//    group6.push_back(-64);
-    params.groups_.push_back(group6);
-    
-//    group7.push_back(68);
-//    group7.push_back(69);
-//    params.groups_.push_back(group7);
-    
-    //调整数序，让face内部的点先计算
-    for ( int i=0; i<17; i++ ) group1.push_back(i);
-    //    group1.push_back(-36);
-    //    group1.push_back(-45);
-    params.groups_.push_back(group1);
-    
-//    for ( int i = 1; i < 7; i++ ){
-//        char buffer[50];
-//        sprintf(buffer, "%s_d%d_n%d", ModelName, i, 1<<(6-i));
-//        params.tree_depth_ = i;
-//        params.trees_num_per_forest_ = 1<<(6-i);
-        CascadeRegressor cas_reg;
-        cas_reg.Train(images, ground_truth_shapes, ground_truth_faces, bboxes, params, pos_num);
-        cas_reg.SaveCascadeRegressor(ModelName);
-        
-//        cout << buffer << endl;
-//        cout << "***********************************************" << endl << endl;
-//    }
+//    params.group_num_ = 6;
+//    std::vector<int> group1, group2, group3, group4, group5, group6, group7;
+//    
+//    for ( int i=17; i<27; i++ ) group2.push_back(i);
+//    group2.push_back(-36);
+//    group2.push_back(-45);
+//    group2.push_back(-39);
+//    group2.push_back(-42);
+//    params.groups_.push_back(group2);
+//    
+//    for ( int i=27; i<36; i++ ) group3.push_back(i);
+//    group3.push_back(-39);
+//    group3.push_back(-42);
+////    group3.push_back(-21);
+////    group3.push_back(-22);
+//    group3.push_back(-48);
+//    group3.push_back(-54);
+//    group3.push_back(-2);
+//    group3.push_back(-14);
+//    params.groups_.push_back(group3);
+//    
+//    for ( int i=36; i<48; i++) group4.push_back(i);
+//    params.groups_.push_back(group4);
+//    
+//    for ( int i=48; i<55; i++) group5.push_back(i);
+//    for ( int i=60; i<65; i++) group5.push_back(i);
+//    params.groups_.push_back(group5);
+//    
+//    for ( int i= 55; i<60; i++) group6.push_back(i);
+//    for ( int i= 65; i<68; i++) group6.push_back(i);
+//    group6.push_back(-48);
+////    group6.push_back(-60);
+//    group6.push_back(-54);
+////    group6.push_back(-64);
+//    params.groups_.push_back(group6);
+//    
+////    group7.push_back(68);
+////    group7.push_back(69);
+////    params.groups_.push_back(group7);
+//
+//    //调整数序，让face内部的点先计算
+//    for ( int i=0; i<17; i++ ) group1.push_back(i);
+//    //    group1.push_back(-36);
+//    //    group1.push_back(-45);
+//    params.groups_.push_back(group1);
+
+    CascadeRegressor cas_reg;
+    cas_reg.Train(images, ground_truth_shapes, ground_truth_faces, bboxes, params, pos_num);
+    cas_reg.SaveCascadeRegressor(ModelName);
     
 	return;
 }

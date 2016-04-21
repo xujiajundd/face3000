@@ -201,17 +201,7 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
 	std::cout << "train forest of stage:" << stage_ << std::endl;
 	rd_forests_.resize(params_.landmarks_num_per_face_);
 //    #pragma omp parallel for
-    
-    std::vector<int> landmarks;
-    for (int g=0; g<params_.group_num_; g++){
-        for ( int j=0; j<params_.groups_[g].size(); j++ ){
-            if ( params_.groups_[g][j] >= 0 ){
-                landmarks.push_back(params_.groups_[g][j]);
-            }
-        }
-    }
-	for (int ii = 0; ii < landmarks.size(); ++ii){
-        int i = landmarks[ii];
+	for (int i = 0; i < params_.landmarks_num_per_face_; ++i){
         std::cout << "landmark: " << i << std::endl;
 		rd_forests_[i] = RandomForest(params_, i, stage_, regression_targets, casRegressor);
         rd_forests_[i].TrainForest(
@@ -220,140 +210,124 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
 			rotations_, scales_);
 	}
 	std::cout << "Get Global Binary Features" << std::endl;
+
+    struct feature_node **global_binary_features;
+    global_binary_features = new struct feature_node* [augmented_current_shapes.size()];
+
+    for(int i = 0; i < augmented_current_shapes.size(); ++i){
+        global_binary_features[i] = new feature_node[params_.trees_num_per_forest_*params_.landmarks_num_per_face_+1];
+    }
+    int num_feature = 0;
+    for (int i=0; i < params_.landmarks_num_per_face_; ++i){
+        num_feature += rd_forests_[i].all_leaf_nodes_;
+    }
+    #pragma omp parallel for
+    for (int i = 0; i < augmented_current_shapes.size(); ++i){
+        int index = 1;
+        int ind = 0;
+        const cv::Mat_<float>& rotation = rotations_[i];
+        const float scale = scales_[i];
+        const cv::Mat_<uchar>& image = images[augmented_images_index[i]];
+        const BoundingBox& bbox = augmented_bboxes[i];
+        const cv::Mat_<float>& current_shape = augmented_current_shapes[i];
+        for (int j = 0; j < params_.landmarks_num_per_face_; ++j){
+            for (int k = 0; k < params_.trees_num_per_forest_; ++k){
+
+                Node* node = rd_forests_[j].trees_[k];
+                while (!node->is_leaf_){
+                    FeatureLocations& pos = node->feature_locations_;
+                    float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
+                    float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
+                    delta_x = scale*delta_x*bbox.width / 2.0;
+                    delta_y = scale*delta_y*bbox.height / 2.0;
+                    int real_x = delta_x + current_shape(pos.lmark1, 0);
+                    int real_y = delta_y + current_shape(pos.lmark1, 1);
+                    real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+                    real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
+                    int tmp = (int)image(real_y, real_x); //real_y at first
+
+                    delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
+                    delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
+                    delta_x = scale*delta_x*bbox.width / 2.0;
+                    delta_y = scale*delta_y*bbox.height / 2.0;
+                    real_x = delta_x + current_shape(pos.lmark2, 0);
+                    real_y = delta_y + current_shape(pos.lmark2, 1);
+                    real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+                    real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
+                    if ((tmp - (int)image(real_y, real_x)) < node->threshold_){
+                        node = node->left_child_;// go left
+                    }
+                    else{
+                        node = node->right_child_;// go right
+                    }
+                }
+                global_binary_features[i][ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k, images[augmented_images_index[i]], augmented_bboxes[i], augmented_current_shapes[i], rotations_[i], scales_[i]);
+                global_binary_features[i][ind].value = 1.0;
+                ind++;
+                //std::cout << global_binary_features[i][ind].index << " ";
+            }
+            index += rd_forests_[j].all_leaf_nodes_;
+        }
+        if (i%500 == 0 && i > 0){
+//                std::cout << "extracted " << i << " images" << std::endl;
+        }
+        global_binary_features[i][params_.trees_num_per_forest_*params_.landmarks_num_per_face_].index = -1;
+        global_binary_features[i][params_.trees_num_per_forest_*params_.landmarks_num_per_face_].value = -1.0;
+    }
+    std::cout << "\n";
+
+    struct problem* prob = new struct problem;
+    prob->l = pos_num; //augmented_current_shapes.size();
+    prob->n = num_feature;
+    prob->x = global_binary_features;
+    prob->bias = -1;
+
+    struct parameter* regression_params = new struct parameter;
+    regression_params-> solver_type = L2R_L2LOSS_SVR_DUAL;
+    regression_params->C = 1.0/pos_num; //augmented_current_shapes.size();
+    regression_params->p = 0;
+
+    std::cout << "Global Regression of stage " << stage_ << std::endl;
     linear_model_x_.resize(params_.landmarks_num_per_face_);
     linear_model_y_.resize(params_.landmarks_num_per_face_);
-    
-    struct feature_node ***global_binary_features;
-    global_binary_features = new struct feature_node** [params_.group_num_];
-    
-    for (int g=0; g < params_.group_num_; g++){ //分组来处理部分全局关系
-        global_binary_features[g] = new struct feature_node* [augmented_current_shapes.size()];
-        for(int i = 0; i < augmented_current_shapes.size(); ++i){
-            global_binary_features[g][i] = new feature_node[params_.trees_num_per_forest_*params_.groups_[g].size()+1];
-        }
-        int num_feature = 0;
-        for (int i=0; i < params_.groups_[g].size(); ++i){
-            num_feature += rd_forests_[abs(params_.groups_[g][i])].all_leaf_nodes_;
-        }
-        #pragma omp parallel for
-        for (int i = 0; i < augmented_current_shapes.size(); ++i){
-            int index = 1;
-            int ind = 0;
-            const cv::Mat_<float>& rotation = rotations_[i];
-            const float scale = scales_[i];
-            const cv::Mat_<uchar>& image = images[augmented_images_index[i]];
-            const BoundingBox& bbox = augmented_bboxes[i];
-            const cv::Mat_<float>& current_shape = augmented_current_shapes[i];
-            for (int jj = 0; jj < params_.groups_[g].size(); ++jj){
-                int j = abs(params_.groups_[g][jj]);
-                for (int k = 0; k < params_.trees_num_per_forest_; ++k){
-                    Node* node = rd_forests_[j].trees_[k];
-                    while (!node->is_leaf_){
-                        FeatureLocations& pos = node->feature_locations_;
-                        float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
-                        float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
-                        delta_x = scale*delta_x*bbox.width / 2.0;
-                        delta_y = scale*delta_y*bbox.height / 2.0;
-//                        int real_x = delta_x + current_shape(j, 0);
-//                        int real_y = delta_y + current_shape(j, 1);
-                        int real_x = delta_x + current_shape(pos.lmark1, 0);
-                        int real_y = delta_y + current_shape(pos.lmark1, 1);
-                        real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                        real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                        int tmp = (int)image(real_y, real_x); //real_y at first
-
-                        delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
-                        delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
-                        delta_x = scale*delta_x*bbox.width / 2.0;
-                        delta_y = scale*delta_y*bbox.height / 2.0;
-                        real_x = delta_x + current_shape(pos.lmark2, 0);
-                        real_y = delta_y + current_shape(pos.lmark2, 1);
-                        real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                        real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                        if ((tmp - (int)image(real_y, real_x)) < node->threshold_){
-                            node = node->left_child_;// go left
-                        }
-                        else{
-                            node = node->right_child_;// go right
-                        }
-                    }
-                    global_binary_features[g][i][ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k, images[augmented_images_index[i]], augmented_bboxes[i], augmented_current_shapes[i], rotations_[i], scales_[i]);
-                    global_binary_features[g][i][ind].value = 1.0;
-                    ind++;
-                    //std::cout << global_binary_features[i][ind].index << " ";
-                }
-                index += rd_forests_[j].all_leaf_nodes_;
-            }
-            if (i%500 == 0 && i > 0){
-//                std::cout << "extracted " << i << " images" << std::endl;
-            }
-            global_binary_features[g][i][params_.trees_num_per_forest_*params_.groups_[g].size()].index = -1;
-            global_binary_features[g][i][params_.trees_num_per_forest_*params_.groups_[g].size()].value = -1.0;
-        }
-        std::cout << "\n";
-
-        //TODO:这里回归的时候，不要回归negtive face实例！
-        //重新生成回归用的binary feature和targets
-        struct problem* prob = new struct problem;
-        prob->l = pos_num; //augmented_current_shapes.size();
-        prob->n = num_feature;
-        prob->x = global_binary_features[g];
-        prob->bias = -1;
-
-        struct parameter* regression_params = new struct parameter;
-        regression_params-> solver_type = L2R_L2LOSS_SVR_DUAL;
-        regression_params->C = 1.0/pos_num; //augmented_current_shapes.size();
-        regression_params->p = 0;
-
-        std::cout << "Global Regression of stage " << stage_ << std::endl;
-
-        float** targets = new float*[params_.groups_[g].size()];
-        for (int i = 0; i < params_.groups_[g].size(); ++i){
-            targets[i] = new float[pos_num];
-        }
-        #pragma omp parallel for
-        for (int ii = 0; ii < params_.groups_[g].size(); ++ii){
-            int i = params_.groups_[g][ii];
-            if ( i < 0 ) continue;
-            std::cout << "regress landmark " << i << std::endl;
-            for(int j = 0; j< pos_num;j++){
-                targets[ii][j] = regression_targets[j](i, 0);
-            }
-            prob->y = targets[ii];
-            check_parameter(prob, regression_params);
-            struct model* regression_model = train(prob, regression_params);
-            linear_model_x_[i] = regression_model;
-            for(int j = 0; j < pos_num; j++){
-                targets[ii][j] = regression_targets[j](i, 1);
-            }
-            prob->y = targets[ii];
-            check_parameter(prob, regression_params);
-            regression_model = train(prob, regression_params);
-            linear_model_y_[i] = regression_model;
-
-        }
-        for (int i = 0; i < params_.groups_[g].size(); ++i){
-            delete[] targets[i];// = new float[augmented_current_shapes.size()];
-        }
-        delete[] targets;
+    float** targets = new float*[params_.landmarks_num_per_face_];
+    for (int i = 0; i < params_.landmarks_num_per_face_; ++i){
+        targets[i] = new float[pos_num];
     }
+    #pragma omp parallel for
+    for (int i = 0; i < params_.landmarks_num_per_face_; ++i){
 
+        std::cout << "regress landmark " << i << std::endl;
+        for(int j = 0; j< pos_num;j++){
+            targets[i][j] = regression_targets[j](i, 0);
+        }
+        prob->y = targets[i];
+        check_parameter(prob, regression_params);
+        struct model* regression_model = train(prob, regression_params);
+        linear_model_x_[i] = regression_model;
+        for(int j = 0; j < pos_num; j++){
+            targets[i][j] = regression_targets[j](i, 1);
+        }
+        prob->y = targets[i];
+        check_parameter(prob, regression_params);
+        regression_model = train(prob, regression_params);
+        linear_model_y_[i] = regression_model;
+
+    }
+    for (int i = 0; i < params_.landmarks_num_per_face_; ++i){
+        delete[] targets[i];// = new float[augmented_current_shapes.size()];
+    }
+    delete[] targets;
 	std::cout << "predict regression targets" << std::endl;
 
     std::vector<cv::Mat_<float> > predict_regression_targets;
     predict_regression_targets.resize(augmented_current_shapes.size());
-    
     #pragma omp parallel for
-    //TODO：如果是negtive sample，直接返回0或? 者允许negtive计算，但在算误差时去掉
     for (int i = 0; i < augmented_current_shapes.size(); i++){
         cv::Mat_<float> a(params_.landmarks_num_per_face_, 2, 0.0);
-        for (int g = 0; g < params_.group_num_; g++){
-            for (int jj = 0; jj < params_.groups_[g].size(); jj++){
-                int j = params_.groups_[g][jj];
-                if ( j < 0 ) continue;
-                a(j, 0) = predict(linear_model_x_[j], global_binary_features[g][i]);
-                a(j, 1) = predict(linear_model_y_[j], global_binary_features[g][i]);
-            }
+        for (int j = 0; j < params_.landmarks_num_per_face_; j++){
+            a(j, 0) = predict(linear_model_x_[j], global_binary_features[i]);
+            a(j, 1) = predict(linear_model_y_[j], global_binary_features[i]);
         }
         cv::Mat_<float> rot;
         cv::transpose(rotations_[i], rot);
@@ -364,11 +338,9 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
     }
     std::cout << "\n";
 
-    for (int g = 0; g < params_.group_num_; g++){
-        for (int i = 0; i< augmented_current_shapes.size(); i++){
-            delete[] global_binary_features[g][i];
-        }
-        delete[] global_binary_features[g];
+
+    for (int i = 0; i< augmented_current_shapes.size(); i++){
+        delete[] global_binary_features[i];
     }
     delete[] global_binary_features;
 
@@ -708,7 +680,7 @@ void Regressor::GetFeaThread(){
 //}
 
 struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
-    cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, int groupNum, float &score, bool &is_face){
+    cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face){
     int index = 1;
     if ( tmp_binary_features == NULL ){
 //        struct feature_node* binary_features = new feature_node[params_.trees_num_per_forest_*params_.groups_[groupNum].size()+1]; //这条性能可能可以优化
@@ -716,9 +688,8 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
     }
     int ind = 0;
     float ss = scale * bbox.width / 2.0; //add by xujj
-    for (int jj = 0; jj < params_.groups_[groupNum].size(); ++jj)
+    for (int j = 0; j < params_.landmarks_num_per_face_; ++j)
     {
-        int j = abs(params_.groups_[groupNum][jj]);
         for (int k = 0; k < params_.trees_num_per_forest_; ++k)
         {
             Node* node = rd_forests_[j].trees_[k];
@@ -769,13 +740,11 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                     }
 //                }
             }
-            if ( params_.groups_[groupNum][jj] >= 0 ){ //如果是负值节点，只是为了训练相关性，所以不做face score累加和判断。
-                score += node->score_;
-                if ( score < rd_forests_[j].trees_[k]->score_ ){
-                    is_face = false;
-                    //std::cout <<"stage:"<<stage_ << "lmark=" << j << " tree=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
-                    return tmp_binary_features;
-                }
+            score += node->score_;
+            if ( score < rd_forests_[j].trees_[k]->score_ ){
+                is_face = false;
+                //std::cout <<"stage:"<<stage_ << "lmark=" << j << " tree=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
+                return tmp_binary_features;
             }
             //int ind = j*params_.trees_num_per_forest_ + k;
             //int ind = feature_node_index[j] + k;
@@ -790,13 +759,13 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
     }
     //std::cout << "\n";
     //std::cout << index << ":" << params_.trees_num_per_forest_*params_.landmarks_num_per_face_ << std::endl;
-    tmp_binary_features[params_.trees_num_per_forest_*params_.groups_[groupNum].size()].index = -1;
-    tmp_binary_features[params_.trees_num_per_forest_*params_.groups_[groupNum].size()].value = -1.0;
+    tmp_binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].index = -1;
+    tmp_binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].value = -1.0;
     return tmp_binary_features;
 }
 
 struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
-                                                        cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, int groupNum, float &score, bool &is_face, int stage, int currentStage, int landmark, int tree, bool &stop){
+                                                        cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face, int stage, int currentStage, int landmark, int tree, bool &stop){
     int index = 1;
     if ( tmp_binary_features == NULL ){
         //        struct feature_node* binary_features = new feature_node[params_.trees_num_per_forest_*params_.groups_[groupNum].size()+1]; //这条性能可能可以优化
@@ -804,10 +773,8 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
     }
     int ind = 0;
     float ss = scale * bbox.width / 2.0; //add by xujj
-    for (int jj = 0; jj < params_.groups_[groupNum].size(); ++jj)
+    for (int j = 0; j < params_.landmarks_num_per_face_; ++j)
     {
-        int j = abs(params_.groups_[groupNum][jj]);
-        if ( stage == currentStage && params_.groups_[groupNum][jj] < 0 ) continue; //如果就在本stage，负的rf其实还没有生成，根据trainning时的顺序，也不用去计算。
         for (int k = 0; k < params_.trees_num_per_forest_; ++k)
         {
             Node* node = rd_forests_[j].trees_[k];
@@ -838,14 +805,13 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
                     node = node->right_child_;// go right
                 }
             }
-            if ( params_.groups_[groupNum][jj] >= 0 ){ //如果是负值节点，只是为了训练相关性，所以不做face score累加和判断。
-                score += node->score_;
-                if ( score < rd_forests_[j].trees_[k]->score_ ){
-                    is_face = false;
-                    //std::cout <<"stage:"<<stage_ << "j=" << j << " k=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
-                    return tmp_binary_features;
-                }
+            score += node->score_;
+            if ( score < rd_forests_[j].trees_[k]->score_ ){
+                is_face = false;
+                //std::cout <<"stage:"<<stage_ << "j=" << j << " k=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
+                return tmp_binary_features;
             }
+
             //int ind = j*params_.trees_num_per_forest_ + k;
             //int ind = feature_node_index[j] + k;
             //binary_features[ind].index = leaf_index_count[j] + node->leaf_identity;
@@ -863,8 +829,8 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
     }
     //std::cout << "\n";
     //std::cout << index << ":" << params_.trees_num_per_forest_*params_.landmarks_num_per_face_ << std::endl;
-    tmp_binary_features[params_.trees_num_per_forest_*params_.groups_[groupNum].size()].index = -1;
-    tmp_binary_features[params_.trees_num_per_forest_*params_.groups_[groupNum].size()].value = -1.0;
+    tmp_binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].index = -1;
+    tmp_binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].value = -1.0;
     return tmp_binary_features;
 }
 
@@ -872,50 +838,28 @@ cv::Mat_<float> Regressor::Predict(cv::Mat_<uchar>& image,
 	cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face){
 
 	cv::Mat_<float> predict_result(current_shape.rows, current_shape.cols, 0.0);
-//    cv::Mat predict_result(current_shape.rows, current_shape.cols, CV_32F, 0.0);
-    
-    //struct timeval t1, t2;
 
-    for (int g=0; g<params_.group_num_; g++ ){
-    //    gettimeofday(&t1, NULL);
-        //feature_node* binary_features = GetGlobalBinaryFeaturesThread(image, current_shape, bbox, rotation, scale);
-        feature_node* binary_features = GetGlobalBinaryFeatures(image, current_shape, bbox, rotation, scale, g, score, is_face);
-        if ( !is_face ){
-            return predict_result;
+    feature_node* binary_features = GetGlobalBinaryFeatures(image, current_shape, bbox, rotation, scale, score, is_face);
+    if ( !is_face ){
+        return predict_result;
+    }
+
+    for (int i = 0; i < params_.landmarks_num_per_face_; i++){
+//		predict_result(i, 0) = predict(linear_model_x_[i], binary_features);
+//        predict_result(i, 1) = predict(linear_model_y_[i], binary_features);
+        
+        int idx;
+        const feature_node *lx=binary_features;
+        float *wx =linear_model_x_[i]->w;
+        float *wy = linear_model_y_[i]->w;
+//        float resultx = 0.0, resulty = 0.0;
+        for(; (idx=lx->index)!=-1 && idx < linear_model_x_[i]->nr_feature; lx++){
+            idx--;
+            predict_result(i,0) += wx[idx]; 
+            predict_result(i,1) += wy[idx];
         }
-    //    gettimeofday(&t2, NULL);
-    //    std::cout << "getBinaryFeatures " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << std::endl;
-    //    feature_node* tmp_binary_features = GetGlobalBinaryFeaturesMP(image, current_shape, bbox, rotation, scale);
-    //    for (int i = 0; i < params_.trees_num_per_forest_*params_.landmarks_num_per_face_; i++){
-    //        std::cout << binary_features[i].index << " ";
-    //    }
-    //    std::cout << "ha\n";
-    //    for (int i = 0; i < params_.trees_num_per_forest_*params_.landmarks_num_per_face_; i++){
-    //        std::cout << tmp_binary_features[i].index << " ";
-    //    }
-    //    std::cout << "ha2\n";
-    //    gettimeofday(&t1, NULL);
 
-        for (int ii = 0; ii < params_.groups_[g].size(); ii++){
-            int i = params_.groups_[g][ii];
-            if ( i < 0 || !params_.predict_group_.count(i) ) continue; //TODO，这个地方可能是不对的，每个点都得回归，否则下一stage就不对了。。。
-    //		predict_result(i, 0) = predict(linear_model_x_[i], binary_features);
-    //        predict_result(i, 1) = predict(linear_model_y_[i], binary_features);
-            
-            int idx;
-            const feature_node *lx=binary_features;
-            float *wx =linear_model_x_[i]->w;
-            float *wy = linear_model_y_[i]->w;
-    //        float resultx = 0.0, resulty = 0.0;
-            for(; (idx=lx->index)!=-1 && idx < linear_model_x_[i]->nr_feature; lx++){
-                idx--;
-                predict_result(i,0) += wx[idx]; 
-                predict_result(i,1) += wy[idx];
-            }
-    //        predict_result(i,0) = resultx;
-    //        predict_result(i,1) = resulty;
-
-        }
+    }
         //performance test
 //        int idx;
 //        const feature_node *lx=binary_features;
@@ -931,7 +875,6 @@ cv::Mat_<float> Regressor::Predict(cv::Mat_<uchar>& image,
      //   gettimeofday(&t2, NULL);
      //   std::cout << "linear " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << std::endl;
      //   delete[] binary_features;
-    }
 
 	cv::Mat_<float> rot;
 	cv::transpose(rotation, rot);
@@ -944,21 +887,18 @@ cv::Mat_<float> Regressor::NegMinePredict(cv::Mat_<uchar>& image,
                                    cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face,  int stage, int currentStage, int landmark, int tree){
     
     cv::Mat_<float> predict_result(current_shape.rows, current_shape.cols, 0.0);
-    
-    for (int g=0; g<params_.group_num_; g++ ){
+
         bool stop = false;
-        feature_node* binary_features = NegMineGetGlobalBinaryFeatures(image, current_shape, bbox, rotation, scale, g, score, is_face, stage, currentStage, landmark, tree, stop);
+        feature_node* binary_features = NegMineGetGlobalBinaryFeatures(image, current_shape, bbox, rotation, scale, score, is_face, stage, currentStage, landmark, tree, stop);
         if ( !is_face ){
             return predict_result;
         }
         if ( stop ){
             return predict_result;
         }
-        if ( stage == currentStage ) continue; //如果已经测试到当前的stage，不用做shape回归了。
+        if ( stage == currentStage ) return predict_result; //如果已经测试到当前的stage，不用做shape回归了。
         
-        for (int ii = 0; ii < params_.groups_[g].size(); ii++){
-            int i = params_.groups_[g][ii];
-            if ( i < 0 || !params_.predict_group_.count(i) ) continue;
+        for (int i = 0; i < params_.landmarks_num_per_face_; i++){
             //		predict_result(i, 0) = predict(linear_model_x_[i], binary_features);
             //        predict_result(i, 1) = predict(linear_model_y_[i], binary_features);
             
@@ -979,7 +919,6 @@ cv::Mat_<float> Regressor::NegMinePredict(cv::Mat_<uchar>& image,
         //   gettimeofday(&t2, NULL);
         //   std::cout << "linear " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << std::endl;
         //   delete[] binary_features;
-    }
     
     cv::Mat_<float> rot;
     cv::transpose(rotation, rot);
@@ -997,8 +936,7 @@ void CascadeRegressor::LoadCascadeRegressor(std::string ModelName){
 		>> params_.regressor_stages_
 		>> params_.tree_depth_
 		>> params_.trees_num_per_forest_
-		>> params_.initial_guess_
-        >> params_.group_num_;
+		>> params_.initial_guess_;
 
 	std::vector<float> local_radius_by_stage;
 	local_radius_by_stage.resize(params_.regressor_stages_);
@@ -1012,33 +950,16 @@ void CascadeRegressor::LoadCascadeRegressor(std::string ModelName){
 		fin >> mean_shape(i, 0) >> mean_shape(i, 1);
 	}
 	params_.mean_shape_ = mean_shape;
-    
-    std::vector<std::vector<int>> groups;
-    groups.resize(params_.group_num_);
-    for (int i=0; i<params_.group_num_; i++ ){
-        std::vector<int> group;
-        int groupSize;
-        fin >> groupSize;
-        group.resize(groupSize);
-        for ( int j=0; j<groupSize; j++){
-            fin >> group[j];
-        }
-        groups[i] = group;
-    }
-    params_.groups_ = groups;
+
     fin.close();
     
     params_.predict_regressor_stages_ = params_.regressor_stages_;
-    params_.predict_group_.clear();
-    for ( int i=0; i<params_.landmarks_num_per_face_; i++ ){
-        params_.predict_group_.insert(i);
-    }
     
 	regressors_.resize(params_.regressor_stages_);
 	for (int i = 0; i < params_.regressor_stages_; i++){
         regressors_[i].params_ = params_;
 		regressors_[i].LoadRegressor(ModelName, i);
-        regressors_[i].ConstructLeafCount();
+//        regressors_[i].ConstructLeafCount();
 	}
 }
 
@@ -1051,8 +972,7 @@ void CascadeRegressor::SaveCascadeRegressor(std::string ModelName){
 		<< params_.regressor_stages_ << " "
 		<< params_.tree_depth_ << " "
 		<< params_.trees_num_per_forest_ << " "
-		<< params_.initial_guess_ << " "
-        << params_.group_num_ << std::endl;
+		<< params_.initial_guess_ << std::endl;
     
 	for (int i = 0; i < params_.regressor_stages_; i++){
 		fout << params_.local_radius_by_stage_[i] << std::endl;
@@ -1060,13 +980,6 @@ void CascadeRegressor::SaveCascadeRegressor(std::string ModelName){
 	for (int i = 0; i < params_.landmarks_num_per_face_; i++){
 		fout << params_.mean_shape_(i, 0) << " " << params_.mean_shape_(i, 1) << std::endl;
 	}
-    for (int i = 0; i<params_.group_num_; i++){
-        fout << params_.groups_[i].size() << " " << std::endl;
-        for (int j = 0; j<params_.groups_[i].size(); j++){
-            fout << params_.groups_[i][j] << " ";
-        }
-        fout << std::endl;
-    }
 
 	fout.close();
 
@@ -1105,15 +1018,15 @@ void Regressor::LoadRegressor(std::string ModelName, int stage){
 	}
 }
 
-void Regressor::ConstructLeafCount(){
-    int index = 1;
-    int ind = params_.trees_num_per_forest_;
-    for (int i = 0; i < params_.landmarks_num_per_face_; ++i){
-        leaf_index_count[i] = index;
-        index += rd_forests_[i].all_leaf_nodes_;
-        feature_node_index[i] = ind*i;
-    }
-}
+//void Regressor::ConstructLeafCount(){
+//    int index = 1;
+//    int ind = params_.trees_num_per_forest_;
+//    for (int i = 0; i < params_.landmarks_num_per_face_; ++i){
+//        leaf_index_count[i] = index;
+//        index += rd_forests_[i].all_leaf_nodes_;
+//        feature_node_index[i] = ind*i;
+//    }
+//}
 
 void Regressor::SaveRegressor(std::string ModelName, int stage){
 	char buffer[50];

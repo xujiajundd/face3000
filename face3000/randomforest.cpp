@@ -10,8 +10,8 @@ Node::Node(){
 	is_leaf_ = false;
 	threshold_ = 0.0;
 	leaf_identity = -1;
-	samples_ = -1;
-	thre_changed_ = false;
+//	samples_ = -1;
+//	thre_changed_ = false;
     score_ = 0.0;
 }
 
@@ -373,7 +373,7 @@ Node* RandomForest::BuildTree(std::set<int>& selected_indexes, cv::Mat_<int>& pi
 	if (images_indexes.size() > 0){ // the node may not split under some cases
 		Node* node = new Node();
 		node->depth_ = current_depth;
-		node->samples_ = images_indexes.size();
+//		node->samples_ = images_indexes.size();
 		std::vector<int> left_indexes, right_indexes;
 		if (current_depth == tree_depth_){ // the node reaches max depth
 			node->is_leaf_ = true;
@@ -620,7 +620,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_indexes,
 			return 1;
 		}
 		node->threshold_ = threshold;
-		node->thre_changed_ = true;
+//		node->thre_changed_ = true;
 		node->feature_locations_ = local_position_[feature_index];
 		selected_indexes.insert(feature_index);
 		return 0;

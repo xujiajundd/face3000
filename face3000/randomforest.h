@@ -10,11 +10,11 @@ public:
 	int leaf_identity; // used only when it is leaf node, and is unique among the tree
 	Node* left_child_;
 	Node* right_child_;
-	int samples_;
+//	int samples_;
 	bool is_leaf_;
 	int depth_; // recording current depth
 	float threshold_;
-	bool thre_changed_;
+//	bool thre_changed_;
 	FeatureLocations feature_locations_;
     float score_; //这个score，在叶子节点存放score，在根节点存放实际是threshold
 	Node(Node* left, Node* right, float thres, bool leaf);
@@ -58,9 +58,9 @@ public:
 		cv::Mat_<int>& pixel_differences, std::vector<int>& images_indexes, std::vector<int>& left_indexes, std::vector<int>& right_indexes);
 	cv::Mat_<float> GetBinaryFeatures(const cv::Mat_<float>& image,
 		const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale);
-	int MarkLeafIdentity(Node* node, int count);
-	int GetNodeOutput(Node* node, const cv::Mat_<float>& image,
-		const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale);
+//	int MarkLeafIdentity(Node* node, int count);
+//	int GetNodeOutput(Node* node, const cv::Mat_<float>& image,
+//		const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale);
 	//predict()
 	int GetBinaryFeatureIndex(int tree_index, const cv::Mat_<float>& image,
 	const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale, float *score);
