@@ -508,26 +508,27 @@ void Train(const char* ModelName){
 //
 
 void Hello(){
-    int stride = 1;
-    int dim = 12;
-    float x[dim], y[dim], z[dim];
+    int modellen = 2000;
+    int stride = 16;
+    int dim = 68;
+    float x[modellen][dim], y[dim];
     for ( int i=0; i<dim; i++ ){
-        x[i] = i;
-        y[i] = (float)i/2.0;
+        for (int j=0; j<modellen; j++ ){
+            x[j][i] = i*j;
+            y[i] = 0;
+        }
     }
-    int rn = 1000000;
+    int rn = 10000;
     float sum;
     
     struct timeval t1, t2;
-
     gettimeofday(&t1, NULL);
-    float done = 1.0;
-    int ione = stride;
-
     for ( int r=0; r<rn; r++){
-        float *xx = &x[0], *yy=&y[0];
-        cblas_saxpy(dim, done, xx, ione, yy, ione);
-//        vDSP_vadd(x, 1, y, 1, z, 1, dim);
+        for ( int i=0; i<dim; i++){
+            for (int j=0; j<modellen; j+= stride ){
+                y[i] += x[j][i];
+            }
+        }
     }
     gettimeofday(&t2, NULL);
     sum = 0;
@@ -538,23 +539,54 @@ void Hello(){
     cout << "time1: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
 
 
-
-    for ( int i=0; i<dim; i++){
-        y[i] = (float)i/2.0;
+    float xx[modellen][dim], yy[dim];
+    for (int j=0; j<modellen; j++){
+        for ( int i=0; i<dim; i++ ){
+            xx[j][i] = i*j;
+            yy[i] = 0;
+        }
     }
+
+    float ssum;
+
     gettimeofday(&t1, NULL);
+
     for ( int r=0; r<rn; r++){
-        for ( int i=0; i<dim; i++){
-            y[i] += x[i];
+        for (int j=0; j<modellen; j+=stride){
+            for ( int i=0; i<dim; i++){
+                yy[i] += xx[j][i];
+            }
         }
     }
     gettimeofday(&t2, NULL);
-    sum = 0;
+    ssum = 0;
+
     for ( int i=0; i<dim; i++){
-        sum += y[i];
+        ssum += yy[i];
     }
-    cout << sum << endl;
+    cout << ssum << endl;
     cout << "time2: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
+
+
+//    gettimeofday(&t1, NULL);
+//    float done = 1.0;
+//    int ione = stride;
+//
+//    for ( int r=0; r<rn; r++){
+//        float *xx = &x[0], *yy=&y[0];
+//        cblas_saxpy(dim, done, xx, ione, yy, ione);
+////        vDSP_vadd(x, 1, y, 1, z, 1, dim);
+//    }
+//    gettimeofday(&t2, NULL);
+//    sum = 0;
+//    for ( int i=0; i<dim; i++){
+//        sum += y[i];
+//    }
+//    cout << sum << endl;
+//    cout << "time1: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
+
+
+
 
 
 

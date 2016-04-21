@@ -262,7 +262,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                 faceFound = true;
                                 current_fi[idx] = tmp_fi;
                                 current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
-                                find_times[idx] += sw_x;
+                                find_times[idx] = sw_x;
                                 break;
                             }
                         }
