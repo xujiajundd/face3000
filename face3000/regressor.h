@@ -56,6 +56,13 @@ public:
     // void GetFeaThread();
 };
 
+enum
+{
+    CASCADE_FLAG_BIGGEST_ONLY = 1,
+    CASCADE_FLAG_SEARCH_MAX_TO_MIN = 2,
+    CASCADE_FLAG_TRACK_MODE = 4  //跟踪模式，根据上次的检测结果在周围检索
+};
+
 class CascadeRegressor {
 public:
 	Parameters params_;
@@ -82,12 +89,14 @@ public:
 		Parameters& params,
         int pos_num);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& ground_truth_shape);
-	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, bool &is_face);
+	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, bool &is_face, float &score);
     cv::Mat_<float> NegMinePredict(cv::Mat_<uchar>& image,
                                    cv::Mat_<float>& current_shape, BoundingBox& bbox, bool &is_face, float &fi, int stage, int landmark, int tree);
 	void LoadCascadeRegressor(std::string ModelName);
 	void SaveCascadeRegressor(std::string ModelName);
-
+    std::vector<cv::Rect> detectMultiScale(cv::Mat_<uchar>& image,
+                                                             std::vector<cv::Mat_<float>>& shapes, float scaleFactor, int minNeighbors=3, int flags=0,
+                                                             cv::Size minSize=cv::Size(50,50) );
 };
 
 #endif

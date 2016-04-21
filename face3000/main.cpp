@@ -73,7 +73,8 @@ void Test(const char* ModelName){
         //struct timeval t1, t2;
         //gettimeofday(&t1, NULL);
         bool is_face = true;
-        cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, bboxes[i], is_face);//, ground_truth_shapes[i]);
+        float score = 0;
+        cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, bboxes[i], is_face, score);//, ground_truth_shapes[i]);
 
         //cout << res << std::endl;
         //cout << res - ground_truth_shapes[i] << std::endl;
@@ -89,8 +90,8 @@ void Test(const char* ModelName){
         DrawPredictedImage(images[i], res);
 
         
-        float scale = 1.1;
-        float shuffle = 0.1;
+        float scale = 1.2;
+        float shuffle = 0.15;
         int minSize = 100;
         int order = -1;
         int currentSize;
@@ -115,7 +116,8 @@ void Test(const char* ModelName){
                     box.center_y = box.start_y + box.width/2.0;
                     bool is_face = true;
                     cv::Mat_<float> current_shape = ReProjection(cas_load.params_.mean_shape_, box);
-                    cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, box, is_face);
+                    float score = 0;
+                    cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, box, is_face, score);
                     if ( is_face){
                         cv::Mat_<uchar> img = images[i].clone();
                         cv::Rect rect;
@@ -253,7 +255,8 @@ void TestVideo(const char* ModelName){
             //DrawPredictedImage(tmp, current_shape);
             gettimeofday(&t1, NULL);
             bool is_face = true;
-            cv::Mat_<float> res = rg.Predict(image, current_shape, bbox, is_face);//, ground_truth_shapes[i]);
+            float score = 0;
+            cv::Mat_<float> res = rg.Predict(image, current_shape, bbox, is_face, score);//, ground_truth_shapes[i]);
             gettimeofday(&t2, NULL);
 //            last_shape = res.clone(); lastShaped = true;
             cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
@@ -313,7 +316,8 @@ void TestImage(const char* name, CascadeRegressor& rg){
         //DrawPredictedImage(tmp, current_shape);
         gettimeofday(&t1, NULL);
         bool is_face = true;
-        cv::Mat_<float> res = rg.Predict(image, current_shape, bbox, is_face);//, ground_truth_shapes[i]);
+        float score = 0;
+        cv::Mat_<float> res = rg.Predict(image, current_shape, bbox, is_face, score);//, ground_truth_shapes[i]);
         gettimeofday(&t2, NULL);
         cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
         
@@ -325,20 +329,21 @@ void TestImage(const char* name, CascadeRegressor& rg){
         break;
     }
     
-    float scale = 1.1;
-    float shuffle = 0.2;
-    int minSize = 100;
+    float scale = 1.2;
+    float shuffle = 0.15;
+    int minSize = image.cols/4;
     int order = -1;
     int currentSize;
     bool biggest_only;
-    
+    int faceFound = 0;
+    int nonface = 0;
     if ( order == 1 ){
         currentSize = minSize;
     }
     else{
         currentSize = std::min(image.cols, image.rows);
     }
-    
+    gettimeofday(&t1, NULL);
     while ( currentSize >= minSize && currentSize <= std::min(image.cols, image.rows)){
         for ( int i=0; i<image.cols-currentSize; i+= currentSize*shuffle){
             for ( int j=0; j<image.rows-currentSize; j+=currentSize*shuffle){
@@ -351,16 +356,22 @@ void TestImage(const char* name, CascadeRegressor& rg){
                 box.center_y = box.start_y + box.width/2.0;
                 bool is_face = true;
                 cv::Mat_<float> current_shape = ReProjection(rg.params_.mean_shape_, box);
-                cv::Mat_<float> res = rg.Predict(image, current_shape, box, is_face);
+                float score = 0;
+                cv::Mat_<float> res = rg.Predict(image, current_shape, box, is_face, score);
                 if ( is_face){
-                    cv::Mat_<uchar> img = image.clone();
-                    cv::Rect rect;
-                    rect.x = box.start_x;
-                    rect.y = box.start_y;
-                    rect.width = box.width;
-                    rect.height = box.height;
-                    cv::rectangle(img, rect, (255), 1);
-                    DrawPredictedImage(img, res);
+                    faceFound++;
+//                    std::cout << "score:" << score << std::endl;
+//                    cv::Mat_<uchar> img = image.clone();
+//                    cv::Rect rect;
+//                    rect.x = box.start_x;
+//                    rect.y = box.start_y;
+//                    rect.width = box.width;
+//                    rect.height = box.height;
+//                    cv::rectangle(img, rect, (255), 1);
+//                    DrawPredictedImage(img, res);
+                }
+                else{
+                    nonface++;
                 }
             }
         }
@@ -373,7 +384,8 @@ void TestImage(const char* name, CascadeRegressor& rg){
         }
     }
     
-    
+    gettimeofday(&t2, NULL);
+    cout << "jda face detected " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " face found:" << faceFound << " nonface checked:" << nonface << endl;
     
 	return;
 }
@@ -385,6 +397,7 @@ void Test(const char* ModelName, const char* name){
     return;
 }
 
+//TODO: detect multiscale, regression performance improve
 
 void Train(const char* ModelName){
 	std::vector<cv::Mat_<uchar> > images;
@@ -428,17 +441,17 @@ void Train(const char* ModelName){
 //    params.local_radius_by_stage_.push_back(0.05);
 //    params.local_radius_by_stage_.push_back(0.03);
     
-    params.detect_factor_by_stage_.push_back(0.8);
-    params.detect_factor_by_stage_.push_back(0.6);
+    params.detect_factor_by_stage_.push_back(0.9);
+    params.detect_factor_by_stage_.push_back(0.7);
     params.detect_factor_by_stage_.push_back(0.5);
     params.detect_factor_by_stage_.push_back(0.3);
-    params.detect_factor_by_stage_.push_back(0.2);
+    params.detect_factor_by_stage_.push_back(0.1);
     params.detect_factor_by_stage_.push_back(0.1);
     params.detect_factor_by_stage_.push_back(0.1);
     params.detect_factor_by_stage_.push_back(0.1);
     
-    params.tree_depth_ = 4;
-    params.trees_num_per_forest_ = 8;
+    params.tree_depth_ = 5;
+    params.trees_num_per_forest_ = 12;
     params.initial_guess_ = 1;
     
     params.group_num_ = 6;

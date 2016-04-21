@@ -270,7 +270,80 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             break;
                         }
                     }
-                    //针对hard neg很难挖掘出来的问题，这儿要不要搞个在正例附近找比较相似的负例？偏移+scale的方法
+                    
+ 
+                    if ( !faceFound ){
+                        //针对hard neg很难挖掘出来的问题，这儿要不要搞个在正例附近找比较相似的负例？偏移+scale的方法
+                        BoundingBox tmp_box = augmented_bboxes[augmented_images_index[idx]];
+                        new_box.width = tmp_box.width / 1.6;
+                        new_box.height = tmp_box.width / 1.6;
+                        for ( int xx = 0; xx<images[augmented_images_index[idx]].cols - new_box.width; xx+=20){
+                            for ( int yy = 0; yy<images[augmented_images_index[idx]].rows - new_box.width; yy+=20){
+                                new_box.start_x=xx;
+                                new_box.start_y=yy;
+                                new_box.center_x=new_box.start_x + new_box.width/2.0;
+                                new_box.center_y=new_box.start_y + new_box.height/2.0;
+                                cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[idx], augmented_bboxes[idx]);
+                                augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
+                                cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[idx], augmented_bboxes[idx]);
+                                augmented_current_shapes[idx]=ReProjection(temp2, new_box);
+                                augmented_bboxes[idx]=new_box;
+                                
+                                bool tmp_isface=true;
+                                float tmp_fi=0;
+                                
+                                //这个时候，自己在第stage_, landmark_index_的i树上
+                                casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
+                                                              augmented_current_shapes[idx], new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
+                                if ( tmp_isface){
+                                    faceFound = true;
+                                    current_fi[idx] = tmp_fi;
+                                    current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
+                                    break;
+                                }
+                            }
+                            if ( faceFound ){
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if ( !faceFound ){
+                        //针对hard neg很难挖掘出来的问题，这儿要不要搞个在正例附近找比较相似的负例？偏移+scale的方法
+                        BoundingBox tmp_box = augmented_bboxes[augmented_images_index[idx]];
+                        new_box.width = tmp_box.width * 1.6;
+                        new_box.height = tmp_box.width * 1.6;
+                        for ( int xx = 0; xx<images[augmented_images_index[idx]].cols - new_box.width; xx+=20){
+                            for ( int yy = 0; yy<images[augmented_images_index[idx]].rows - new_box.width; yy+=20){
+                                new_box.start_x=xx;
+                                new_box.start_y=yy;
+                                new_box.center_x=new_box.start_x + new_box.width/2.0;
+                                new_box.center_y=new_box.start_y + new_box.height/2.0;
+                                cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[idx], augmented_bboxes[idx]);
+                                augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
+                                cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[idx], augmented_bboxes[idx]);
+                                augmented_current_shapes[idx]=ReProjection(temp2, new_box);
+                                augmented_bboxes[idx]=new_box;
+                                
+                                bool tmp_isface=true;
+                                float tmp_fi=0;
+                                
+                                //这个时候，自己在第stage_, landmark_index_的i树上
+                                casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
+                                                              augmented_current_shapes[idx], new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
+                                if ( tmp_isface){
+                                    faceFound = true;
+                                    current_fi[idx] = tmp_fi;
+                                    current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
+                                    break;
+                                }
+                            }
+                            if ( faceFound ){
+                                break;
+                            }
+                        }
+                    }
+                    
                 }
                 if ( !faceFound ){
                     find_times[idx] = MAXFINDTIMES;
@@ -370,6 +443,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_indexes,
     std::vector<std::pair<int,int>> thresholds;
 
 	//int j = 0, tmp_index;
+#pragma omp parallel for
 	for (int j = 0; j < local_features_num_; j++){
 		if (selected_indexes.find(j) == selected_indexes.end()){
             std::vector<int> data;

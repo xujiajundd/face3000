@@ -414,10 +414,10 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
 
 
 cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
-	cv::Mat_<float>& current_shape, BoundingBox& bbox, bool &is_face){
+	cv::Mat_<float>& current_shape, BoundingBox& bbox, bool &is_face, float &score){
 //    cv::Mat_<float> rshape = ProjectShape( current_shape.clone(), bbox);
 
-    float score = 0;
+//    float score = 0;
 	for (int i = 0; i < params_.predict_regressor_stages_; i++){
         cv::Mat_<float> rotation;
 		float scale;
@@ -478,6 +478,16 @@ cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
     }
 
 	return res;
+}
+
+
+std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
+                                                         std::vector<cv::Mat_<float>>& shapes, float scaleFactor, int minNeighbors, int flags,
+                                                         cv::Size minSize){
+    std::vector<cv::Rect> faces;
+    
+    
+    return faces;
 }
 
 cv::Mat_<float> CascadeRegressor::NegMinePredict(cv::Mat_<uchar>& image,
@@ -691,30 +701,50 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
             Node* node = rd_forests_[j].trees_[k];
             while (!node->is_leaf_){
                 FeatureLocations& pos = node->feature_locations_;
-                float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
-                float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
-                delta_x = ss * delta_x; //scale*delta_x*bbox.width / 2.0;
-                delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
-                int real_x = delta_x + current_shape(pos.lmark1, 0);
-                int real_y = delta_y + current_shape(pos.lmark1, 1);
-                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                int tmp = (int)image(real_y, real_x); //real_y at first
-
-                delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
-                delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
-                delta_x = ss * delta_x; //scale*delta_x*bbox.width / 2.0;
-                delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
-                real_x = delta_x + current_shape(pos.lmark2, 0);
-                real_y = delta_y + current_shape(pos.lmark2, 1);
-                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                if ( (tmp - (int)image(real_y, real_x)) < node->threshold_){
-                    node = node->left_child_;// go left
-                }
-                else{
-                    node = node->right_child_;// go right
-                }
+//                if ( stage_ ==  0 ){ //没意义，省了5ms而已
+//                    int real_x = ss * pos.start.x + current_shape(pos.lmark1, 0);
+//                    int real_y = ss * pos.start.y + current_shape(pos.lmark1, 1);
+//                    real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+//                    real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
+//                    int tmp = (int)image(real_y, real_x); //real_y at first
+//
+//                    real_x = ss * pos.end.x + current_shape(pos.lmark2, 0);
+//                    real_y = ss * pos.end.y + current_shape(pos.lmark2, 1);
+//                    real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+//                    real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
+//                    if ( (tmp - (int)image(real_y, real_x)) < node->threshold_){
+//                        node = node->left_child_;// go left
+//                    }
+//                    else{
+//                        node = node->right_child_;// go right
+//                    }
+//                }
+//                else{
+                    float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
+                    float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
+                    delta_x = ss * delta_x; //scale*delta_x*bbox.width / 2.0;
+                    delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
+                    int real_x = delta_x + current_shape(pos.lmark1, 0);
+                    int real_y = delta_y + current_shape(pos.lmark1, 1);
+                    real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+                    real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
+                    int tmp = (int)image(real_y, real_x); //real_y at first
+                    
+                    delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
+                    delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
+                    delta_x = ss * delta_x; //scale*delta_x*bbox.width / 2.0;
+                    delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
+                    real_x = delta_x + current_shape(pos.lmark2, 0);
+                    real_y = delta_y + current_shape(pos.lmark2, 1);
+                    real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+                    real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
+                    if ( (tmp - (int)image(real_y, real_x)) < node->threshold_){
+                        node = node->left_child_;// go left
+                    }
+                    else{
+                        node = node->right_child_;// go right
+                    }
+//                }
             }
             if ( params_.groups_[groupNum][jj] >= 0 ){ //如果是负值节点，只是为了训练相关性，所以不做face score累加和判断。
                 score += node->score_;
