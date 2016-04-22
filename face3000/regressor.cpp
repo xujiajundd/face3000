@@ -695,50 +695,30 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
             Node* node = rd_forests_[j].trees_[k];
             while (!node->is_leaf_){
                 FeatureLocations& pos = node->feature_locations_;
-//                if ( stage_ ==  0 ){ //没意义，省了5ms而已
-//                    int real_x = ss * pos.start.x + current_shape(pos.lmark1, 0);
-//                    int real_y = ss * pos.start.y + current_shape(pos.lmark1, 1);
-//                    real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-//                    real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-//                    int tmp = (int)image(real_y, real_x); //real_y at first
-//
-//                    real_x = ss * pos.end.x + current_shape(pos.lmark2, 0);
-//                    real_y = ss * pos.end.y + current_shape(pos.lmark2, 1);
-//                    real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-//                    real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-//                    if ( (tmp - (int)image(real_y, real_x)) < node->threshold_){
-//                        node = node->left_child_;// go left
-//                    }
-//                    else{
-//                        node = node->right_child_;// go right
-//                    }
-//                }
-//                else{
-                    float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
-                    float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
-                    delta_x = ss * delta_x; //scale*delta_x*bbox.width / 2.0;
-                    delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
-                    int real_x = delta_x + current_shape(pos.lmark1, 0);
-                    int real_y = delta_y + current_shape(pos.lmark1, 1);
-                    real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                    real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                    int tmp = (int)image(real_y, real_x); //real_y at first
-                    
-                    delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
-                    delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
-                    delta_x = ss * delta_x; //scale*delta_x*bbox.width / 2.0;
-                    delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
-                    real_x = delta_x + current_shape(pos.lmark2, 0);
-                    real_y = delta_y + current_shape(pos.lmark2, 1);
-                    real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                    real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                    if ( (tmp - (int)image(real_y, real_x)) < node->threshold_){
-                        node = node->left_child_;// go left
-                    }
-                    else{
-                        node = node->right_child_;// go right
-                    }
-//                }
+                float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
+                float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
+                delta_x = ss * delta_x; //scale*delta_x*bbox.width / 2.0;
+                delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
+                int real_x = delta_x + current_shape(pos.lmark1, 0);
+                int real_y = delta_y + current_shape(pos.lmark1, 1);
+                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
+                int tmp = (int)image(real_y, real_x); //real_y at first
+                
+                delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
+                delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
+                delta_x = ss * delta_x; //scale*delta_x*bbox.width / 2.0;
+                delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
+                real_x = delta_x + current_shape(pos.lmark2, 0);
+                real_y = delta_y + current_shape(pos.lmark2, 1);
+                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
+                if ( (tmp - (int)image(real_y, real_x)) < node->threshold_){
+                    node = node->left_child_;// go left
+                }
+                else{
+                    node = node->right_child_;// go right
+                }
             }
             score += node->score_;
             if ( score < rd_forests_[j].trees_[k]->score_ ){
@@ -843,7 +823,9 @@ cv::Mat_<float> Regressor::Predict(cv::Mat_<uchar>& image,
     if ( !is_face ){
         return predict_result;
     }
-
+//    struct timeval t1, t2;
+//    gettimeofday(&t1, NULL);
+    
     for (int i = 0; i < params_.landmarks_num_per_face_; i++){
 //		predict_result(i, 0) = predict(linear_model_x_[i], binary_features);
 //        predict_result(i, 1) = predict(linear_model_y_[i], binary_features);
@@ -860,16 +842,18 @@ cv::Mat_<float> Regressor::Predict(cv::Mat_<uchar>& image,
         }
 
     }
-        //performance test
-//        int idx;
-//        const feature_node *lx=binary_features;
-//        for(; (idx=lx->index)!=-1 ; lx++){
-//            idx--;
-//            for (int ii = 0; ii < params_.groups_[g].size(); ii++){
-//                int i = params_.groups_[g][ii];
-//
-//            }
-//        }
+    //performance test
+    //模型数据结构改为：m[idx][2*landmarks], idx为binary_feature的长度
+    int idx;
+    const feature_node *lx=binary_features;
+    for(; (idx=lx->index)!=-1 ; lx++){
+        idx--;
+        for (int i = 0; i < params_.landmarks_num_per_face_; i++){
+            idx--;
+            predict_result(i,0) += 0;
+            predict_result(i,1) += 0;
+        }
+    }
 
 
      //   gettimeofday(&t2, NULL);

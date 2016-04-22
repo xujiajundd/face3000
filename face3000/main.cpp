@@ -90,8 +90,8 @@ void Test(const char* ModelName){
         DrawPredictedImage(images[i], res);
 
         
-        float scale = 1.2;
-        float shuffle = 0.15;
+        float scale = 1.1;
+        float shuffle = 0.1;
         int minSize = 100;
         int order = -1;
         int currentSize;
@@ -329,8 +329,8 @@ void TestImage(const char* name, CascadeRegressor& rg){
         break;
     }
     
-    float scale = 1.2;
-    float shuffle = 0.15;
+    float scale = 1.1;
+    float shuffle = 0.1;
     int minSize = image.cols/4;
     int order = -1;
     int currentSize;
@@ -360,15 +360,15 @@ void TestImage(const char* name, CascadeRegressor& rg){
                 cv::Mat_<float> res = rg.Predict(image, current_shape, box, is_face, score);
                 if ( is_face){
                     faceFound++;
-//                    std::cout << "score:" << score << std::endl;
-//                    cv::Mat_<uchar> img = image.clone();
-//                    cv::Rect rect;
-//                    rect.x = box.start_x;
-//                    rect.y = box.start_y;
-//                    rect.width = box.width;
-//                    rect.height = box.height;
-//                    cv::rectangle(img, rect, (255), 1);
-//                    DrawPredictedImage(img, res);
+                    std::cout << "score:" << score << std::endl;
+                    cv::Mat_<uchar> img = image.clone();
+                    cv::Rect rect;
+                    rect.x = box.start_x;
+                    rect.y = box.start_y;
+                    rect.width = box.width;
+                    rect.height = box.height;
+                    cv::rectangle(img, rect, (255), 1);
+                    DrawPredictedImage(img, res);
                 }
                 else{
                     nonface++;
@@ -422,7 +422,7 @@ void Train(const char* ModelName){
     
     params.local_features_num_ = 2000;
 	params.landmarks_num_per_face_ = 68;
-    params.regressor_stages_ = 5;
+    params.regressor_stages_ = 4;
 //    params.local_radius_by_stage_.push_back(0.6);
 //    params.local_radius_by_stage_.push_back(0.5);
 	params.local_radius_by_stage_.push_back(0.45);
@@ -450,9 +450,9 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.1);
     params.detect_factor_by_stage_.push_back(0.1);
     
-    params.tree_depth_ = 5;
-    params.trees_num_per_forest_ = 12;
-    params.initial_guess_ = 1;
+    params.tree_depth_ = 4;
+    params.trees_num_per_forest_ = 2;
+    params.initial_guess_ = 0;
     
 //    params.group_num_ = 6;
 //    std::vector<int> group1, group2, group3, group4, group5, group6, group7;
