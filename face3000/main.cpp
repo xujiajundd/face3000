@@ -444,7 +444,7 @@ void Train(const char* ModelName){
 	int pos_num = LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names);
 	params.mean_shape_ = GetMeanShape(ground_truth_shapes, ground_truth_faces, bboxes);
     
-    params.local_features_num_ = 1000;
+    params.local_features_num_ = 2000;
 	params.landmarks_num_per_face_ = 68;
     params.regressor_stages_ = 5;
 //    params.local_radius_by_stage_.push_back(0.6);
@@ -475,7 +475,7 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.0);
     
     params.tree_depth_ = 4;
-    params.trees_num_per_forest_ = 8;
+    params.trees_num_per_forest_ = 12;
     params.initial_guess_ = 2;
     
 //    params.group_num_ = 6;

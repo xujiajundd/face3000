@@ -560,7 +560,7 @@ cv::Mat_<float> CascadeRegressor::NegMinePredict(cv::Mat_<uchar>& image,
         float scale;
         getSimilarityTransform(ProjectShape(current_shape, bbox), params_.mean_shape_, rotation, scale);
         cv::Mat_<float> shape_increaments = regressors_[i].NegMinePredict(image, current_shape, bbox, rotation, scale, score, is_face, stage, i, landmark, tree);
-        if ( !is_face ){
+        if ( !is_face || shape_increaments.empty()){
 //            std::cout << "挖掘负例，不是face!!!!!!!!!!!!!!!!!!!!!!"<< std::endl;
             return current_shape;
         }
