@@ -52,68 +52,68 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 	time_t current_time;
 	current_time = time(0);
 	cv::RNG rd(current_time);
-	// random generate feature locations
-	//std::cout << "generate feature locations" << std::endl;
-//	local_position_.clear();
-//	local_position_.resize(local_features_num_);
-//	for (int i = 0; i < local_features_num_; i++){
-//		float x, y;
-//		do{
-//			x = rd.uniform(-local_radius_, local_radius_); 
-//			y = rd.uniform(-local_radius_, local_radius_);
-////            if ( i < 4 && x < -local_radius_/5.0) continue; //add by xujj, 避免脸部外侧的pixel
-////            if ( (i>13 && i<17) && x > local_radius_/5.0) continue;
-////            if ( (i>6 && i<10 ) && y > local_radius_/5.0) continue;
-//		} while (x*x + y*y > local_radius_*local_radius_);
-//		cv::Point2f a(x, y);
-//
-//		do{
-//			x = rd.uniform(-local_radius_, local_radius_);
-//			y = rd.uniform(-local_radius_, local_radius_);
-////            if ( i < 4 && x < -local_radius_/5.0) continue;
-////            if ( (i>13 && i<17) && x > local_radius_/5.0) continue;
-////            if ( (i>6 && i<10 ) && y > local_radius_/5.0) continue;
-//		} while (x*x + y*y > local_radius_*local_radius_);
-//		cv::Point2f b(x, y);
-//
-//        //TODO，这个地方可以试多个策略：1）自己，2）自己和随机一个，3）随机两个
-//        int landmark1 = (int)rd.uniform(0, landmark_num_);
-//        int landmark2 = (int)rd.uniform(0, landmark_num_);
-//		local_position_[i] = FeatureLocations(landmark1, landmark2, a, b);
-//	}
-//	//std::cout << "get pixel differences" << std::endl;
-//	cv::Mat_<int> pixel_differences(local_features_num_, augmented_images_index.size()); // matrix: features*images
-//	
-//#pragma omp parallel for
-//	for (int i = 0; i < augmented_images_index.size(); i++){
-//		
-//		cv::Mat_<float> rotation = rotations[i];
-//		float scale = scales[i];
-//		//getSimilarityTransform(ProjectShape(augmented_current_shapes[i], augmented_bboxes[i]),mean_shape_, rotation, scale);
-//		
-//		for (int j = 0; j < local_features_num_; j++){
-//			FeatureLocations pos = local_position_[j];
-//			float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
-//			float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
-//			delta_x = scale*delta_x*augmented_bboxes[i].width / 2.0;
-//			delta_y = scale*delta_y*augmented_bboxes[i].height / 2.0;
-//			int real_x = delta_x + augmented_current_shapes[i](pos.lmark1, 0);
-//			int real_y = delta_y + augmented_current_shapes[i](pos.lmark1, 1);
-//			real_x = std::max(0, std::min(real_x, images[augmented_images_index[i]].cols - 1)); // which cols
-//			real_y = std::max(0, std::min(real_y, images[augmented_images_index[i]].rows - 1)); // which rows
-//			int tmp = (int)images[augmented_images_index[i]](real_y, real_x); //real_y at first
-//
-//			delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
-//			delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
-//			delta_x = scale*delta_x*augmented_bboxes[i].width / 2.0;
-//			delta_y = scale*delta_y*augmented_bboxes[i].height / 2.0;
-//			real_x = delta_x + augmented_current_shapes[i](pos.lmark2, 0);
-//			real_y = delta_y + augmented_current_shapes[i](pos.lmark2, 1);
-//			real_x = std::max(0, std::min(real_x, images[augmented_images_index[i]].cols - 1)); // which cols
-//			real_y = std::max(0, std::min(real_y, images[augmented_images_index[i]].rows - 1)); // which rows
-//			pixel_differences(j, i) = tmp - (int)images[augmented_images_index[i]](real_y, real_x); 
-//		}
-//	}
+//	 random generate feature locations
+	std::cout << "generate feature locations" << std::endl;
+	local_position_.clear();
+	local_position_.resize(local_features_num_);
+	for (int i = 0; i < local_features_num_; i++){
+		float x, y;
+		do{
+			x = rd.uniform(-local_radius_, local_radius_); 
+			y = rd.uniform(-local_radius_, local_radius_);
+//            if ( i < 4 && x < -local_radius_/5.0) continue; //add by xujj, 避免脸部外侧的pixel
+//            if ( (i>13 && i<17) && x > local_radius_/5.0) continue;
+//            if ( (i>6 && i<10 ) && y > local_radius_/5.0) continue;
+		} while (x*x + y*y > local_radius_*local_radius_);
+		cv::Point2f a(x, y);
+
+		do{
+			x = rd.uniform(-local_radius_, local_radius_);
+			y = rd.uniform(-local_radius_, local_radius_);
+//            if ( i < 4 && x < -local_radius_/5.0) continue;
+//            if ( (i>13 && i<17) && x > local_radius_/5.0) continue;
+//            if ( (i>6 && i<10 ) && y > local_radius_/5.0) continue;
+		} while (x*x + y*y > local_radius_*local_radius_);
+		cv::Point2f b(x, y);
+
+        //TODO，这个地方可以试多个策略：1）自己，2）自己和随机一个，3）随机两个
+        int landmark1 = (int)rd.uniform(0, landmark_num_);
+        int landmark2 = (int)rd.uniform(0, landmark_num_);
+		local_position_[i] = FeatureLocations(landmark1, landmark2, a, b);
+	}
+	//std::cout << "get pixel differences" << std::endl;
+	cv::Mat_<int> pixel_differences(local_features_num_, augmented_images_index.size()); // matrix: features*images
+	
+#pragma omp parallel for
+	for (int i = 0; i < augmented_images_index.size(); i++){
+		
+		cv::Mat_<float> rotation = rotations[i];
+		float scale = scales[i];
+		//getSimilarityTransform(ProjectShape(augmented_current_shapes[i], augmented_bboxes[i]),mean_shape_, rotation, scale);
+		
+		for (int j = 0; j < local_features_num_; j++){
+			FeatureLocations pos = local_position_[j];
+			float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
+			float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
+			delta_x = scale*delta_x*augmented_bboxes[i].width / 2.0;
+			delta_y = scale*delta_y*augmented_bboxes[i].height / 2.0;
+			int real_x = delta_x + augmented_current_shapes[i](pos.lmark1, 0);
+			int real_y = delta_y + augmented_current_shapes[i](pos.lmark1, 1);
+			real_x = std::max(0, std::min(real_x, images[augmented_images_index[i]].cols - 1)); // which cols
+			real_y = std::max(0, std::min(real_y, images[augmented_images_index[i]].rows - 1)); // which rows
+			int tmp = (int)images[augmented_images_index[i]](real_y, real_x); //real_y at first
+
+			delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
+			delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
+			delta_x = scale*delta_x*augmented_bboxes[i].width / 2.0;
+			delta_y = scale*delta_y*augmented_bboxes[i].height / 2.0;
+			real_x = delta_x + augmented_current_shapes[i](pos.lmark2, 0);
+			real_y = delta_y + augmented_current_shapes[i](pos.lmark2, 1);
+			real_x = std::max(0, std::min(real_x, images[augmented_images_index[i]].cols - 1)); // which cols
+			real_y = std::max(0, std::min(real_y, images[augmented_images_index[i]].rows - 1)); // which rows
+			pixel_differences(j, i) = tmp - (int)images[augmented_images_index[i]](real_y, real_x); 
+		}
+	}
 	// train Random Forest
 	// construct each tree in the forest
 	
@@ -122,67 +122,67 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 	trees_.clear();
 	all_leaf_nodes_ = 0;
 	for (int i = 0; i < trees_num_per_forest_; i++){
-        //为每棵树都重新生成一次local feature，否则每个森林树太多时，特征不够用。
-        local_position_.clear();
-        local_position_.resize(local_features_num_);
-        for (int i = 0; i < local_features_num_; i++){
-            float x, y;
-            do{
-                x = rd.uniform(-local_radius_, local_radius_);
-                y = rd.uniform(-local_radius_, local_radius_);
-                //            if ( i < 4 && x < -local_radius_/5.0) continue; //add by xujj, 避免脸部外侧的pixel
-                //            if ( (i>13 && i<17) && x > local_radius_/5.0) continue;
-                //            if ( (i>6 && i<10 ) && y > local_radius_/5.0) continue;
-            } while (x*x + y*y > local_radius_*local_radius_);
-            cv::Point2f a(x, y);
-
-            do{
-                x = rd.uniform(-local_radius_, local_radius_);
-                y = rd.uniform(-local_radius_, local_radius_);
-                //            if ( i < 4 && x < -local_radius_/5.0) continue;
-                //            if ( (i>13 && i<17) && x > local_radius_/5.0) continue;
-                //            if ( (i>6 && i<10 ) && y > local_radius_/5.0) continue;
-            } while (x*x + y*y > local_radius_*local_radius_);
-            cv::Point2f b(x, y);
-
-            //TODO，这个地方可以试多个策略：1）自己，2）自己和随机一个，3）随机两个
-            int landmark1 = (int)rd.uniform(0, landmark_num_);
-            int landmark2 = (int)rd.uniform(0, landmark_num_);
-            local_position_[i] = FeatureLocations(landmark1, landmark2, a, b);
-        }
-        //std::cout << "get pixel differences" << std::endl;
-        cv::Mat_<int> pixel_differences(local_features_num_, augmented_images_index.size()); // matrix: features*images
-
-#pragma omp parallel for
-        for (int i = 0; i < augmented_images_index.size(); i++){
-
-            cv::Mat_<float> rotation = rotations[i];
-            float scale = scales[i];
-            //getSimilarityTransform(ProjectShape(augmented_current_shapes[i], augmented_bboxes[i]),mean_shape_, rotation, scale);
-
-            for (int j = 0; j < local_features_num_; j++){
-                FeatureLocations pos = local_position_[j];
-                float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
-                float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
-                delta_x = scale*delta_x*augmented_bboxes[i].width / 2.0;
-                delta_y = scale*delta_y*augmented_bboxes[i].height / 2.0;
-                int real_x = delta_x + augmented_current_shapes[i](pos.lmark1, 0);
-                int real_y = delta_y + augmented_current_shapes[i](pos.lmark1, 1);
-                real_x = std::max(0, std::min(real_x, images[augmented_images_index[i]].cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, images[augmented_images_index[i]].rows - 1)); // which rows
-                int tmp = (int)images[augmented_images_index[i]](real_y, real_x); //real_y at first
-
-                delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
-                delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
-                delta_x = scale*delta_x*augmented_bboxes[i].width / 2.0;
-                delta_y = scale*delta_y*augmented_bboxes[i].height / 2.0;
-                real_x = delta_x + augmented_current_shapes[i](pos.lmark2, 0);
-                real_y = delta_y + augmented_current_shapes[i](pos.lmark2, 1);
-                real_x = std::max(0, std::min(real_x, images[augmented_images_index[i]].cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, images[augmented_images_index[i]].rows - 1)); // which rows
-                pixel_differences(j, i) = tmp - (int)images[augmented_images_index[i]](real_y, real_x); 
-            }
-        }
+//        //为每棵树都重新生成一次local feature，否则每个森林树太多时，特征不够用。
+//        local_position_.clear();
+//        local_position_.resize(local_features_num_);
+//        for (int i = 0; i < local_features_num_; i++){
+//            float x, y;
+//            do{
+//                x = rd.uniform(-local_radius_, local_radius_);
+//                y = rd.uniform(-local_radius_, local_radius_);
+//                //            if ( i < 4 && x < -local_radius_/5.0) continue; //add by xujj, 避免脸部外侧的pixel
+//                //            if ( (i>13 && i<17) && x > local_radius_/5.0) continue;
+//                //            if ( (i>6 && i<10 ) && y > local_radius_/5.0) continue;
+//            } while (x*x + y*y > local_radius_*local_radius_);
+//            cv::Point2f a(x, y);
+//
+//            do{
+//                x = rd.uniform(-local_radius_, local_radius_);
+//                y = rd.uniform(-local_radius_, local_radius_);
+//                //            if ( i < 4 && x < -local_radius_/5.0) continue;
+//                //            if ( (i>13 && i<17) && x > local_radius_/5.0) continue;
+//                //            if ( (i>6 && i<10 ) && y > local_radius_/5.0) continue;
+//            } while (x*x + y*y > local_radius_*local_radius_);
+//            cv::Point2f b(x, y);
+//
+//            //TODO，这个地方可以试多个策略：1）自己，2）自己和随机一个，3）随机两个
+//            int landmark1 = (int)rd.uniform(0, landmark_num_);
+//            int landmark2 = (int)rd.uniform(0, landmark_num_);
+//            local_position_[i] = FeatureLocations(landmark1, landmark2, a, b);
+//        }
+//        //std::cout << "get pixel differences" << std::endl;
+//        cv::Mat_<int> pixel_differences(local_features_num_, augmented_images_index.size()); // matrix: features*images
+//
+//#pragma omp parallel for
+//        for (int i = 0; i < augmented_images_index.size(); i++){
+//
+//            cv::Mat_<float> rotation = rotations[i];
+//            float scale = scales[i];
+//            //getSimilarityTransform(ProjectShape(augmented_current_shapes[i], augmented_bboxes[i]),mean_shape_, rotation, scale);
+//
+//            for (int j = 0; j < local_features_num_; j++){
+//                FeatureLocations pos = local_position_[j];
+//                float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
+//                float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
+//                delta_x = scale*delta_x*augmented_bboxes[i].width / 2.0;
+//                delta_y = scale*delta_y*augmented_bboxes[i].height / 2.0;
+//                int real_x = delta_x + augmented_current_shapes[i](pos.lmark1, 0);
+//                int real_y = delta_y + augmented_current_shapes[i](pos.lmark1, 1);
+//                real_x = std::max(0, std::min(real_x, images[augmented_images_index[i]].cols - 1)); // which cols
+//                real_y = std::max(0, std::min(real_y, images[augmented_images_index[i]].rows - 1)); // which rows
+//                int tmp = (int)images[augmented_images_index[i]](real_y, real_x); //real_y at first
+//
+//                delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
+//                delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
+//                delta_x = scale*delta_x*augmented_bboxes[i].width / 2.0;
+//                delta_y = scale*delta_y*augmented_bboxes[i].height / 2.0;
+//                real_x = delta_x + augmented_current_shapes[i](pos.lmark2, 0);
+//                real_y = delta_y + augmented_current_shapes[i](pos.lmark2, 1);
+//                real_x = std::max(0, std::min(real_x, images[augmented_images_index[i]].cols - 1)); // which cols
+//                real_y = std::max(0, std::min(real_y, images[augmented_images_index[i]].rows - 1)); // which rows
+//                pixel_differences(j, i) = tmp - (int)images[augmented_images_index[i]](real_y, real_x); 
+//            }
+//        }
 
         //计算每个训练实例的weight
         for(int k=0;k<current_weight.size();++k)
@@ -302,11 +302,11 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 if ( augmented_ground_truth_faces[idx] == -1 && find_times[idx] < MAXFINDTIMES ){
                     BoundingBox new_box;
                     int start = find_times[idx];
-                    for ( int sw_x = start; sw_x<images[augmented_images_index[idx]].cols * 9 / 10; sw_x+=5){
-                        for ( int sw_y = 0; sw_y<images[augmented_images_index[idx]].rows - images[augmented_images_index[idx]].cols / 10; sw_y+=5){
+                    for ( int sw_x = start; sw_x<images[augmented_images_index[idx]].cols * 19 / 20; sw_x+=5){
+                        for ( int sw_y = 0; sw_y<images[augmented_images_index[idx]].rows - images[augmented_images_index[idx]].cols / 20; sw_y+=5){
                             new_box.start_x=sw_x;
                             new_box.start_y=sw_y;
-                            new_box.width=images[augmented_images_index[idx]].cols/10;
+                            new_box.width=images[augmented_images_index[idx]].cols/20;
                             new_box.height=new_box.width;
                             new_box.center_x=new_box.start_x + new_box.width/2.0;
                             new_box.center_y=new_box.start_y + new_box.height/2.0;

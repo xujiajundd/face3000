@@ -391,11 +391,9 @@ cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
 
 //    float score = 0;
 	for (int i = 0; i < params_.predict_regressor_stages_; i++){
-        cv::Mat_<float> rotation = cv::Mat_<float>::ones(2, 2);
-		float scale = 1.0;
-        if ( i > 0 ){
-		    getSimilarityTransform(ProjectShape(current_shape, bbox), params_.mean_shape_, rotation, scale);
-        }
+        cv::Mat_<float> rotation;
+		float scale;
+		getSimilarityTransform(ProjectShape(current_shape, bbox), params_.mean_shape_, rotation, scale);
 		cv::Mat_<float> shape_increaments = regressors_[i].Predict(image, current_shape, bbox, rotation, scale, score, is_face);
         if ( !is_face ){
             //std::cout << "检测不是face!!!!!!!!!!!!!!!!!!!!!!"<< std::endl;

@@ -75,19 +75,19 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "video model_groups_t5d6n4i5"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "train model_jda500"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "train model_jdat5d4n12"
+            argument = "train model_jdamin"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "test model_jda500 /Users/xujiajun/developer/face3000/face3000/test.jpg"
+            argument = "test model_jda"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "video model_jda"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "test model_jda /Users/xujiajun/developer/dataset/test4.jpg"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
