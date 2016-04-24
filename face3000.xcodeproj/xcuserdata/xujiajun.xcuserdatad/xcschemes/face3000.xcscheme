@@ -79,15 +79,15 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "train model_jda500"
+            argument = "test model_jda"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "test model_jda500"
+            argument = "train model_jda"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "test model_jda500 /Users/xujiajun/developer/face3000/face3000/test.jpg"
+            argument = "test model_jda /Users/xujiajun/developer/dataset/test4.jpg"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>

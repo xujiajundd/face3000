@@ -1,6 +1,7 @@
 //#include <opencv2/opencv.hpp>
 #include <iostream>
 #include <fstream>
+#include <dirent.h>
 #include <string>
 #include <time.h>
 //#include <Windows.h>
@@ -10,7 +11,7 @@
 #ifdef __linux__
 #include <omp.h>
 #endif
-#include <Accelerate/Accelerate.h>
+
 
 #ifndef DLIB_NO_GUI_SUPPORT
 #define DLIB_NO_GUI_SUPPORT
@@ -189,92 +190,115 @@ void TestVideo(const char* ModelName){
         
         struct timeval t1, t2;
         float timeuse;
-        gettimeofday(&t1, NULL);
-        std::vector<cv::Rect> faces, eyes;
-        haar_cascade.detectMultiScale(image, faces, 1.1, 2, 0
-                                      |cv::CASCADE_FIND_BIGGEST_OBJECT
-//                                      |cv::CASCADE_DO_ROUGH_SEARCH
-                                      , cv::Size(100, 100));
-//        cv_image<uchar>cimg(image);
-//        std::vector<dlib::rectangle> faces;
-//        if ( faceDetected ){
-//            double result = tracker.update(cimg);
-//            if ( result > 5.0 ){
-//                dlib::rectangle r = tracker.get_position();
-//                faces.clear();
-//                faces.push_back(r);
-//            }
-//            else{
-//                faceDetected = false;
-//            }
-//        }
-//        else{
-//            faces = detector(cimg);
-//            if ( faces.size()>0){
-//                tracker.start_track(cimg, faces[0]);
-//                //faceDetected = true;
-//            }
-//        }
-        
-        gettimeofday(&t2, NULL);
-        cout << faces.size() << "face detected " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0  << endl;
-        
-        for (int i = 0; i < faces.size() && i < 1; i++){
-//            gettimeofday(&t1, NULL);
-//            cv::Mat face = image(faces[i]);
-//            haar_eye_cascade.detectMultiScale(face, eyes, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, cv::Size(80,80));
-//            
-//            if (eyes.size())
-//            {
-//                cv::Rect rect = eyes[0] + cv::Point(faces[i].x, faces[i].y);
-////                tpl  = im(rect);
-//            }
-//            gettimeofday(&t2, NULL);
-//            cout << eyes.size() << "eye detected " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0  << endl;
-            
-            cv::Rect faceRec = faces[i];
-//            cout << faces[0] << endl;
-//            cv::Rect faceRec;
-//            faceRec.x = faces[i].left();
-//            faceRec.y = faces[i].top();
-//            faceRec.width = faces[i].right() - faces[i].left();
-//            faceRec.height = faces[i].bottom() - faces[i].top();
-            
-            BoundingBox bbox;
-            bbox.start_x = faceRec.x;
-            bbox.start_y = faceRec.y;
-            bbox.width = faceRec.width;
-            bbox.height = faceRec.height;
-            bbox.center_x = bbox.start_x + bbox.width / 2.0;
-            bbox.center_y = bbox.start_y + bbox.height / 2.0;
-            cv::Mat_<float> current_shape = ReProjection(rg.params_.mean_shape_, bbox);
-//            if ( lastShaped ){
-//                current_shape = last_shape;
-//            }
-            //cv::Mat_<float> tmp = image.clone();
-            //DrawPredictedImage(tmp, current_shape);
+        if ( false ){
             gettimeofday(&t1, NULL);
-            bool is_face = true;
-            float score = 0;
-            cv::Mat_<float> res = rg.Predict(image, current_shape, bbox, is_face, score);//, ground_truth_shapes[i]);
-            gettimeofday(&t2, NULL);
-//            last_shape = res.clone(); lastShaped = true;
-            cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
-            
-//            for ( int d=0; d<rg.params_.predict_regressor_stages_; d++){
-//                cout << rg.stage_delta_[d] << " ";
-//                cv::line(frame, Point2f(20*d+20, 450), Point2f(20*d+20, 450 - 200000*rg.stage_delta_[d]), (255));
-//            }
-//            cout << endl;
-            
-            cv::rectangle(image, faceRec, (255), 1);
-            //cv::imshow("show image", image);
-            //cv::waitKey(0);
+            std::vector<cv::Rect> faces, eyes;
+            haar_cascade.detectMultiScale(image, faces, 1.1, 2, 0
+                                          |cv::CASCADE_FIND_BIGGEST_OBJECT
+    //                                      |cv::CASCADE_DO_ROUGH_SEARCH
+                                          , cv::Size(100, 100));
 
-            DrawPredictedImageContinue(frame, res);
-//            imshow(WindowName, image);
+
+    //        cv_image<uchar>cimg(image);
+    //        std::vector<dlib::rectangle> faces;
+    //        if ( faceDetected ){
+    //            double result = tracker.update(cimg);
+    //            if ( result > 5.0 ){
+    //                dlib::rectangle r = tracker.get_position();
+    //                faces.clear();
+    //                faces.push_back(r);
+    //            }
+    //            else{
+    //                faceDetected = false;
+    //            }
+    //        }
+    //        else{
+    //            faces = detector(cimg);
+    //            if ( faces.size()>0){
+    //                tracker.start_track(cimg, faces[0]);
+    //                //faceDetected = true;
+    //            }
+    //        }
+            
+    //        gettimeofday(&t2, NULL);
+    //        cout << faces.size() << "face detected " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0  << endl;
+    //        
+            for (int i = 0; i < faces.size() && i < 1; i++){
+    //            gettimeofday(&t1, NULL);
+    //            cv::Mat face = image(faces[i]);
+    //            haar_eye_cascade.detectMultiScale(face, eyes, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, cv::Size(80,80));
+    //            
+    //            if (eyes.size())
+    //            {
+    //                cv::Rect rect = eyes[0] + cv::Point(faces[i].x, faces[i].y);
+    ////                tpl  = im(rect);
+    //            }
+    //            gettimeofday(&t2, NULL);
+    //            cout << eyes.size() << "eye detected " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0  << endl;
+                
+                cv::Rect faceRec = faces[i];
+    //            cout << faces[0] << endl;
+    //            cv::Rect faceRec;
+    //            faceRec.x = faces[i].left();
+    //            faceRec.y = faces[i].top();
+    //            faceRec.width = faces[i].right() - faces[i].left();
+    //            faceRec.height = faces[i].bottom() - faces[i].top();
+                
+                BoundingBox bbox;
+                bbox.start_x = faceRec.x;
+                bbox.start_y = faceRec.y;
+                bbox.width = faceRec.width;
+                bbox.height = faceRec.height;
+                bbox.center_x = bbox.start_x + bbox.width / 2.0;
+                bbox.center_y = bbox.start_y + bbox.height / 2.0;
+                cv::Mat_<float> current_shape = ReProjection(rg.params_.mean_shape_, bbox);
+    //            if ( lastShaped ){
+    //                current_shape = last_shape;
+    //            }
+                //cv::Mat_<float> tmp = image.clone();
+                //DrawPredictedImage(tmp, current_shape);
+                gettimeofday(&t1, NULL);
+                bool is_face = true;
+                float score = 0;
+                cv::Mat_<float> res = rg.Predict(image, current_shape, bbox, is_face, score);//, ground_truth_shapes[i]);
+                gettimeofday(&t2, NULL);
+                if ( !is_face ) continue;
+    //            last_shape = res.clone(); lastShaped = true;
+                cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " isface" << is_face << " score:" << score << endl;
+                
+    //            for ( int d=0; d<rg.params_.predict_regressor_stages_; d++){
+    //                cout << rg.stage_delta_[d] << " ";
+    //                cv::line(frame, Point2f(20*d+20, 450), Point2f(20*d+20, 450 - 200000*rg.stage_delta_[d]), (255));
+    //            }
+    //            cout << endl;
+
+                cv::rectangle(image, faceRec, (255), 1);
+                //cv::imshow("show image", image);
+                //cv::waitKey(0);
+
+                DrawPredictedImageContinue(frame, res);
+    //            imshow(WindowName, image);
+            }
+    //        imshow(WindowName, image);
         }
-//        imshow(WindowName, image);
+        else{ //用新的方法
+            gettimeofday(&t1, NULL);
+            std::vector<cv::Mat_<float>> shapes;
+            std::vector<cv::Rect> rects = rg.detectMultiScale(image, shapes, 1.1, 2, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, 150);
+            gettimeofday(&t2, NULL);
+            //            last_shape = res.clone(); lastShaped = true;
+            cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " faces:" << rects.size() <<  endl;
+            if ( rects.size() == 0 ) continue;
+            //            for ( int d=0; d<rg.params_.predict_regressor_stages_; d++){
+            //                cout << rg.stage_delta_[d] << " ";
+            //                cv::line(frame, Point2f(20*d+20, 450), Point2f(20*d+20, 450 - 200000*rg.stage_delta_[d]), (255));
+            //            }
+            //            cout << endl;
+            for ( int c=0; c<rects.size(); c++){
+                cv::rectangle(image, rects[c], (255), 1);
+                DrawPredictedImageContinue(frame, shapes[c]);
+            }
+        }
     }
     return;
 }
@@ -301,7 +325,7 @@ void TestImage(const char* name, CascadeRegressor& rg){
     gettimeofday(&t1, NULL);
     haar_cascade.detectMultiScale(image, faces, 1.1, 2, 0, cv::Size(100, 100));
     gettimeofday(&t2, NULL);
-    cout << "face detected " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
+    cout << "face detected " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " faces:" << faces.size() << endl;
     for (int i = 0; i < faces.size(); i++){
         cv::Rect faceRec = faces[i];
         BoundingBox bbox;
@@ -420,9 +444,9 @@ void Train(const char* ModelName){
 	int pos_num = LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names);
 	params.mean_shape_ = GetMeanShape(ground_truth_shapes, ground_truth_faces, bboxes);
     
-    params.local_features_num_ = 2000;
+    params.local_features_num_ = 1000;
 	params.landmarks_num_per_face_ = 68;
-    params.regressor_stages_ = 4;
+    params.regressor_stages_ = 5;
 //    params.local_radius_by_stage_.push_back(0.6);
 //    params.local_radius_by_stage_.push_back(0.5);
 	params.local_radius_by_stage_.push_back(0.45);
@@ -444,15 +468,15 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.9);
     params.detect_factor_by_stage_.push_back(0.7);
     params.detect_factor_by_stage_.push_back(0.5);
-    params.detect_factor_by_stage_.push_back(0.3);
     params.detect_factor_by_stage_.push_back(0.1);
-    params.detect_factor_by_stage_.push_back(0.1);
-    params.detect_factor_by_stage_.push_back(0.1);
-    params.detect_factor_by_stage_.push_back(0.1);
+    params.detect_factor_by_stage_.push_back(0.0);
+    params.detect_factor_by_stage_.push_back(0.0);
+    params.detect_factor_by_stage_.push_back(0.0);
+    params.detect_factor_by_stage_.push_back(0.0);
     
     params.tree_depth_ = 4;
-    params.trees_num_per_forest_ = 2;
-    params.initial_guess_ = 0;
+    params.trees_num_per_forest_ = 8;
+    params.initial_guess_ = 2;
     
 //    params.group_num_ = 6;
 //    std::vector<int> group1, group2, group3, group4, group5, group6, group7;
@@ -741,6 +765,68 @@ void Hello(){
 //    cout << "time sumw: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0  << endl;
 }
 
+//给一个目录，循环处理子目录下的图片，文件名改为子目录-子目录-数字编号，用其他识别器，把人脸抹掉
+std::vector<char *>  List(const char *path, int level) {
+    std::vector<char *> fileLists;
+    struct dirent* ent = NULL;
+    DIR *pDir;
+    pDir = opendir(path);
+    if (pDir == NULL) {
+        //被当作目录，但是执行opendir后发现又不是目录，比如软链接就会发生这样的情况。
+        return fileLists;
+    }
+    while (NULL != (ent = readdir(pDir))) {
+        if (ent->d_type == 8) {
+            //file
+            for (int i = 0; i < level; i++) {
+                printf("-");
+            }
+            printf("%s/n", ent->d_name);
+        } else {
+            if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) {
+                continue;
+            }
+            //directory
+            std::string _path(path);
+            std::string _dirName(ent->d_name);
+            std::string fullDirPath = _path + "/" + _dirName;
+            for (int i = 0; i < level; i++) {
+                printf(" ");
+            }
+            printf("%s//n", ent->d_name);
+            List(fullDirPath.c_str(), level + 1);
+        }
+    }
+    return fileLists;
+}
+
+void GenNeg(const char* path){
+    std::string destDir = "/Users/xujiajun/developer/dataset/negface/";
+    std::string fn_haar = "/Users/xujiajun/developer/dataset/haarcascade_frontalface_alt2.xml";
+    cv::CascadeClassifier haar_cascade;
+    bool yes = haar_cascade.load(fn_haar);
+    std::cout << "detector: " << yes << std::endl;
+
+    std::vector<char *> files = List(path, 3);
+    for ( int i=0; i<files.size(); i++){
+        cv::Mat_<uchar> image = cv::imread(files[i], 1);
+        if (image.cols > 2000){
+            cv::resize(image, image, cv::Size(image.cols / 3, image.rows / 3), 0, 0, cv::INTER_LINEAR);
+        }
+        else if (image.cols > 1400 && image.cols <= 2000){
+            cv::resize(image, image, cv::Size(image.cols / 2, image.rows / 2), 0, 0, cv::INTER_LINEAR);
+        }
+
+        std::vector<cv::Rect> faces;
+        haar_cascade.detectMultiScale(image, faces, 1.1, 2, 0, cv::Size(50, 50));
+        for (int i = 0; i < faces.size(); i++){
+            cv::Rect faceRec = faces[i];
+
+        }
+    }
+}
+
+
 int main(int argc, char* argv[])
 {
 //    detector = get_frontal_face_detector();
@@ -773,6 +859,12 @@ int main(int argc, char* argv[])
             }
             return 0;
         }
+        if (strcmp(argv[1], "genneg") == 0){
+            std::cout << "generate negative image\n";
+            if ( argc == 3){
+                GenNeg(argv[2]);
+            }
+        }
 	}
     else if ( argc == 2){
         if (strcmp(argv[1], "hello") == 0)
@@ -786,3 +878,19 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
+
+
+
+
+//TODO LIST
+/*
+ 1、做一个标注工具，自动先对齐，人工校正来标注
+ 2、做一个生成负例的工具，自动从图片中扣除人脸
+ 3、看f3000的最新代码，关于validataion那部分的改进
+ 4、性能调试，做time profile
+ 5、如何提高训练速度？
+ 6、如何压缩模型：把回归部分的float改为short？千分之一的精度应该够了。观察一下模型的最大最小值
+ 7、做成手机上predict用的包
+ 8、
+ 
+ */

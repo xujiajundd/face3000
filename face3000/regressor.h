@@ -13,6 +13,7 @@ public:
 	std::vector<RandomForest> rd_forests_;
     std::vector<struct model*> linear_model_x_;
     std::vector<struct model*> linear_model_y_;
+    float **modreg;
 
     struct feature_node* tmp_binary_features;
 
@@ -88,8 +89,8 @@ public:
 	void LoadCascadeRegressor(std::string ModelName);
 	void SaveCascadeRegressor(std::string ModelName);
     std::vector<cv::Rect> detectMultiScale(cv::Mat_<uchar>& image,
-                                                             std::vector<cv::Mat_<float>>& shapes, float scaleFactor, int minNeighbors=3, int flags=0,
-                                                             int minSize=50 );
+                                                             std::vector<cv::Mat_<float>>& shapes, float scaleFactor, int minNeighbors=2, int flags=0,
+                                                             int minSize=100 );
 };
 
 #endif

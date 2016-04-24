@@ -391,9 +391,11 @@ cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
 
 //    float score = 0;
 	for (int i = 0; i < params_.predict_regressor_stages_; i++){
-        cv::Mat_<float> rotation;
-		float scale;
-		getSimilarityTransform(ProjectShape(current_shape, bbox), params_.mean_shape_, rotation, scale);
+        cv::Mat_<float> rotation = cv::Mat_<float>::ones(2, 2);
+		float scale = 1.0;
+        if ( i > 0 ){
+		    getSimilarityTransform(ProjectShape(current_shape, bbox), params_.mean_shape_, rotation, scale);
+        }
 		cv::Mat_<float> shape_increaments = regressors_[i].Predict(image, current_shape, bbox, rotation, scale, score, is_face);
         if ( !is_face ){
             //std::cout << "检测不是face!!!!!!!!!!!!!!!!!!!!!!"<< std::endl;
@@ -405,29 +407,50 @@ cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
 
     cv::Mat_<float> res = current_shape;
     
-    //add by xujj, 做一个小幅抖动滤波
-    if ( antiJitter == 1 && params_.landmarks_num_per_face_ == 68 ){
-        for ( int j=0; j<68; j++){
-            float alphax = fabs(res(j,0)-lastRes(j,0)) / 10.0;
-            float alphay = fabs(res(j,1)-lastRes(j,1)) / 10.0;
-            if (alphax > 1.0 ) alphax = 1.0;
-            if (alphay > 1.0 ) alphay = 1.0;
-            
-            lastRes(j,0) = ((1.0-alphax)*lastRes(j,0) + alphax*res(j,0));
-            lastRes(j,1) = ((1.0-alphay)*lastRes(j,1) + alphay*res(j,1));
-        }
-        return lastRes;
-    }
+    //add by xujj, 做一个小幅抖动滤波，这个在detect时无效了。。。//TODO：可放到检测合并结束的时候再做
+//    if ( antiJitter == 1 && params_.landmarks_num_per_face_ == 68 ){
+//        for ( int j=0; j<68; j++){
+//            float alphax = fabs(res(j,0)-lastRes(j,0)) / 10.0;
+//            float alphay = fabs(res(j,1)-lastRes(j,1)) / 10.0;
+//            if (alphax > 1.0 ) alphax = 1.0;
+//            if (alphay > 1.0 ) alphay = 1.0;
+//            
+//            lastRes(j,0) = ((1.0-alphax)*lastRes(j,0) + alphax*res(j,0));
+//            lastRes(j,1) = ((1.0-alphay)*lastRes(j,1) + alphay*res(j,1));
+//        }
+//        return lastRes;
+//    }
 
 	return res;
 }
 
 
+bool box_overlap(BoundingBox box1, BoundingBox box2){
+    float sx = std::max(box1.start_x, box2.start_x);
+    float sy = std::max(box1.start_y, box2.start_y);
+    float ex = std::min(box1.start_x+box1.width, box2.start_x+box2.width);
+    float ey = std::min(box1.start_y+box1.height, box2.start_y+box2.height);
+    float oversquare = 0;
+    if ( ex > sx && ey > sy ){
+        oversquare = (ex - sx)*(ey - sy);
+    }
+
+    float square1 = box1.width * box1.height;
+    float square2 = box2.width * box2.height;
+
+    if ( oversquare > 0.5 * std::min(square1, square2)) {
+        return true;
+    }
+
+    return false;
+}
+
 std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
                                                          std::vector<cv::Mat_<float>>& shapes, float scaleFactor, int minNeighbors, int flags,
                                                          int minSize){
     std::vector<cv::Rect> faces;
-    float shuffle = 0.15;
+    shapes.clear();
+    float shuffle = 0.1;
     int order = flags | CASCADE_FLAG_SEARCH_MAX_TO_MIN;
     int biggest = flags | CASCADE_FLAG_BIGGEST_ONLY;
     int track_mode = flags | CASCADE_FLAG_TRACK_MODE;
@@ -442,31 +465,59 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
         currentSize = minSize;
     }
 
+    struct candidate{
+        float score;
+        BoundingBox box;
+        cv::Mat_<float> shape;
+        int neighbors;
+    };
+
+    std::vector<struct candidate> candidates;
+    BoundingBox box;
+    cv::Mat_<float> mean_shape = ReProjection(params_.mean_shape_, box); //这句也是重复执行了
     while ( currentSize >= minSize && currentSize <= std::min(image.cols, image.rows)){
+        box.width = currentSize;
+        box.height = currentSize;
         for ( int i=0; i<image.cols-currentSize; i+= currentSize*shuffle){
+            box.start_x = i;
+            box.center_x = box.start_x + box.width/2.0;
             for ( int j=0; j<image.rows-currentSize; j+=currentSize*shuffle){
-                BoundingBox box;
-                box.start_x = i;
                 box.start_y = j;
-                box.width = currentSize;
-                box.height = currentSize;
-                box.center_x = box.start_x + box.width/2.0;
                 box.center_y = box.start_y + box.width/2.0;
                 bool is_face = true;
-                cv::Mat_<float> current_shape = ReProjection(params_.mean_shape_, box);
+                cv::Mat_<float> current_shape = mean_shape.clone();
                 float score = 0;
                 cv::Mat_<float> res = Predict(image, current_shape, box, is_face, score);
                 if ( is_face){
                     faceFound++;
-                    //                    std::cout << "score:" << score << std::endl;
-                    //                    cv::Mat_<uchar> img = image.clone();
-                    //                    cv::Rect rect;
-                    //                    rect.x = box.start_x;
-                    //                    rect.y = box.start_y;
-                    //                    rect.width = box.width;
-                    //                    rect.height = box.height;
-                    //                    cv::rectangle(img, rect, (255), 1);
-                    //                    DrawPredictedImage(img, res);
+                    bool has_overlap = false;
+                    for ( int c=0; c<candidates.size(); c++){
+                        if ( box_overlap(box, candidates[c].box)){ //TODO:这个算法这样有漏洞的
+                            if ( score > candidates[c].score){
+                                candidates[c].score = score;
+                                candidates[c].box = box;
+                                candidates[c].shape = res;
+                                candidates[c].neighbors++;
+                            }
+                            else{
+                                candidates[c].neighbors++;
+                            }
+                            //这个结果处理完
+                            has_overlap = true;
+                            break;
+                        }
+                        else{
+
+                        }
+                    }
+                    if ( !has_overlap ){
+                        struct candidate cand;
+                        cand.score = score;
+                        cand.box = box;
+                        cand.shape = res;
+                        cand.neighbors = 0;
+                        candidates.push_back(cand);
+                    }
                 }
                 else{
                     nonface++;
@@ -481,9 +532,23 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
             currentSize *= scaleFactor;
         }
     }
+
+    for ( int c=0; c<candidates.size(); c++){
+        if ( candidates[c].neighbors >= minNeighbors-1 ){
+            cv::Rect rect;
+            rect.x = candidates[c].box.start_x;
+            rect.width = candidates[c].box.width;
+            rect.y = candidates[c].box.start_y;
+            rect.height = candidates[c].box.height;
+            faces.push_back(rect);
+            shapes.push_back(candidates[c].shape);
+        }
+    }
     
     return faces;
 }
+
+
 
 cv::Mat_<float> CascadeRegressor::NegMinePredict(cv::Mat_<uchar>& image,
                                           cv::Mat_<float>& current_shape, BoundingBox& bbox, bool &is_face, float &fi, int stage, int landmark, int tree){
@@ -817,44 +882,49 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
 cv::Mat_<float> Regressor::Predict(cv::Mat_<uchar>& image,
 	cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face){
 
-	cv::Mat_<float> predict_result(current_shape.rows, current_shape.cols, 0.0);
-
+    cv::Mat_<float> predict_result;
     feature_node* binary_features = GetGlobalBinaryFeatures(image, current_shape, bbox, rotation, scale, score, is_face);
     if ( !is_face ){
         return predict_result;
     }
 //    struct timeval t1, t2;
 //    gettimeofday(&t1, NULL);
-    
-    for (int i = 0; i < params_.landmarks_num_per_face_; i++){
-//		predict_result(i, 0) = predict(linear_model_x_[i], binary_features);
-//        predict_result(i, 1) = predict(linear_model_y_[i], binary_features);
-        
-        int idx;
-        const feature_node *lx=binary_features;
-        float *wx =linear_model_x_[i]->w;
-        float *wy = linear_model_y_[i]->w;
-//        float resultx = 0.0, resulty = 0.0;
-        for(; (idx=lx->index)!=-1 && idx < linear_model_x_[i]->nr_feature; lx++){
-            idx--;
-            predict_result(i,0) += wx[idx]; 
-            predict_result(i,1) += wy[idx];
-        }
+    predict_result = cv::Mat_<float>(current_shape.rows, current_shape.cols);
+//    for (int i = 0; i < params_.landmarks_num_per_face_; i++){
+////		predict_result(i, 0) = predict(linear_model_x_[i], binary_features);
+////        predict_result(i, 1) = predict(linear_model_y_[i], binary_features);
+//        
+//        int idx;
+//        const feature_node *lx=binary_features;
+//        float *wx =linear_model_x_[i]->w;
+//        float *wy = linear_model_y_[i]->w;
+////        float resultx = 0.0, resulty = 0.0;
+//        for(; (idx=lx->index)!=-1 && idx < linear_model_x_[i]->nr_feature; lx++){
+//            idx--;
+//            predict_result(i,0) += wx[idx]; 
+//            predict_result(i,1) += wy[idx];
+//        }
+//
+//    }
 
-    }
     //performance test
     //模型数据结构改为：m[idx][2*landmarks], idx为binary_feature的长度
     int idx;
     const feature_node *lx=binary_features;
-    for(; (idx=lx->index)!=-1 ; lx++){
+    float sum[2*params_.landmarks_num_per_face_];
+    for ( int i=0; i<2*params_.landmarks_num_per_face_; i++) sum[i] = 0;
+    
+    for(; (idx=lx->index)!=-1 && idx < linear_model_x_[0]->nr_feature; lx++){
         idx--;
-        for (int i = 0; i < params_.landmarks_num_per_face_; i++){
-            idx--;
-            predict_result(i,0) += 0;
-            predict_result(i,1) += 0;
+//        cblas_saxpy(2*params_.landmarks_num_per_face_, 1.0, &modreg[idx][0], 1, sum, 1); //用这个速度跟后面的循环差不多
+        for (int i = 0; i < 2*params_.landmarks_num_per_face_; i++){
+            sum[i] += modreg[idx][i];
         }
     }
-
+    for ( int i=0; i<params_.landmarks_num_per_face_; i++){
+        predict_result(i,0) = sum[2*i];
+        predict_result(i,1) = sum[2*i+1];
+    }
 
      //   gettimeofday(&t2, NULL);
      //   std::cout << "linear " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << std::endl;
@@ -870,7 +940,7 @@ cv::Mat_<float> Regressor::Predict(cv::Mat_<uchar>& image,
 cv::Mat_<float> Regressor::NegMinePredict(cv::Mat_<uchar>& image,
                                    cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face,  int stage, int currentStage, int landmark, int tree){
     
-    cv::Mat_<float> predict_result(current_shape.rows, current_shape.cols, 0.0);
+    cv::Mat_<float> predict_result;
 
         bool stop = false;
         feature_node* binary_features = NegMineGetGlobalBinaryFeatures(image, current_shape, bbox, rotation, scale, score, is_face, stage, currentStage, landmark, tree, stop);
@@ -881,7 +951,9 @@ cv::Mat_<float> Regressor::NegMinePredict(cv::Mat_<uchar>& image,
             return predict_result;
         }
         if ( stage == currentStage ) return predict_result; //如果已经测试到当前的stage，不用做shape回归了。
-        
+
+        predict_result = cv::Mat_<float>(current_shape.rows, current_shape.cols);
+
         for (int i = 0; i < params_.landmarks_num_per_face_; i++){
             //		predict_result(i, 0) = predict(linear_model_x_[i], binary_features);
             //        predict_result(i, 1) = predict(linear_model_y_[i], binary_features);
@@ -1000,6 +1072,16 @@ void Regressor::LoadRegressor(std::string ModelName, int stage){
 		linear_model_y_.push_back(load_model_bin(fin));
         fin.close();
 	}
+    modreg = new float *[linear_model_x_[0]->nr_feature];
+    for ( int i = 0; i < linear_model_x_[0]->nr_feature; i++){
+        modreg[i] = new float[2*params_.landmarks_num_per_face_];
+        for ( int j = 0; j<params_.landmarks_num_per_face_; j++ ){
+            float *wx =linear_model_x_[j]->w;
+            float *wy = linear_model_y_[j]->w;
+            modreg[i][2*j] = wx[i];
+            modreg[i][2*j+1] = wy[i];
+        }
+    }
 }
 
 //void Regressor::ConstructLeafCount(){

@@ -12,7 +12,7 @@
 // #include <atomic>
 //using namespace std;
 //using namespace cv;
-
+#include <Accelerate/Accelerate.h>
 
 #define MAXFINDTIMES 100000
 
