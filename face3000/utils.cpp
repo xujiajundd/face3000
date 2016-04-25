@@ -184,12 +184,55 @@ std::vector<cv::Rect> DetectFaces(cv::Mat_<uchar>& image, cv::CascadeClassifier&
 }
 
 
+BoundingBox CalculateBoundingBox(cv::Mat_<float>& shape){
+    BoundingBox bbx;
+    float left_x = 10000;
+    float right_x = 0;
+    float top_y = 10000;
+    float bottom_y = 0;
+    for (int i=0; i < shape.rows;i++){
+        if (shape(i,0) < left_x)
+            left_x = shape(i,0);
+        if (shape(i,0) > right_x)
+            right_x = shape(i,0);
+        if (shape(i,1) < top_y)
+            top_y = shape(i,1);
+        if (shape(i,1) > bottom_y)
+            bottom_y = shape(i,1);
+    }
+    bbx.start_x = left_x;
+    bbx.start_y = top_y;
+    bbx.height  = bottom_y - top_y;
+    bbx.width   = right_x - left_x;
+    if ( bbx.height > bbx.width){
+        float delta = bbx.height - bbx.width;
+        bbx.width += delta/2;
+        bbx.height -= delta/2;
+        bbx.start_x -= delta/4;
+        bbx.start_y += delta/4;
+    }
+    
+    if ( bbx.width > bbx.height){
+        float delta = bbx.width - bbx.height;
+        bbx.width -= delta/2;
+        bbx.height += delta/2;
+        bbx.start_x += delta/4;
+        bbx.start_y -= delta/4;
+    }
+    //上面有可能越界，需要处理么？
+    
+    bbx.center_x = bbx.start_x + bbx.width/2.0;
+    bbx.center_y = bbx.start_y + bbx.height/2.0;
+    return bbx;
+}
+
 int LoadImages(std::vector<cv::Mat_<uchar> >& images,
 	std::vector<cv::Mat_<float> >& ground_truth_shapes,
     std::vector<int>& ground_truth_faces,
 	//const std::vector<cv::Mat_<float> >& current_shapes,
 	std::vector<BoundingBox>& bboxes,
-	std::string file_names){
+	std::string file_names,
+    std::string neg_file_names){
 	
 	// change this function to satisfy your own needs
 	// for .box files I just use another program before this LoadImage() function
@@ -228,30 +271,33 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
         
         cv::Mat_<uchar> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 0);
         cv::Mat_<float> ground_truth_shape = LoadGroundTruthShape(("/Users/xujiajun/developer/dataset/helen/" + pts).c_str());
-        
+        if ( ground_truth_shape.rows != 68 || ground_truth_shape.cols != 2){
+            std::cout<<"error:" << pts << std::endl;
+            continue;
+        }
 
 		if (image.cols > 2000){
+			cv::resize(image, image, cv::Size(image.cols / 4, image.rows / 4), 0, 0, cv::INTER_LINEAR);
+			ground_truth_shape /= 4.0;
+		}
+		else if (image.cols > 1500 && image.cols <= 2000){
 			cv::resize(image, image, cv::Size(image.cols / 3, image.rows / 3), 0, 0, cv::INTER_LINEAR);
 			ground_truth_shape /= 3.0;
 		}
-		else if (image.cols > 1400 && image.cols <= 2000){  
-			cv::resize(image, image, cv::Size(image.cols / 2, image.rows / 2), 0, 0, cv::INTER_LINEAR);
-			ground_truth_shape /= 2.0;
-		}
 
-        std::vector<cv::Rect> faces;
-//        haar_cascade.detectMultiScale(image, faces, 1.1, 2, 0, cv::Size(100, 100)); //原来是30
-        haar_cascade.detectMultiScale(image, faces, 1.1, 2, 0
-                                      |cv::CASCADE_FIND_BIGGEST_OBJECT
-                                      //                                      |cv::CASCADE_DO_ROUGH_SEARCH
-                                      , cv::Size(60, 60));
+//        std::vector<cv::Rect> faces;
+//        haar_cascade.detectMultiScale(image, faces, 1.1, 2, 0
+//                                      |cv::CASCADE_FIND_BIGGEST_OBJECT
+//                                      //                                      |cv::CASCADE_DO_ROUGH_SEARCH
+//                                      , cv::Size(60, 60));
+        
 //        dlib::cv_image<uchar>cimg(image);
 //        std::vector<dlib::rectangle> faces;
 //        faces = fdetector(cimg);
         
         
-        for (int i = 0; i < faces.size(); i++){
-            cv::Rect faceRec = faces[i];
+//        for (int i = 0; i < faces.size(); i++){
+          //  cv::Rect faceRec = faces[i];
 //            cv::Rect faceRec;
 //            faceRec.x = faces[i].left();
 //            faceRec.y = faces[i].top();
@@ -259,18 +305,18 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
 //            faceRec.height = faces[i].bottom() - faces[i].top();
             
             
-            if (ShapeInRect(ground_truth_shape, faceRec)){ 
+            //if (ShapeInRect(ground_truth_shape, faceRec)){
             	// check if the detected face rectangle is in the ground_truth_shape
                 images.push_back(image);
                 ground_truth_shapes.push_back(ground_truth_shape);
                 ground_truth_faces.push_back(1);
-                BoundingBox bbox;
-                bbox.start_x = faceRec.x;
-                bbox.start_y = faceRec.y;
-                bbox.width = faceRec.width;
-                bbox.height = faceRec.height;
-                bbox.center_x = bbox.start_x + bbox.width / 2.0;
-                bbox.center_y = bbox.start_y + bbox.height / 2.0;
+                BoundingBox bbox = CalculateBoundingBox(ground_truth_shape);
+//                bbox.start_x = faceRec.x;
+//                bbox.start_y = faceRec.y;
+//                bbox.width = faceRec.width;
+//                bbox.height = faceRec.height;
+//                bbox.center_x = bbox.start_x + bbox.width / 2.0;
+//                bbox.center_y = bbox.start_y + bbox.height / 2.0;
                 bboxes.push_back(bbox);
                 pos_num++;
                 
@@ -350,80 +396,93 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
                 ground_truth_shapes.push_back(flipped_ground_truth_shape);
                 ground_truth_faces.push_back(1);
                 BoundingBox flipped_bbox;
-                flipped_bbox.start_x = image.cols - (faceRec.x + faceRec.width);
-                flipped_bbox.start_y = faceRec.y;
-                flipped_bbox.width = faceRec.width;
-                flipped_bbox.height = faceRec.height;
+                flipped_bbox.start_x = image.cols - (bbox.start_x + bbox.width);
+                flipped_bbox.start_y = bbox.start_y;
+                flipped_bbox.width = bbox.width;
+                flipped_bbox.height = bbox.height;
                 flipped_bbox.center_x = flipped_bbox.start_x + flipped_bbox.width / 2.0;
                 flipped_bbox.center_y = flipped_bbox.start_y + flipped_bbox.height / 2.0;
                 bboxes.push_back(flipped_bbox);
                 pos_num++;
 
-//                //加负例
-//                BoundingBox fbbox;
-//                fbbox.start_x = image.cols * 3 / 4;
-//                fbbox.start_y = image.rows * 3 / 4;
-//                fbbox.width = image.cols / 4 - 10;
-//                fbbox.height = image.rows / 4 - 10;
-//                fbbox.center_x = fbbox.start_x + fbbox.width / 2.0;
-//                fbbox.center_y = fbbox.start_y + fbbox.height / 2.0;
-//                images.push_back(flippedImage);
-//                ground_truth_shapes.push_back(ReProjection(ProjectShape(flipped_ground_truth_shape, bbox), fbbox));
-//                ground_truth_faces.push_back(-1);
-//                bboxes.push_back(fbbox);
-
                 count++;
                 if (count%100 == 0){
                     std::cout << count << " images loaded\n";
                 }
-                break;
-            }
-         }
+             //   break;
+            //}
+        // }
 
 	}
 	std::cout << "get " << bboxes.size() << " faces\n";
 	fin.close();
 
-    for ( int i=0; i<pos_num; i++){
-        cv::Mat_<uchar> image = images[i];
-        cv::Mat_<float> ground_truth_shape = ground_truth_shapes[i];
-        BoundingBox bbox = bboxes[i];
-        //加负例
-        BoundingBox nbbox;
-        nbbox.width = std::max(image.cols / 4 - 10, image.rows / 4 - 10);
-        nbbox.height = nbbox.width;
+    //开始加负例
+    int neg_num = 0;
+    fin.open(neg_file_names.c_str(), std::ifstream::in);
+    while (fin >> name){
+        std::cout << name << std::endl;
+        cv::Mat_<uchar> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 0);
+        neg_num++;
+        if ( neg_num > 3 * pos_num ) break;
         
-        nbbox.start_x = image.cols - nbbox.width - 50;
-        nbbox.start_y = image.rows - nbbox.height - 50;
-
+        cv::Mat_<float> ground_truth_shape = ground_truth_shapes[neg_num % pos_num];
+        BoundingBox bbox = bboxes[neg_num % pos_num];
+        BoundingBox nbbox;
+        nbbox.width = std::max(image.cols / 5, image.rows / 5);
+        nbbox.height = nbbox.width;
+        nbbox.start_x = image.cols - nbbox.width - 20;
+        nbbox.start_y = image.rows - nbbox.height - 20;
         nbbox.center_x = nbbox.start_x + nbbox.width / 2.0;
         nbbox.center_y = nbbox.start_y + nbbox.height / 2.0;
         images.push_back(image);
         ground_truth_shapes.push_back(ReProjection(ProjectShape(ground_truth_shape, bbox), nbbox));
         ground_truth_faces.push_back(-1);
         bboxes.push_back(nbbox);
-        
-        { //再添一个比较接近人脸的
-            time_t current_time;
-            current_time = time(0);
-            cv::RNG rd(current_time);
-            BoundingBox nbbox;
-            nbbox.width = bbox.width + rd.uniform(-50, 50);
-            nbbox.height = nbbox.width;
-            
-            nbbox.start_x = 20;
-            nbbox.start_y = 20;
-            
-            nbbox.center_x = nbbox.start_x + nbbox.width / 2.0;
-            nbbox.center_y = nbbox.start_y + nbbox.height / 2.0;
-            images.push_back(image);
-            ground_truth_shapes.push_back(ReProjection(ProjectShape(ground_truth_shape, bbox), nbbox));
-            ground_truth_faces.push_back(-1);
-            bboxes.push_back(nbbox);
-        }
-        
-        //TODO：据说添加4倍左右的负例比较好，还需要继续生成
     }
+    fin.close();
+    
+    std::cout << "add negative samples:" << neg_num << std::endl;
+//    for ( int i=0; i<pos_num; i++){
+//        cv::Mat_<uchar> image = images[i];
+//        cv::Mat_<float> ground_truth_shape = ground_truth_shapes[i];
+//        BoundingBox bbox = bboxes[i];
+//        //加负例
+//        BoundingBox nbbox;
+//        nbbox.width = std::max(image.cols / 4 - 10, image.rows / 4 - 10);
+//        nbbox.height = nbbox.width;
+//        
+//        nbbox.start_x = image.cols - nbbox.width - 50;
+//        nbbox.start_y = image.rows - nbbox.height - 50;
+//
+//        nbbox.center_x = nbbox.start_x + nbbox.width / 2.0;
+//        nbbox.center_y = nbbox.start_y + nbbox.height / 2.0;
+//        images.push_back(image);
+//        ground_truth_shapes.push_back(ReProjection(ProjectShape(ground_truth_shape, bbox), nbbox));
+//        ground_truth_faces.push_back(-1);
+//        bboxes.push_back(nbbox);
+//        
+//        { //再添一个比较接近人脸的
+//            time_t current_time;
+//            current_time = time(0);
+//            cv::RNG rd(current_time);
+//            BoundingBox nbbox;
+//            nbbox.width = bbox.width + rd.uniform(-50, 50);
+//            nbbox.height = nbbox.width;
+//            
+//            nbbox.start_x = 20;
+//            nbbox.start_y = 20;
+//            
+//            nbbox.center_x = nbbox.start_x + nbbox.width / 2.0;
+//            nbbox.center_y = nbbox.start_y + nbbox.height / 2.0;
+//            images.push_back(image);
+//            ground_truth_shapes.push_back(ReProjection(ProjectShape(ground_truth_shape, bbox), nbbox));
+//            ground_truth_faces.push_back(-1);
+//            bboxes.push_back(nbbox);
+//        }
+//        
+//        //TODO：据说添加4倍左右的负例比较好，还需要继续生成
+//    }
 
     return pos_num;
 }

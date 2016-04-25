@@ -14,7 +14,7 @@
 //using namespace cv;
 #include <Accelerate/Accelerate.h>
 
-#define MAXFINDTIMES 100000
+#define MAXFINDTIMES 50
 
 //std::mutex m;
 class BoundingBox {
@@ -86,7 +86,7 @@ void getSimilarityTransform(const cv::Mat_<float>& shape_to,
 cv::Mat_<float> LoadGroundTruthShape(const char* name);
 
 int LoadImages(std::vector<cv::Mat_<uchar> >& images, std::vector<cv::Mat_<float> >& ground_truth_shapes, std::vector<int> & ground_truth_faces,
-	std::vector<BoundingBox>& bboxes, std::string file_names);
+	std::vector<BoundingBox>& bboxes, std::string file_names, std::string neg_file_names);
 
 bool ShapeInRect(cv::Mat_<float>& ground_truth_shape, cv::Rect&);
 

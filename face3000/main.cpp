@@ -65,7 +65,8 @@ void Test(const char* ModelName){
     std::vector<int> ground_truth_faces;
 	std::vector<BoundingBox> bboxes;
 	std::string file_names = "/Users/xujiajun/developer/dataset/helen/test_jpgs.txt"; //"./../dataset/helen/train_jpgs.txt";
-    LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names);
+    std::string neg_file_names = "/Users/xujiajun/developer/dataset/helen/test_jpgs.txt.no";
+    LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names, neg_file_names);
     
     struct timeval t1, t2;
     gettimeofday(&t1, NULL);
@@ -429,6 +430,7 @@ void Train(const char* ModelName){
     std::vector<int> ground_truth_faces;
 	std::vector<BoundingBox> bboxes;
     std::string file_names = "/Users/xujiajun/developer/dataset/helen/train_jpgs.txt";
+    std::string neg_file_names = "/Users/xujiajun/developer/dataset/helen/train_neg_jpgs.txt";
     Parameters params;
     // train_jpgs.txt contains all the paths for each image, one image per line
     // for example: in Linux you can use ls *.jpg > train_jpgs.txt to get the paths
@@ -441,7 +443,7 @@ void Train(const char* ModelName){
     	1000.jpg
     */
     
-	int pos_num = LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names);
+	int pos_num = LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names, neg_file_names);
 	params.mean_shape_ = GetMeanShape(ground_truth_shapes, ground_truth_faces, bboxes);
     
     params.local_features_num_ = 2000;
@@ -476,7 +478,7 @@ void Train(const char* ModelName){
     
     params.tree_depth_ = 4;
     params.trees_num_per_forest_ = 4;
-    params.initial_guess_ = 1;
+    params.initial_guess_ = 2;
     
 //    params.group_num_ = 6;
 //    std::vector<int> group1, group2, group3, group4, group5, group6, group7;
@@ -594,180 +596,11 @@ void Hello(){
     }
     cout << ssum << endl;
     cout << "time2: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
-
-
-//    gettimeofday(&t1, NULL);
-//    float done = 1.0;
-//    int ione = stride;
-//
-//    for ( int r=0; r<rn; r++){
-//        float *xx = &x[0], *yy=&y[0];
-//        cblas_saxpy(dim, done, xx, ione, yy, ione);
-////        vDSP_vadd(x, 1, y, 1, z, 1, dim);
-//    }
-//    gettimeofday(&t2, NULL);
-//    sum = 0;
-//    for ( int i=0; i<dim; i++){
-//        sum += y[i];
-//    }
-//    cout << sum << endl;
-//    cout << "time1: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
-
-
-
-
-
-
-
-/*
-    for ( int i=0; i<68; i++ ){
-        std::cout << y[i] << ", ";
-    }
-    std::cout << endl;
-    
-    int pixel = 0;
-    cv::Mat_<int> img = cv::Mat_<int>(640, 640);
-    for (int i=0; i<640; i++){
-        for ( int j=0; j<640; j++){
-            img(i,j) = i*j;
-        }
-    }
-    gettimeofday(&t1, NULL);
-    for (int k=0; k<10000; k++){
-        for (int i=0; i<640; i++){
-            for ( int j=0; j<640; j++){
-                img(0,j) += img(i,j);
-            }
-        }
-    }
-    gettimeofday(&t2, NULL);
-    cout << "time mat: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
-    
-    gettimeofday(&t1, NULL);
-    for (int k=0; k<10000; k++){
-        for (int i=0; i<640; i++){
-            for ( int j=0; j<640; j++){
-                img(i,0) += img(i,j);
-            }
-        }
-    }
-    gettimeofday(&t2, NULL);
-    cout << "time mat: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
-    
-    
-    int uimg[68][2048];
-    for (int i=0; i<68; i++){
-        for ( int j=0; j<2048; j++){
-            uimg[i][j] = i*j;
-        }
-    }
-    
-    gettimeofday(&t1, NULL);
-    for (int k=0; k<10000; k++){
-        for (int i=0; i<68; i++){
-            for ( int j=0; j<2048; j=j+3){
-                uimg[0][j] += uimg[i][j];
-            }
-        }
-    }
-    gettimeofday(&t2, NULL);
-    cout << "time array: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << "   " << pixel << endl;
-    
-    
-    int uimg2[2048][68];
-    for (int i=0; i<2048; i++){
-        for ( int j=0; j<68; j++){
-            uimg2[i][j] = i*j;
-        }
-    }
-    gettimeofday(&t1, NULL);
-    for (int k=0; k<10000; k++){
-        for (int i=0; i<2048; i=i+3){
-            for ( int j=0; j<68;j++){
-                uimg2[i][0] += uimg2[i][j];
-            }
-        }
-    }
-    gettimeofday(&t2, NULL);
-    cout << "time array: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << "   " << pixel << endl;
-    */
-//    time_t current_time;
-//    current_time = time(0);
-//    cv::RNG random_generator(current_time);
-//    int r = random_generator.uniform(0, 10000);
-//    random_generator.uniform(0.0, 10.0);
-//    
-//    struct feature_node* binary_features = new feature_node[1089];
-//    std::vector<struct model*> linear;
-//    linear.resize(68);
-////    model  linear[68];
-//
-//    
-//    for (int i=0; i<68; i++){
-//        linear[i] = new model;
-//        float *w = (float *)malloc(1088*8);
-//        for ( int j=0; j<1088*8; j++){
-//            w[j] = random_generator.uniform(0.0, 10.0);
-//        }
-//        linear[i]->w = w;
-//    }
-// 
-//    gettimeofday(&t1, NULL);
-//
-//    float sumw[68];
-//    for ( int k=0; k<10; k++){
-//        for (int i=0; i<1088; i++){
-//            for ( int j=0; j<5; j++){
-//                binary_features[i].index = 8*i;
-//                binary_features[i].value = 1;
-//            }
-//        }
-//        cv::Mat_<float> predict_result(68,2, 0.0);
-//        binary_features[1088].index = -1;
-//        binary_features[1088].value = 0;
-//        for ( int i=0; i<68; i++){
-//            int idx;
-//            const feature_node *lx = binary_features;
-//            float *w=linear[i]->w;
-//            float result = 0.0;
-//            for(; (idx=lx->index)!=-1 && idx < 1088; lx++){
-//                sumw[i] += w[idx]; //为了这儿减少一次减法，在getglobalfeature的地方改了index的初值为0;
-//            }
-//            predict_result(i,0) = sumw[i];
-//            predict_result(i,1) = sumw[i];
-////            for ( int j=0; j<1088; j++){
-////                sumw[i] += linear[i].w[binary_features[j].index];
-////            }
-//        }
-//        
-//    }
-//
-//    gettimeofday(&t2, NULL);
-//    cout << "time sumw1: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
-//    
-
-//    gettimeofday(&t1, NULL);
-//
-//    for ( int k=0; k<10; k++){
-//        for (int i=0; i<1088; i++){
-//            for ( int j=0; j<5; j++){
-//                binary_features[i].index = 8*i;
-//                binary_features[i].value = 1.0;
-//            }
-//        }
-//        for ( int j=0; j<1088; j++){
-//            for ( int i=0; i<68; i++){
-//                sumw[i] += linear[i]->w[binary_features[j].index];
-//            }
-//        }
-//    }
-//    gettimeofday(&t2, NULL);
-//    cout << "time sumw: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0  << endl;
 }
 
 //给一个目录，循环处理子目录下的图片，文件名改为子目录-子目录-数字编号，用其他识别器，把人脸抹掉
-std::vector<char *>  List(const char *path, int level) {
-    std::vector<char *> fileLists;
+std::vector<std::string>  List(const char *path) {
+    std::vector<std::string> fileLists;
     struct dirent* ent = NULL;
     DIR *pDir;
     pDir = opendir(path);
@@ -778,38 +611,67 @@ std::vector<char *>  List(const char *path, int level) {
     while (NULL != (ent = readdir(pDir))) {
         if (ent->d_type == 8) {
             //file
-            for (int i = 0; i < level; i++) {
-                printf("-");
-            }
-            printf("%s/n", ent->d_name);
+//            for (int i = 0; i < level; i++) {
+//                printf("-");
+//            }
+            if ( ent->d_name[0] == '.' ) continue;
+ //           printf("%s/%s\n", path, ent->d_name);
+            std::string _path(path);
+            std::string _fileName(ent->d_name);
+            std::string fullFilePath = _path + "/" + _fileName;
+//            std::cout << fullFilePath << std::endl;
+            fileLists.push_back(fullFilePath);
         } else {
-            if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) {
+            if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0 ) {
                 continue;
             }
             //directory
             std::string _path(path);
             std::string _dirName(ent->d_name);
             std::string fullDirPath = _path + "/" + _dirName;
-            for (int i = 0; i < level; i++) {
-                printf(" ");
+//            for (int i = 0; i < level; i++) {
+//                printf(" ");
+//            }
+//            printf("%s\n", ent->d_name);
+            vector<std::string> l = List(fullDirPath.c_str());
+            for ( int i=0; i<l.size(); i++){
+                fileLists.push_back(l[i]);
             }
-            printf("%s//n", ent->d_name);
-            List(fullDirPath.c_str(), level + 1);
         }
     }
     return fileLists;
 }
 
 void GenNeg(const char* path){
-    std::string destDir = "/Users/xujiajun/developer/dataset/negface/";
+    std::string destDir = "/Users/xujiajun/developer/dataset/helen/negset/";
+    std::string sourceFile = "/Users/xujiajun/developer/dataset/helen/train_jpgs.txt.full";
     std::string fn_haar = "/Users/xujiajun/developer/dataset/haarcascade_frontalface_alt2.xml";
     cv::CascadeClassifier haar_cascade;
     bool yes = haar_cascade.load(fn_haar);
     std::cout << "detector: " << yes << std::endl;
-
-    std::vector<char *> files = List(path, 3);
-    for ( int i=0; i<files.size(); i++){
-        cv::Mat_<uchar> image = cv::imread(files[i], 1);
+    std::ifstream fin;
+    fin.open(sourceFile.c_str(), std::ifstream::in);
+    // train_jpgs.txt contains all the paths for each image, one image per line
+    // for example: in Linux you can use ls *.jpg > train_jpgs.txt to get the paths
+    // the file looks like as below
+    /*
+    	1.jpg
+    	2.jpg
+    	3.jpg
+    	...
+    	1000.jpg
+     */
+    
+    std::string name;
+    //std::cout << name << std::endl;
+    int count;
+    while (fin >> name){
+        //std::cout << "reading file: " << name << std::endl;
+        std::cout << name << std::endl;
+//        std::string pts = name.substr(0, name.length() - 3) + "pts";
+        
+        cv::Mat_<uchar> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 0);
+//        cv::Mat_<uchar> image = cv::imread(files[i], 1);
         if (image.cols > 2000){
             cv::resize(image, image, cv::Size(image.cols / 3, image.rows / 3), 0, 0, cv::INTER_LINEAR);
         }
@@ -819,11 +681,22 @@ void GenNeg(const char* path){
 
         std::vector<cv::Rect> faces;
         haar_cascade.detectMultiScale(image, faces, 1.1, 2, 0, cv::Size(50, 50));
+        std::cout << faces.size() << endl;
         for (int i = 0; i < faces.size(); i++){
             cv::Rect faceRec = faces[i];
-
+            cv::rectangle(image, faceRec, Scalar(image(faceRec.y, faceRec.x)), CV_FILLED);
+        }
+        if ( faces.size() > 0 ){
+            std:string dd = "/";
+            int pos = name.find(dd);
+            while (pos != -1){
+                name.replace(pos, dd.length(), std::string("-"));
+                pos = name.find(dd);
+            }
+            cv::imwrite((destDir+name).c_str(), image);
         }
     }
+    fin.close();
 }
 
 
@@ -864,6 +737,7 @@ int main(int argc, char* argv[])
             if ( argc == 3){
                 GenNeg(argv[2]);
             }
+            return 0;
         }
 	}
     else if ( argc == 2){

@@ -517,7 +517,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
 
     std::vector<struct candidate> candidates;
     BoundingBox box;
-    cv::Mat_<float> mean_shape = ReProjection(params_.mean_shape_, box); //这句也是重复执行了
+    
     while ( currentSize >= minSize && currentSize <= std::min(image.cols, image.rows)){
         box.width = currentSize;
         box.height = currentSize;
@@ -528,7 +528,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
                 box.start_y = j;
                 box.center_y = box.start_y + box.width/2.0;
                 bool is_face = true;
-                cv::Mat_<float> current_shape = mean_shape.clone();
+                cv::Mat_<float> current_shape = ReProjection(params_.mean_shape_, box);
                 float score = 0;
                 cv::Mat_<float> res = Predict(image, current_shape, box, is_face, score);
                 if ( is_face){
