@@ -423,49 +423,58 @@ cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
 }
 
 /*
- static vector<int> nms(const vector<Rect>& rects, const vector<double>& scores, \
- double overlap) {
- const int n = rects.size();
- vector<double> areas(n);
- 
- typedef std::multimap<double, int> ScoreMapper;
- ScoreMapper map;
- for (int i = 0; i < n; i++) {
- map.insert(ScoreMapper::value_type(scores[i], i));
- areas[i] = rects[i].width*rects[i].height;
- }
- 
- int picked_n = 0;
- vector<int> picked(n);
- while (map.size() != 0) {
- int last = map.rbegin()->second; // get the index of maximum score value
- picked[picked_n] = last;
- picked_n++;
- 
- for (ScoreMapper::iterator it = map.begin(); it != map.end();) {
- int idx = it->second;
- double x1 = std::max(rects[idx].x, rects[last].x);
- double y1 = std::max(rects[idx].y, rects[last].y);
- double x2 = std::min(rects[idx].x + rects[idx].width, rects[last].x + rects[last].width);
- double y2 = std::min(rects[idx].y + rects[idx].height, rects[last].y + rects[last].height);
- double w = std::max(0., x2 - x1);
- double h = std::max(0., y2 - y1);
- double ov = w*h / (areas[idx] + areas[last] - w*h);
- if (ov > overlap) {
- ScoreMapper::iterator tmp = it;
- tmp++;
- map.erase(it);
- it = tmp;
- }
- else{
- it++;
- }
- }
- }
- 
- picked.resize(picked_n);
- return picked;
- }
+ * \breif nms Non-maximum suppression
+ *  the algorithm is from https://github.com/ShaoqingRen/SPP_net/blob/master/nms%2Fnms_mex.cpp
+ *
+ * \param rects     area of faces
+ * \param scores    score of faces
+ * \param overlap   overlap threshold
+ * \return          picked index
+*/
+/*
+static vector<int> nms(const vector<Rect>& rects, const vector<double>& scores, \
+                       double overlap) {
+    const int n = rects.size();
+    vector<double> areas(n);
+    
+    typedef std::multimap<double, int> ScoreMapper;
+    ScoreMapper map;
+    for (int i = 0; i < n; i++) {
+        map.insert(ScoreMapper::value_type(scores[i], i));
+        areas[i] = rects[i].width*rects[i].height;
+    }
+    
+    int picked_n = 0;
+    vector<int> picked(n);
+    while (map.size() != 0) {
+        int last = map.rbegin()->second; // get the index of maximum score value
+        picked[picked_n] = last;
+        picked_n++;
+        
+        for (ScoreMapper::iterator it = map.begin(); it != map.end();) {
+            int idx = it->second;
+            double x1 = std::max(rects[idx].x, rects[last].x);
+            double y1 = std::max(rects[idx].y, rects[last].y);
+            double x2 = std::min(rects[idx].x + rects[idx].width, rects[last].x + rects[last].width);
+            double y2 = std::min(rects[idx].y + rects[idx].height, rects[last].y + rects[last].height);
+            double w = std::max(0., x2 - x1);
+            double h = std::max(0., y2 - y1);
+            double ov = w*h / (areas[idx] + areas[last] - w*h);
+            if (ov > overlap) {
+                ScoreMapper::iterator tmp = it;
+                tmp++;
+                map.erase(it);
+                it = tmp;
+            }
+            else{
+                it++;
+            }
+        }
+    }
+    
+    picked.resize(picked_n);
+    return picked;
+}
  */
 
 bool box_overlap(BoundingBox box1, BoundingBox box2){

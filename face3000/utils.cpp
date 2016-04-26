@@ -290,7 +290,7 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
 //                                      |cv::CASCADE_FIND_BIGGEST_OBJECT
 //                                      //                                      |cv::CASCADE_DO_ROUGH_SEARCH
 //                                      , cv::Size(60, 60));
-        
+//        
 //        dlib::cv_image<uchar>cimg(image);
 //        std::vector<dlib::rectangle> faces;
 //        faces = fdetector(cimg);
@@ -429,7 +429,7 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
         cv::Mat_<float> ground_truth_shape = ground_truth_shapes[neg_num % pos_num];
         BoundingBox bbox = bboxes[neg_num % pos_num];
         BoundingBox nbbox;
-        nbbox.width = std::max(image.cols / 5, image.rows / 5);
+        nbbox.width = std::min(image.cols / 5, image.rows / 5);
         nbbox.height = nbbox.width;
         nbbox.start_x = image.cols - nbbox.width - 20;
         nbbox.start_y = image.rows - nbbox.height - 20;
