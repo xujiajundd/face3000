@@ -423,9 +423,6 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
     while (fin >> name){
         std::cout << name << std::endl;
         cv::Mat_<uchar> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 0);
-        neg_num++;
-        if ( neg_num > 3 * pos_num ) break;
-        
         cv::Mat_<float> ground_truth_shape = ground_truth_shapes[neg_num % pos_num];
         BoundingBox bbox = bboxes[neg_num % pos_num];
         BoundingBox nbbox;
@@ -439,6 +436,8 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
         ground_truth_shapes.push_back(ReProjection(ProjectShape(ground_truth_shape, bbox), nbbox));
         ground_truth_faces.push_back(-1);
         bboxes.push_back(nbbox);
+        neg_num++;
+        if ( neg_num >= 2 * pos_num ) break;
     }
     fin.close();
     

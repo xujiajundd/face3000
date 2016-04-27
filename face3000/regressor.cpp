@@ -89,7 +89,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
         current_weight.push_back(1);
         find_times.push_back(0);
 
-        for (int j = 0; j < params_.initial_guess_; j++)
+        for (int j = 0; j < params_.initial_guess_ && j < 1; j++)
         {
             int index = 0;
             do {
@@ -208,6 +208,13 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
 			images,augmented_images_index, augmented_ground_truth_shapes, augmented_bboxes, augmented_current_shapes,
             augmented_ground_truth_faces, current_fi, current_weight, find_times,
 			rotations_, scales_);
+        int neg_examples_num = 0;
+        for ( int n=0; n<augmented_ground_truth_faces.size(); n++){
+            if ( find_times[n] < MAXFINDTIMES && augmented_ground_truth_faces[n] == -1 ){
+                neg_examples_num++;
+            }
+        }
+        std::cout<< "negative example left:" << neg_examples_num << std::endl;
 	}
 	std::cout << "Get Global Binary Features" << std::endl;
 
@@ -1124,6 +1131,8 @@ void Regressor::LoadRegressor(std::string ModelName, int stage){
 		linear_model_y_.push_back(load_model_bin(fin));
         fin.close();
 	}
+    float max_linear = -9999999.0;
+    float min_linear = 9999999.0;
     modreg = new float *[linear_model_x_[0]->nr_feature];
     for ( int i = 0; i < linear_model_x_[0]->nr_feature; i++){
         modreg[i] = new float[2*params_.landmarks_num_per_face_];
@@ -1132,8 +1141,13 @@ void Regressor::LoadRegressor(std::string ModelName, int stage){
             float *wy = linear_model_y_[j]->w;
             modreg[i][2*j] = wx[i];
             modreg[i][2*j+1] = wy[i];
+            if ( wx[i] > max_linear ) max_linear = wx[i];
+            if ( wx[i] < min_linear ) min_linear = wx[i];
+            if ( wy[i] > max_linear ) max_linear = wy[i];
+            if ( wy[i] < min_linear ) min_linear = wy[i];
         }
     }
+    std::cout<<"regression value max:" << max_linear << " min:" << min_linear << std::endl;
 }
 
 //void Regressor::ConstructLeafCount(){

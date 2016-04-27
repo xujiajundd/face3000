@@ -37,8 +37,8 @@ public:
 	std::vector<Node*> trees_;
 	std::vector<FeatureLocations> local_position_; // size = param_.local_features_num
 	std::vector<cv::Mat_<float> >* regression_targets_;
-    std::vector<int> augmented_ground_truth_faces_;
-    std::vector<float> current_weight_;
+//    std::vector<int> augmented_ground_truth_faces_;
+//    std::vector<float> current_weight_;
     CascadeRegressor *casRegressor_;
     
 	bool TrainForest(//std::vector<cv::Mat_<float> >& regression_targets, 
@@ -53,9 +53,11 @@ public:
         std::vector<int> & find_times,
 		const std::vector<cv::Mat_<float> >& rotations,
 		const std::vector<float>& scales);
-	Node* BuildTree(std::set<int>& selected_indexes, cv::Mat_<int>& pixel_differences, std::vector<int>& images_indexes, int current_depth);
+    Node* BuildTree(std::set<int>& selected_indexes, cv::Mat_<int>& pixel_differences, std::vector<int>& images_indexes, std::vector<int> & augmented_ground_truth_faces,
+                    std::vector<float> & current_weight, int current_depth);
 	int FindSplitFeature(Node* node, std::set<int>& selected_indexes,
-		cv::Mat_<int>& pixel_differences, std::vector<int>& images_indexes, std::vector<int>& left_indexes, std::vector<int>& right_indexes);
+                         cv::Mat_<int>& pixel_differences, std::vector<int>& images_indexes, std::vector<int> & augmented_ground_truth_faces,
+                         std::vector<float> & current_weight, std::vector<int>& left_indexes, std::vector<int>& right_indexes);
 	cv::Mat_<float> GetBinaryFeatures(const cv::Mat_<float>& image,
 		const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale);
 //	int MarkLeafIdentity(Node* node, int count);

@@ -483,15 +483,15 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.9);
     params.detect_factor_by_stage_.push_back(0.7);
     params.detect_factor_by_stage_.push_back(0.5);
+    params.detect_factor_by_stage_.push_back(0.2);
     params.detect_factor_by_stage_.push_back(0.1);
-    params.detect_factor_by_stage_.push_back(0.0);
     params.detect_factor_by_stage_.push_back(0.0);
     params.detect_factor_by_stage_.push_back(0.0);
     params.detect_factor_by_stage_.push_back(0.0);
     
     params.tree_depth_ = 4;
     params.trees_num_per_forest_ = 4;
-    params.initial_guess_ = 1;
+    params.initial_guess_ = 2;
     
 //    params.group_num_ = 6;
 //    std::vector<int> group1, group2, group3, group4, group5, group6, group7;
@@ -610,6 +610,8 @@ void Hello(){
     cout << ssum << endl;
     cout << "time2: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
 }
+
+
 
 //给一个目录，循环处理子目录下的图片，文件名改为子目录-子目录-数字编号，用其他识别器，把人脸抹掉
 std::vector<std::string>  List(const char *path) {

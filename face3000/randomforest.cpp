@@ -45,8 +45,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 	const std::vector<cv::Mat_<float> >& rotations,
 	const std::vector<float>& scales){
     
-    augmented_ground_truth_faces_ = augmented_ground_truth_faces;
-    current_weight_ = current_weight;
+//    augmented_ground_truth_faces_ = augmented_ground_truth_faces;
+//    current_weight_ = current_weight;
     //std::cout << "build forest of landmark: " << landmark_index_ << " of stage: " << stage_ << std::endl;
 	//regression_targets_ = &regression_targets;
 	time_t current_time;
@@ -125,7 +125,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         //为每棵树都重新生成一次local feature，否则每个森林树太多时，特征不够用。如果16棵树，4层，需要31*16个不同特征
         local_position_.clear();
         local_position_.resize(local_features_num_);
-        for (int i = 0; i < local_features_num_; i++){
+        for (int n = 0; n < local_features_num_; n++){
             float x, y;
             do{
                 x = rd.uniform(-local_radius_, local_radius_);
@@ -148,39 +148,38 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
             //TODO，这个地方可以试多个策略：1）自己，2）自己和随机一个，3）随机两个
             int landmark1 = (int)rd.uniform(0, landmark_num_);
             int landmark2 = (int)rd.uniform(0, landmark_num_);
-            local_position_[i] = FeatureLocations(landmark1, landmark2, a, b);
+            local_position_[n] = FeatureLocations(landmark1, landmark2, a, b);
         }
         //std::cout << "get pixel differences" << std::endl;
         cv::Mat_<int> pixel_differences(local_features_num_, augmented_images_index.size()); // matrix: features*images
 
 #pragma omp parallel for
-        for (int i = 0; i < augmented_images_index.size(); i++){
+        for (int n = 0; n < augmented_images_index.size(); n++){
 
-            cv::Mat_<float> rotation = rotations[i];
-            float scale = scales[i];
-            //getSimilarityTransform(ProjectShape(augmented_current_shapes[i], augmented_bboxes[i]),mean_shape_, rotation, scale);
+            cv::Mat_<float> rotation = rotations[n];
+            float scale = scales[n];
 
             for (int j = 0; j < local_features_num_; j++){
                 FeatureLocations pos = local_position_[j];
                 float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
                 float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
-                delta_x = scale*delta_x*augmented_bboxes[i].width / 2.0;
-                delta_y = scale*delta_y*augmented_bboxes[i].height / 2.0;
-                int real_x = delta_x + augmented_current_shapes[i](pos.lmark1, 0);
-                int real_y = delta_y + augmented_current_shapes[i](pos.lmark1, 1);
-                real_x = std::max(0, std::min(real_x, images[augmented_images_index[i]].cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, images[augmented_images_index[i]].rows - 1)); // which rows
-                int tmp = (int)images[augmented_images_index[i]](real_y, real_x); //real_y at first
+                delta_x = scale*delta_x*augmented_bboxes[n].width / 2.0;
+                delta_y = scale*delta_y*augmented_bboxes[n].height / 2.0;
+                int real_x = delta_x + augmented_current_shapes[n](pos.lmark1, 0);
+                int real_y = delta_y + augmented_current_shapes[n](pos.lmark1, 1);
+                real_x = std::max(0, std::min(real_x, images[augmented_images_index[n]].cols - 1)); // which cols
+                real_y = std::max(0, std::min(real_y, images[augmented_images_index[n]].rows - 1)); // which rows
+                int tmp = (int)images[augmented_images_index[n]](real_y, real_x); //real_y at first
 
                 delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
                 delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
-                delta_x = scale*delta_x*augmented_bboxes[i].width / 2.0;
-                delta_y = scale*delta_y*augmented_bboxes[i].height / 2.0;
-                real_x = delta_x + augmented_current_shapes[i](pos.lmark2, 0);
-                real_y = delta_y + augmented_current_shapes[i](pos.lmark2, 1);
-                real_x = std::max(0, std::min(real_x, images[augmented_images_index[i]].cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, images[augmented_images_index[i]].rows - 1)); // which rows
-                pixel_differences(j, i) = tmp - (int)images[augmented_images_index[i]](real_y, real_x); 
+                delta_x = scale*delta_x*augmented_bboxes[n].width / 2.0;
+                delta_y = scale*delta_y*augmented_bboxes[n].height / 2.0;
+                real_x = delta_x + augmented_current_shapes[n](pos.lmark2, 0);
+                real_y = delta_y + augmented_current_shapes[n](pos.lmark2, 1);
+                real_x = std::max(0, std::min(real_x, images[augmented_images_index[n]].cols - 1)); // which cols
+                real_y = std::max(0, std::min(real_y, images[augmented_images_index[n]].rows - 1)); // which rows
+                pixel_differences(j, n) = tmp - (int)images[augmented_images_index[n]](real_y, real_x);
             }
         }
 
@@ -189,11 +188,11 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         {
             current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
             //current_weight[k]=1;
-            if ( current_weight_[k] > 10000.0 ) {
-                current_weight_[k] = 10000.0;
+            if ( current_weight[k] > 10000.0 ) {
+                //current_weight[k] = 10000.0;
                 //这个地方如果按照参考的搞法，会丢弃太多example
-//                find_times[k] = MAXFINDTIMES+8;
-//                augmented_ground_truth_faces[k] = -1; //这种情况等于把这个训练数据抛弃了。。。
+                find_times[k] = MAXFINDTIMES+8;
+                augmented_ground_truth_faces[k] = -1; //这种情况等于把这个训练数据抛弃了。。。
             }
         }
         
@@ -203,8 +202,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 		//cv::Mat_<int> data = pixel_differences(cv::Range(0, local_features_num_), cv::Range(start_index, end_index));
 		//cv::Mat_<int> sorted_data;
 		//cv::sortIdx(data, sorted_data, cv::SORT_EVERY_ROW + cv::SORT_ASCENDING);
-		std::set<int> selected_indexes; //这个是用来表示那个feature已经被用过了
-        selected_indexes.clear();
+		std::set<int> selected_feature_indexes; //这个是用来表示那个feature已经被用过了
+        selected_feature_indexes.clear();
 
 		std::vector<int> images_indexes;
 		for (int j = start_index; j < end_index; j++){
@@ -213,7 +212,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
             }
 		}
         
-		Node* root = BuildTree(selected_indexes, pixel_differences, images_indexes, 0);
+		Node* root = BuildTree(selected_feature_indexes, pixel_differences, images_indexes, augmented_ground_truth_faces, current_weight, 0);
 		trees_.push_back(root);
         
         //计算每个训练实例的fi
@@ -292,6 +291,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         //TODO:如果负例不够了，要挖掘一些。挖掘应该指的的找一些图片，按训练到目前为止的模型判定为face但实际非face的东东
         int deleteNumber = 0;
         int mineHardNegNumber = 0;
+//#pragma omp parallel for //TODO：后面有else break这个要去掉就可能可以并行来 
         for ( int n=0; n<fiSort.size(); ++n){
             if ( fiSort[n].first < root->score_ ){
                 deleteNumber++;
@@ -301,14 +301,17 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 //接下来开始挖掘hard neg example
                 if ( augmented_ground_truth_faces[idx] == -1 && find_times[idx] < MAXFINDTIMES ){
                     BoundingBox new_box;
+//                    BoundingBox max_fi_box;
+//                    cv::Mat_<float> max_fi_shape;
+//                    float max_fi = -100000000.0;
                     float cols = images[augmented_images_index[idx]].cols;
                     float rows = images[augmented_images_index[idx]].rows;
-                    int ss = (find_times[idx] & 0x00ff0000) >> 16;
-                    int sx = (find_times[idx] & 0x0000ff00) >> 8;
-                    int sy = (find_times[idx] & 0x000000ff);
-                    for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.1, ss++)){
-                        for ( int sw_x = 5 * sx; sw_x<cols - sw_size; sw_x+=5, sx++){
-                            for ( int sw_y = 5 * sy; sw_y<rows - sw_size; sw_y+=5, sy++){
+                    int ss = find_times[idx] / ( MAXFINDTIMES / 32 );
+//                    for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.1, ss++)){
+//                    int sw_size = 50 + 10 * ss;
+                    for ( int sw_size = 50; sw_size < std::min(cols, rows); sw_size+=10){
+                        for ( int sw_x = 5; sw_x<cols - sw_size; sw_x+=5){
+                            for ( int sw_y = 5; sw_y<rows - sw_size; sw_y+=5){
                                 new_box.start_x=sw_x;
                                 new_box.start_y=sw_y;
                                 new_box.width= sw_size;
@@ -325,13 +328,14 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                 float tmp_fi=0;
                                 
                                 //这个时候，自己在第stage_, landmark_index_的i树上
+                                cv::Mat_<float> shape = augmented_current_shapes[idx].clone();
                                 casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
-                                                              augmented_current_shapes[idx], new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
+                                                              shape, new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
                                 if ( tmp_isface){
                                     faceFound = true;
                                     current_fi[idx] = tmp_fi;
                                     current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
-                                    find_times[idx] = 256*256*ss + 256*sx + sy;
+                                    augmented_current_shapes[idx] = shape;
                                     break;
                                 }
                             }
@@ -339,23 +343,31 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                 break;
                             }
                         }
-                        if ( faceFound ){
+                        if ( faceFound){
                             break;
                         }
                     }
-                }
-                if ( !faceFound ){
-                    find_times[idx] = MAXFINDTIMES;
-                }
-                else{
-                    mineHardNegNumber++;
+                    if ( !faceFound ){
+                        find_times[idx] = MAXFINDTIMES;
+//                        if (max_fi > -99999999.0){
+//                            current_fi[idx] = max_fi;
+//                            current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
+//                            augmented_ground_truth_shapes[idx] = ReProjection(ProjectShape(augmented_ground_truth_shapes[idx], augmented_bboxes[idx]), max_fi_box);
+//                            augmented_current_shapes[idx] = max_fi_shape;
+//                            augmented_bboxes[idx]=max_fi_box;
+//                            mineNormalNegNumber++;
+//                        }
+                    }
+                    else{
+                        mineHardNegNumber++;
+                    }
                 }
             }
             else{
                 break;
             }
         }
-        std::cout << "fi<threshold delete number:" << deleteNumber << " threshold:" << root->score_  <<" mine:" << mineHardNegNumber << std::endl;
+        std::cout << "fi<threshold delete number:" << deleteNumber << " threshold:" << root->score_  <<" hard mine:" << mineHardNegNumber  << std::endl;
         
 	}
 	/*int count = 0;
@@ -368,7 +380,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 }
 
 
-Node* RandomForest::BuildTree(std::set<int>& selected_indexes, cv::Mat_<int>& pixel_differences, std::vector<int>& images_indexes, int current_depth){
+Node* RandomForest::BuildTree(std::set<int>& selected_feature_indexes, cv::Mat_<int>& pixel_differences, std::vector<int>& images_indexes, std::vector<int> & augmented_ground_truth_faces,std::vector<float> & current_weight, int current_depth){
 	if (images_indexes.size() > 0){ // the node may not split under some cases
 		Node* node = new Node();
 		node->depth_ = current_depth;
@@ -382,18 +394,19 @@ Node* RandomForest::BuildTree(std::set<int>& selected_indexes, cv::Mat_<int>& pi
             float leaf_pos_weight = 0;
             float leaf_neg_weight = 0;
             for ( int i=0; i<images_indexes.size(); i++){
-                if ( augmented_ground_truth_faces_[images_indexes[i]] == 1){
-                    leaf_pos_weight += current_weight_[images_indexes[i]];
+                if ( augmented_ground_truth_faces[images_indexes[i]] == 1){
+                    leaf_pos_weight += current_weight[images_indexes[i]];
                 }
                 else{
-                    leaf_neg_weight += current_weight_[images_indexes[i]];
+                    leaf_neg_weight += current_weight[images_indexes[i]];
                 }
             }
             node->score_ = 0.5*(((leaf_pos_weight-0.0)<FLT_EPSILON)?0:log(leaf_pos_weight))-0.5*(((leaf_neg_weight-0.0)<FLT_EPSILON)?0:log(leaf_neg_weight))/*/log(2.0)*/;
 			return node;
 		}
 
-		int ret = FindSplitFeature(node, selected_indexes, pixel_differences, images_indexes, left_indexes, right_indexes);
+        int ret = FindSplitFeature(node, selected_feature_indexes, pixel_differences, images_indexes, augmented_ground_truth_faces,
+                                   current_weight, left_indexes, right_indexes);
 		// actually it won't enter the if block, when the random function is good enough
 		if (ret == 1){ // the current node contain all sample when reaches max variance reduction, it is leaf node
 			node->is_leaf_ = true;
@@ -403,11 +416,11 @@ Node* RandomForest::BuildTree(std::set<int>& selected_indexes, cv::Mat_<int>& pi
             float leaf_pos_weight = 0;
             float leaf_neg_weight = 0;
             for ( int i=0; i<images_indexes.size(); i++){
-                if ( augmented_ground_truth_faces_[images_indexes[i]] == 1){
-                    leaf_pos_weight += current_weight_[images_indexes[i]];
+                if ( augmented_ground_truth_faces[images_indexes[i]] == 1){
+                    leaf_pos_weight += current_weight[images_indexes[i]];
                 }
                 else{
-                    leaf_neg_weight += current_weight_[images_indexes[i]];
+                    leaf_neg_weight += current_weight[images_indexes[i]];
                 }
             }
             node->score_ = 0.5*(((leaf_pos_weight-0.0)<FLT_EPSILON)?0:log(leaf_pos_weight))-0.5*(((leaf_neg_weight-0.0)<FLT_EPSILON)?0:log(leaf_neg_weight))/*/log(2.0)*/;
@@ -415,8 +428,10 @@ Node* RandomForest::BuildTree(std::set<int>& selected_indexes, cv::Mat_<int>& pi
 		}
 
 		//if (current_depth + 1 < tree_depth_){
-		node->left_child_ = BuildTree(selected_indexes, pixel_differences, left_indexes, current_depth + 1);
-		node->right_child_ = BuildTree(selected_indexes, pixel_differences, right_indexes, current_depth + 1);
+        node->left_child_ = BuildTree(selected_feature_indexes, pixel_differences, left_indexes, augmented_ground_truth_faces,
+                                      current_weight, current_depth + 1);
+        node->right_child_ = BuildTree(selected_feature_indexes, pixel_differences, right_indexes, augmented_ground_truth_faces,
+                                       current_weight,  current_depth + 1);
 		//}
 		return node;
 	}
@@ -425,8 +440,8 @@ Node* RandomForest::BuildTree(std::set<int>& selected_indexes, cv::Mat_<int>& pi
 	}
 }
 
-int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_indexes, 
-	cv::Mat_<int>& pixel_differences, std::vector<int>& images_indexes, std::vector<int>& left_indexes, std::vector<int>& right_indexes){
+int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_indexes, 
+	cv::Mat_<int>& pixel_differences, std::vector<int>& images_indexes, std::vector<int> & augmented_ground_truth_faces,std::vector<float> & current_weight, std::vector<int>& left_indexes, std::vector<int>& right_indexes){
 //	std::vector<int> val;
 	//cv::Mat_<int> sorted_fea;
 	time_t current_time;
@@ -444,7 +459,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_indexes,
 	//int j = 0, tmp_index;
 #pragma omp parallel for
 	for (int j = 0; j < local_features_num_; j++){
-		if (selected_indexes.find(j) == selected_indexes.end()){
+		if (selected_feature_indexes.find(j) == selected_feature_indexes.end()){
             std::vector<int> data;
             data.reserve(images_indexes.size());
             for (int i = 0; i < images_indexes.size(); i++){
@@ -470,7 +485,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_indexes,
                     int index = images_indexes[i];
                     if (pixel_differences(j, index) < tmp_threshold){
     //					tmp_left_indexes.push_back(index);
-                        if ( augmented_ground_truth_faces_[index] == 1){
+                        if ( augmented_ground_truth_faces[index] == 1){
                             // do with regression target
                             num_l_shapes++;
                             float value = regression_targets_->at(index)(landmark_index_, 0);
@@ -481,16 +496,16 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_indexes,
                             Ey_lc += value;
                             
                             num_l_pos_faces++;
-                            total_l_pos_weight += current_weight_[index];
+                            total_l_pos_weight += current_weight[index];
                         }
                         else{ //负样本
                             num_l_neg_faces++;
-                            total_l_neg_weight += current_weight_[index];
+                            total_l_neg_weight += current_weight[index];
                         }
                     }
                     else{
     //					tmp_right_indexes.push_back(index);
-                        if ( augmented_ground_truth_faces_[index] == 1){
+                        if ( augmented_ground_truth_faces[index] == 1){
                             num_r_shapes++;
                             float value = regression_targets_->at(index)(landmark_index_, 0);
                             Ex_2_rc += pow(value, 2);
@@ -500,11 +515,11 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_indexes,
                             Ey_rc += value;
                             
                             num_r_pos_faces++;
-                            total_r_pos_weight += current_weight_[index];
+                            total_r_pos_weight += current_weight[index];
                         }
                         else{ //负样本
                             num_r_neg_faces++;
-                            total_r_neg_weight += current_weight_[index];
+                            total_r_neg_weight += current_weight[index];
                         }
                     }
                 }
@@ -621,7 +636,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_indexes,
 		node->threshold_ = threshold;
 //		node->thre_changed_ = true;
 		node->feature_locations_ = local_position_[feature_index];
-		selected_indexes.insert(feature_index);
+		selected_feature_indexes.insert(feature_index);
 		return 0;
 	}
 	
