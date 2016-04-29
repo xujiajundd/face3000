@@ -943,6 +943,7 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
             ind++;
             //std::cout << binary_features[ind].index << " ";
             if ( stage == currentStage && landmark == j && tree == k){
+                is_face = true;
                 stop = true;
                 return tmp_binary_features;
             }
