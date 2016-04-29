@@ -354,25 +354,25 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
                                         augmented_current_shapes[idx] = shape;
                                         find_times[idx] = 256*256*ss + 256*sx + sy;
-                                        cv::Rect rect;
-                                        rect.x = new_box.start_x;
-                                        rect.y = new_box.start_y;
-                                        rect.width = new_box.width;
-                                        rect.height = new_box.height;
-                                        std::cout << rect << std::endl;
+//                                        cv::Rect rect;
+//                                        rect.x = new_box.start_x;
+//                                        rect.y = new_box.start_y;
+//                                        rect.width = new_box.width;
+//                                        rect.height = new_box.height;
+//                                        std::cout << rect << std::endl;
                                         //测试看看
-                                        if ( landmark_index_ > 25 ){
-                                            cv::Mat_<uchar> image = images[augmented_images_index[idx]].clone();
-                                            cv::Rect rect;
-                                            rect.x = new_box.start_x;
-                                            rect.y = new_box.start_y;
-                                            rect.width = new_box.width;
-                                            rect.height = new_box.height;
-                                            std::cout << rect << std::endl;
-                                            cv::rectangle(image, rect, cv::Scalar(100));
-                                            cv::imshow("test", image);
-                                            cv::waitKey(0);
-                                        }
+//                                        if ( landmark_index_ > 25 ){
+//                                            cv::Mat_<uchar> image = images[augmented_images_index[idx]].clone();
+//                                            cv::Rect rect;
+//                                            rect.x = new_box.start_x;
+//                                            rect.y = new_box.start_y;
+//                                            rect.width = new_box.width;
+//                                            rect.height = new_box.height;
+//                                            std::cout << rect << std::endl;
+//                                            cv::rectangle(image, rect, cv::Scalar(100));
+//                                            cv::imshow("test", image);
+//                                            cv::waitKey(0);
+//                                        }
                                         break;
                                     }
                                 }
