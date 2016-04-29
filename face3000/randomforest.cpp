@@ -379,10 +379,12 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                 if ( faceFound ){
                                     break;
                                 }
+                                sy = 0;
                             }
                             if ( faceFound){
                                 break;
                             }
+                            sx = 0;
                         }
                     }
                     if ( !faceFound ){
