@@ -66,7 +66,7 @@ public:
 //		const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale);
 	//predict()
 	int GetBinaryFeatureIndex(int tree_index, const cv::Mat_<float>& image,
-	const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale, float *score);
+	const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale, float& score);
 	RandomForest();
 	RandomForest(Parameters& param, int landmark_index, int stage, std::vector<cv::Mat_<float> >& regression_targets, CascadeRegressor *casRegressor, int true_pos_num);
 	void WriteTree(Node* p, std::ofstream& fout);

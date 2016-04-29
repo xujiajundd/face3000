@@ -223,7 +223,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 //            cv::Mat_<float> rotation;
 //            float scale;
 //            getSimilarityTransform(ProjectShape(augmented_current_shapes[n],augmented_bboxes[n]),mean_shape_,rotation,scale);
-            GetBinaryFeatureIndex(i, images[augmented_images_index[n]], augmented_bboxes[n], augmented_current_shapes[n], rotations[n] , scales[n], &score);
+            GetBinaryFeatureIndex(i, images[augmented_images_index[n]], augmented_bboxes[n], augmented_current_shapes[n], rotations[n] , scales[n], score);
             current_fi[n] += score;
         }
         //开始计算这棵树的detection threshold
@@ -323,9 +323,12 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                         int ss = (find_times[idx] & 0x00ff0000) >> 16;
                         int sx = (find_times[idx] & 0x0000ff00) >> 8;
                         int sy = (find_times[idx] & 0x000000ff);
-                        for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.1, ss++)){
-                            for ( int sw_x = 8 * sx; sw_x<cols - sw_size && sx < 256; sw_x+=8, sx++){
-                                for ( int sw_y = 8 * sy; sw_y<rows - sw_size && sy < 256; sw_y+=8, sy++){
+                        for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.1, ss)){
+                            ss++;
+                            for ( int sw_x = 8 * sx; sw_x<cols - sw_size && sx < 256; sw_x+=8){
+                                sx++;
+                                for ( int sw_y = 8 * sy; sw_y<rows - sw_size && sy < 256; sw_y+=8){
+                                    sy++;
                                     new_box.start_x=sw_x;
                                     new_box.start_y=sw_y;
                                     new_box.width= sw_size;
@@ -350,7 +353,13 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         current_fi[idx] = tmp_fi;
                                         current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
                                         augmented_current_shapes[idx] = shape;
-                                        find_times[idx] = 256*256*ss + 256*sx + sy + 1;
+                                        find_times[idx] = 256*256*ss + 256*sx + sy;
+                                        cv::Rect rect;
+                                        rect.x = new_box.start_x;
+                                        rect.y = new_box.start_y;
+                                        rect.width = new_box.width;
+                                        rect.height = new_box.height;
+                                        std::cout << rect << std::endl;
                                         //测试看看
                                         if ( landmark_index_ > 25 ){
                                             cv::Mat_<uchar> image = images[augmented_images_index[idx]].clone();
@@ -792,7 +801,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 //}
 
 int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<float>& image,
-	const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale, float *score){
+	const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale, float& score){
 	Node* node = trees_[tree_index];
 	while (!node->is_leaf_){
 		FeatureLocations& pos = node->feature_locations_;
@@ -821,7 +830,7 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<float>& i
 			node = node->right_child_;// go right
 		}
 	}
-    *score = node->score_;
+    score = node->score_;
 	return node->leaf_identity;
 }
 
