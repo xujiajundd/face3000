@@ -63,13 +63,27 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                 std::cout << "Error..." << std::endl;
             }
             else{
+                BoundingBox ibox = bboxes_[i];
+                float minor = random_generator.uniform(-ibox.width, ibox.width);
+                minor = 0.05 * minor;
+                ibox.start_x -= minor/2.0;
+                ibox.start_y -= minor/2.0;
+                ibox.width += minor;
+                ibox.height += minor;
+                if ( ibox.start_x < 0 ) ibox.start_x = 0;
+                if ( ibox.start_y < 0 ) ibox.start_y = 0;
+                if ( (ibox.start_x + ibox.width) > images[i].cols ) ibox.width = images[i].cols - ibox.start_x;
+                if ( (ibox.start_y + ibox.height) > images[i].rows ) ibox.height = images[i].rows - ibox.start_y;
+                ibox.center_x = ibox.start_x + ibox.width / 2.0;
+                ibox.center_y = ibox.start_y + ibox.height / 2.0;
+                //这个地方对box也做了一点小小的扰动
                 augmented_images_index.push_back(i);
-                augmented_ground_truth_shapes.push_back(ground_truth_shapes_[i]);
+                augmented_ground_truth_shapes.push_back(ReProjection(ProjectShape(ground_truth_shapes_[i], bboxes_[i]), ibox));
                 augmented_ground_truth_faces.push_back(ground_truth_faces[i]);
-                augmented_bboxes.push_back(bboxes_[i]);
+                augmented_bboxes.push_back(ibox);
                 cv::Mat_<float> temp = ground_truth_shapes_[index];
                 temp = ProjectShape(temp, bboxes_[index]);
-                temp = ReProjection(temp, bboxes_[i]);
+                temp = ReProjection(temp, ibox);
                 augmented_current_shapes.push_back(temp);
                 current_fi.push_back(0);
                 current_weight.push_back(1);
@@ -203,7 +217,8 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
 //    #pragma omp parallel for
 	for (int i = 0; i < params_.landmarks_num_per_face_; ++i){
         std::cout << "landmark: " << i << std::endl;
-		rd_forests_[i] = RandomForest(params_, i, stage_, regression_targets, casRegressor);
+        int true_pos_num = pos_num / ( params.initial_guess_ + 1 );
+		rd_forests_[i] = RandomForest(params_, i, stage_, regression_targets, casRegressor, true_pos_num);
         rd_forests_[i].TrainForest(
 			images,augmented_images_index, augmented_ground_truth_shapes, augmented_bboxes, augmented_current_shapes,
             augmented_ground_truth_faces, current_fi, current_weight, find_times,
@@ -593,7 +608,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
     }
 
     for ( int c=0; c<candidates.size(); c++){
-        if ( candidates[c].neighbors >= minNeighbors-1 ){
+        if ( candidates[c].neighbors >= minNeighbors-2 ){
             cv::Rect rect;
             rect.x = candidates[c].box.start_x;
             rect.width = candidates[c].box.width;

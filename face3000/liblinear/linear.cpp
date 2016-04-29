@@ -2813,8 +2813,13 @@ int save_model_bin(std::ofstream& fout, const struct model *model_)
     
     fout.write((char*)&nr_feature, sizeof(int));
     fout.write((char*)&model_->bias, sizeof(float));
-    fout.write((char*)model_->w, sizeof(float)*w_size*nr_w);
-    
+//    fout.write((char*)model_->w, sizeof(float)*w_size*nr_w);
+    //为了节省每一个铜板，都逼到这份儿上了！！！ add by xujj
+    short temp[w_size];
+    for ( int i=0; i<w_size; i++){
+        temp[i] = (short)(model_->w[i]*327670.0);
+    }
+    fout.write((char*)temp, sizeof(short)*w_size*nr_w);
     setlocale(LC_ALL, old_locale);
     free(old_locale);
     
@@ -2867,7 +2872,15 @@ struct model *load_model_bin(std::ifstream& fin)
 //        fscanf(fp, "\n");
 //    }
     
-    fin.read((char*)model_->w, sizeof(float)*w_size*nr_w);
+//    fin.read((char*)model_->w, sizeof(float)*w_size*nr_w);
+    //同样，add by xujj
+    short *temp = Malloc(short, w_size*nr_w);
+    fin.read((char*)temp, sizeof(short)*w_size*nr_w);
+    for ( int i=0; i<w_size; i++){
+        model_->w[i] = (float)temp[i]/327670.0;
+    }
+    free(temp);
+    
     setlocale(LC_ALL, old_locale);
     free(old_locale);
     return model_;

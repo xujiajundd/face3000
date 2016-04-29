@@ -33,6 +33,7 @@ public:
 	float local_radius_;
     float detect_factor_;
 	int all_leaf_nodes_;
+    int true_pos_num_;
 	cv::Mat_<float> mean_shape_;
 	std::vector<Node*> trees_;
 	std::vector<FeatureLocations> local_position_; // size = param_.local_features_num
@@ -67,7 +68,7 @@ public:
 	int GetBinaryFeatureIndex(int tree_index, const cv::Mat_<float>& image,
 	const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale, float *score);
 	RandomForest();
-	RandomForest(Parameters& param, int landmark_index, int stage, std::vector<cv::Mat_<float> >& regression_targets, CascadeRegressor *casRegressor);
+	RandomForest(Parameters& param, int landmark_index, int stage, std::vector<cv::Mat_<float> >& regression_targets, CascadeRegressor *casRegressor, int true_pos_num);
 	void WriteTree(Node* p, std::ofstream& fout);
 	Node* ReadTree(std::ifstream& fin);
 	void SaveRandomForest(std::ofstream& fout);

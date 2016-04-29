@@ -291,10 +291,20 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         //TODO:如果负例不够了，要挖掘一些。挖掘应该指的的找一些图片，按训练到目前为止的模型判定为face但实际非face的东东
         int deleteNumber = 0;
         int mineHardNegNumber = 0;
-//#pragma omp parallel for //TODO：后面有else break这个要去掉就可能可以并行来 
+        int mineNormalNegNumber = 0;
+        
         for ( int n=0; n<fiSort.size(); ++n){
             if ( fiSort[n].first < root->score_ ){
                 deleteNumber++;
+            }
+            else{
+                break;
+            }
+        }
+        //TODO：后面有else break这个要去掉就可能可以并行来
+#pragma omp parallel for
+        for ( int n=0; n<deleteNumber; ++n){
+            if ( fiSort[n].first < root->score_ ){
                 int idx = fiSort[n].second;
                 bool faceFound = false;
                 
@@ -304,30 +314,113 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 //                    BoundingBox max_fi_box;
 //                    cv::Mat_<float> max_fi_shape;
 //                    float max_fi = -100000000.0;
-                    float cols = images[augmented_images_index[idx]].cols;
-                    float rows = images[augmented_images_index[idx]].rows;
-                    int ss = find_times[idx] / ( MAXFINDTIMES / 32 );
-//                    for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.1, ss++)){
-//                    int sw_size = 50 + 10 * ss;
-                    for ( int sw_size = 50; sw_size < std::min(cols, rows); sw_size+=10){
-                        for ( int sw_x = 5; sw_x<cols - sw_size; sw_x+=5){
-                            for ( int sw_y = 5; sw_y<rows - sw_size; sw_y+=5){
-                                new_box.start_x=sw_x;
-                                new_box.start_y=sw_y;
-                                new_box.width= sw_size;
-                                new_box.height=new_box.width;
-                                new_box.center_x=new_box.start_x + new_box.width/2.0;
-                                new_box.center_y=new_box.start_y + new_box.height/2.0;
-                                cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[idx], augmented_bboxes[idx]);
-                                augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
-                                cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[idx], augmented_bboxes[idx]);
-                                augmented_current_shapes[idx]=ReProjection(temp2, new_box);
-                                augmented_bboxes[idx]=new_box;
+                    if ( find_times[idx] < MAXFINDTIMES - 1){ //先普通挖掘
+                        float cols = images[augmented_images_index[idx]].cols;
+                        float rows = images[augmented_images_index[idx]].rows;
+                        //int ss = find_times[idx] / ( MAXFINDTIMES / 32 );
+    //                    for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.1, ss++)){
+    //                    int sw_size = 50 + 10 * ss;
+                        int ss = (find_times[idx] & 0x00ff0000) >> 16;
+                        int sx = (find_times[idx] & 0x0000ff00) >> 8;
+                        int sy = (find_times[idx] & 0x000000ff);
+                        for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.1, ss++)){
+                            for ( int sw_x = 8 * sx; sw_x<cols - sw_size && sx < 256; sw_x+=8, sx++){
+                                for ( int sw_y = 8 * sy; sw_y<rows - sw_size && sy < 256; sw_y+=8, sy++){
+                                    new_box.start_x=sw_x;
+                                    new_box.start_y=sw_y;
+                                    new_box.width= sw_size;
+                                    new_box.height=new_box.width;
+                                    new_box.center_x=new_box.start_x + new_box.width/2.0;
+                                    new_box.center_y=new_box.start_y + new_box.height/2.0;
+                                    cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[idx], augmented_bboxes[idx]);
+                                    augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
+                                    cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[idx], augmented_bboxes[idx]);
+                                    augmented_current_shapes[idx]=ReProjection(temp2, new_box);
+                                    augmented_bboxes[idx]=new_box;
 
+                                    bool tmp_isface=true;
+                                    float tmp_fi=0;
+                                    
+                                    //这个时候，自己在第stage_, landmark_index_的i树上
+                                    cv::Mat_<float> shape = augmented_current_shapes[idx].clone();
+                                    casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
+                                                                  shape, new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
+                                    if ( tmp_isface){
+                                        faceFound = true;
+                                        current_fi[idx] = tmp_fi;
+                                        current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
+                                        augmented_current_shapes[idx] = shape;
+                                        find_times[idx] = 256*256*ss + 256*sx + sy;
+                                        break;
+                                    }
+                                }
+                                if ( faceFound ){
+                                    break;
+                                }
+                            }
+                            if ( faceFound){
+                                break;
+                            }
+                        }
+                    }
+                    if ( !faceFound ){
+                        //再从正例中找特别负例，以后都得从这儿找，不能再执行上面那部分
+                        find_times[idx] = MAXFINDTIMES - 1;
+//                        std::cout<<"得从正例中找负例:" << idx << std::endl;
+                        int p = augmented_images_index[idx] - true_pos_num_;
+                        if ( p < true_pos_num_ ){
+//                            augmented_images_index[idx] = p;
+                            images[augmented_images_index[idx]] = images[p];
+                            std::vector<BoundingBox> boxes;
+                            //加二分之一大小的框
+                            for ( int ix = 0; ix < 5 ; ix++){
+                                for ( int iy = 0; iy < 5; iy++ ){
+                                    BoundingBox box = augmented_bboxes[p];
+                                    box.start_x = box.start_x + ix * box.width / 8.0;
+                                    box.start_y = box.start_y + iy * box.height / 8.0;
+                                    box.width = box.width / 2.0;
+                                    box.height = box.height / 2.0;
+                                    box.center_x = box.start_x + box.width / 2.0;
+                                    box.center_y = box.start_y + box.height / 2.0;
+                                    boxes.push_back(box);
+                                }
+                            }
+                            //加同等大小上下位移的框
+                            BoundingBox box = augmented_bboxes[p];
+                            box.start_y = box.start_y - box.height / 2.0;
+                            if ( box.start_y >= 0 ){
+                                box.center_y = box.start_y + box.height / 2.0;
+                                boxes.push_back(box);
+                            }
+                            box = augmented_bboxes[p];
+                            box.start_y = box.start_y + box.height / 2.0;
+                            if ( ( box.start_y + box.height ) < images[p].rows ){
+                                box.center_y = box.start_y + box.height / 2.0;
+                                boxes.push_back(box);
+                            }
+                            //加一倍大的框
+                            box = augmented_bboxes[p];
+                            box.start_x = box.start_x - box.width / 2.0;
+                            box.start_y = box.start_y - box.height / 2.0;
+                            box.width = 2 * box.width;
+                            box.height = 2 * box.height;
+                            if ((( box.start_x + box.width ) < images[p].cols ) && ((box.start_y + box.height ) < images[p].rows )){
+                                box.center_x = box.start_x + box.width / 2.0;
+                                box.center_y = box.start_y + box.height / 2.0;
+                                boxes.push_back(box);
+                            }
+                            for (int ib = 0; ib < boxes.size(); ib++ ){
+                                BoundingBox box = boxes[ib];
+                                
+                                cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[p], augmented_bboxes[p]);
+                                augmented_ground_truth_shapes[idx] = ReProjection(temp1, box);
+                                cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[p], augmented_bboxes[p]);
+                                augmented_current_shapes[idx]=ReProjection(temp2, box);
+                                augmented_bboxes[idx]=box;
+                                
                                 bool tmp_isface=true;
                                 float tmp_fi=0;
                                 
-                                //这个时候，自己在第stage_, landmark_index_的i树上
                                 cv::Mat_<float> shape = augmented_current_shapes[idx].clone();
                                 casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
                                                               shape, new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
@@ -340,35 +433,24 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                 }
                             }
                             if ( faceFound ){
-                                break;
+                                mineHardNegNumber++;
+                                std::cout<< "从正例中找到一个" << std::endl;
                             }
+                            else{
+                                find_times[idx] = MAXFINDTIMES;
+                            }
+                        } //没有对应的正例可以用
+                        else{
+                            find_times[idx] = MAXFINDTIMES;
                         }
-                        if ( faceFound){
-                            break;
-                        }
-                    }
-                    if ( !faceFound ){
-                        find_times[idx] = MAXFINDTIMES;
-//                        if (max_fi > -99999999.0){
-//                            current_fi[idx] = max_fi;
-//                            current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
-//                            augmented_ground_truth_shapes[idx] = ReProjection(ProjectShape(augmented_ground_truth_shapes[idx], augmented_bboxes[idx]), max_fi_box);
-//                            augmented_current_shapes[idx] = max_fi_shape;
-//                            augmented_bboxes[idx]=max_fi_box;
-//                            mineNormalNegNumber++;
-//                        }
                     }
                     else{
-                        mineHardNegNumber++;
+                        mineNormalNegNumber++;
                     }
                 }
             }
-            else{
-                break;
-            }
         }
-        std::cout << "fi<threshold delete number:" << deleteNumber << " threshold:" << root->score_  <<" hard mine:" << mineHardNegNumber  << std::endl;
-        
+        std::cout << "fi<threshold delete number:" << deleteNumber << " threshold:" << root->score_  << " normal mine:" << mineNormalNegNumber <<" hard mine:" << mineHardNegNumber  << std::endl;
 	}
 	/*int count = 0;
 	for (int i = 0; i < trees_num_per_forest_; i++){
@@ -762,7 +844,7 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<float>& i
 //
 //}
 
-RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std::vector<cv::Mat_<float> >& regression_targets, CascadeRegressor *casRegressor){
+RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std::vector<cv::Mat_<float> >& regression_targets, CascadeRegressor *casRegressor, int true_pos_num){
 	stage_ = stage;
 	local_features_num_ = param.local_features_num_;
 	landmark_index_ = landmark_index;
@@ -773,6 +855,7 @@ RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std
 	mean_shape_ = param.mean_shape_;
     detect_factor_ = param.detect_factor_by_stage_[stage_];
 	regression_targets_ = &regression_targets; // get the address pointer, not reference
+    true_pos_num_ = true_pos_num;
     casRegressor_ = casRegressor;
 }
 
