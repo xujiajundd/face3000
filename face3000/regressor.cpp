@@ -223,13 +223,17 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
 			images,augmented_images_index, augmented_ground_truth_shapes, augmented_bboxes, augmented_current_shapes,
             augmented_ground_truth_faces, current_fi, current_weight, find_times,
 			rotations_, scales_);
+        int pos_examples_num = 0;
         int neg_examples_num = 0;
         for ( int n=0; n<augmented_ground_truth_faces.size(); n++){
+            if ( find_times[n] < MAXFINDTIMES && augmented_ground_truth_faces[n] == 1 ){
+                pos_examples_num++;
+            }
             if ( find_times[n] < MAXFINDTIMES && augmented_ground_truth_faces[n] == -1 ){
                 neg_examples_num++;
             }
         }
-        std::cout<< "negative example left:" << neg_examples_num << std::endl;
+        std::cout<< "positive example left:" << pos_examples_num << " negative example left:" << neg_examples_num << std::endl;
 	}
 	std::cout << "Get Global Binary Features" << std::endl;
 

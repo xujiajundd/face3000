@@ -350,7 +350,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         current_fi[idx] = tmp_fi;
                                         current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
                                         augmented_current_shapes[idx] = shape;
-                                        find_times[idx] = 256*256*ss + 256*sx + sy;
+                                        find_times[idx] = 256*256*ss + 256*sx + sy + 1;
                                         break;
                                     }
                                 }
@@ -434,7 +434,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             }
                             if ( faceFound ){
                                 mineHardNegNumber++;
-                                std::cout<< "从正例中找到一个" << std::endl;
+                                //std::cout<< "从正例中找到一个" << std::endl;
                             }
                             else{
                                 find_times[idx] = MAXFINDTIMES;
