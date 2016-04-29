@@ -437,7 +437,7 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
         ground_truth_faces.push_back(-1);
         bboxes.push_back(nbbox);
         neg_num++;
-        if ( neg_num >= 2 * pos_num ) break;
+        if ( neg_num >= 4 * pos_num ) break;
     }
     fin.close();
     

@@ -81,7 +81,7 @@ void Test(const char* ModelName){
         //cout << res << std::endl;
         //cout << res - ground_truth_shapes[i] << std::endl;
         //float err = CalculateError(grodund_truth_shapes[i], res);
-        //cout << "error: " << err << std::endl;
+        cout << "first score: " << score << std::endl;
         cv::Rect faceRec;
         faceRec.x = bboxes[i].start_x;
         faceRec.y = bboxes[i].start_y;
@@ -121,6 +121,7 @@ void Test(const char* ModelName){
                     float score = 0;
                     cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, box, is_face, score);
                     if ( is_face){
+                        std::cout << "score:" << score << std::endl;
                         cv::Mat_<uchar> img = images[i].clone();
                         cv::Rect rect;
                         rect.x = box.start_x;
@@ -128,7 +129,7 @@ void Test(const char* ModelName){
                         rect.width = box.width;
                         rect.height = box.height;
                         cv::rectangle(img, rect, (255), 1);
-                        DrawPredictedImage(img, res);
+                        DrawPredictedImageContinue(img, res);
                     }
                 }
             }
