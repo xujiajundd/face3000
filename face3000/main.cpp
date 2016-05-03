@@ -492,7 +492,7 @@ void Train(const char* ModelName){
     
     params.tree_depth_ = 4;
     params.trees_num_per_forest_ = 4;
-    params.initial_guess_ = 5;
+    params.initial_guess_ = 3;
     
 //    params.group_num_ = 6;
 //    std::vector<int> group1, group2, group3, group4, group5, group6, group7;

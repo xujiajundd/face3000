@@ -475,7 +475,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                 
                                 cv::Mat_<float> shape = augmented_current_shapes[idx].clone();
                                 casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
-                                                              shape, new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
+                                                              shape, box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
                                 if ( tmp_isface){
                                     faceFound = true;
                                     current_fi[idx] = tmp_fi;
