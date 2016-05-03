@@ -460,7 +460,7 @@ void Train(const char* ModelName){
 //        DrawPredictedImage(images[i], ground_truth_shapes[i]);
 //    }
     
-    params.local_features_num_ = 1000;
+    params.local_features_num_ = 500;
 	params.landmarks_num_per_face_ = 68;
     params.regressor_stages_ = 5;
 //    params.local_radius_by_stage_.push_back(0.6);
@@ -492,7 +492,7 @@ void Train(const char* ModelName){
     
     params.tree_depth_ = 4;
     params.trees_num_per_forest_ = 4;
-    params.initial_guess_ = 3;
+    params.initial_guess_ = 5;
     
 //    params.group_num_ = 6;
 //    std::vector<int> group1, group2, group3, group4, group5, group6, group7;

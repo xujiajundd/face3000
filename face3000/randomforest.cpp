@@ -315,76 +315,95 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 //                    cv::Mat_<float> max_fi_shape;
 //                    float max_fi = -100000000.0;
                     if ( find_times[idx] < MAXFINDTIMES - 1){ //先普通挖掘
-                        float cols = images[augmented_images_index[idx]].cols;
-                        float rows = images[augmented_images_index[idx]].rows;
                         //int ss = find_times[idx] / ( MAXFINDTIMES / 32 );
     //                    for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.1, ss++)){
     //                    int sw_size = 50 + 10 * ss;
+                        int so = (find_times[idx] & 0x7f000000) >> 24;
                         int ss = (find_times[idx] & 0x00ff0000) >> 16;
                         int sx = (find_times[idx] & 0x0000ff00) >> 8;
                         int sy = (find_times[idx] & 0x000000ff);
-                        for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.1, ss)){
-                            ss++;
-                            for ( int sw_x = 8 * sx; sw_x<cols - sw_size && sx < 256; sw_x+=8){
-                                sx++;
-                                for ( int sw_y = 8 * sy; sw_y<rows - sw_size && sy < 256; sw_y+=8){
-                                    sy++;
-                                    new_box.start_x=sw_x;
-                                    new_box.start_y=sw_y;
-                                    new_box.width= sw_size;
-                                    new_box.height=new_box.width;
-                                    new_box.center_x=new_box.start_x + new_box.width/2.0;
-                                    new_box.center_y=new_box.start_y + new_box.height/2.0;
-                                    cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[idx], augmented_bboxes[idx]);
-                                    augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
-                                    cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[idx], augmented_bboxes[idx]);
-                                    augmented_current_shapes[idx]=ReProjection(temp2, new_box);
-                                    augmented_bboxes[idx]=new_box;
+                        for ( int orient = so; orient < 4; orient++ ){
+                            float cols = images[augmented_images_index[idx]].cols;
+                            float rows = images[augmented_images_index[idx]].rows;
+                            for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.1, ss)){
+                                ss++;
+                                float shuffle_size = sw_size * 0.1;
+                                for ( int sw_x = shuffle_size * sx; sw_x<cols - sw_size && sx < 256; sw_x+=shuffle_size){
+                                    sx++;
+                                    for ( int sw_y = shuffle_size * sy; sw_y<rows - sw_size && sy < 256; sw_y+=shuffle_size){
+                                        sy++;
+                                        new_box.start_x=sw_x;
+                                        new_box.start_y=sw_y;
+                                        new_box.width= sw_size;
+                                        new_box.height=new_box.width;
+                                        new_box.center_x=new_box.start_x + new_box.width/2.0;
+                                        new_box.center_y=new_box.start_y + new_box.height/2.0;
+                                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[idx], augmented_bboxes[idx]);
+                                        augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
+                                        cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[idx], augmented_bboxes[idx]);
+                                        augmented_current_shapes[idx]=ReProjection(temp2, new_box);
+                                        augmented_bboxes[idx]=new_box;
 
-                                    bool tmp_isface=true;
-                                    float tmp_fi=0;
-                                    
-                                    //这个时候，自己在第stage_, landmark_index_的i树上
-                                    cv::Mat_<float> shape = augmented_current_shapes[idx].clone();
-                                    casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
-                                                                  shape, new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
-                                    if ( tmp_isface){
-                                        faceFound = true;
-                                        current_fi[idx] = tmp_fi;
-                                        current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
-                                        augmented_current_shapes[idx] = shape;
-                                        find_times[idx] = 256*256*ss + 256*sx + sy;
-//                                        cv::Rect rect;
-//                                        rect.x = new_box.start_x;
-//                                        rect.y = new_box.start_y;
-//                                        rect.width = new_box.width;
-//                                        rect.height = new_box.height;
-//                                        std::cout << rect << std::endl;
-                                        //测试看看
-//                                        if ( landmark_index_ > 25 ){
-//                                            cv::Mat_<uchar> image = images[augmented_images_index[idx]].clone();
-//                                            cv::Rect rect;
-//                                            rect.x = new_box.start_x;
-//                                            rect.y = new_box.start_y;
-//                                            rect.width = new_box.width;
-//                                            rect.height = new_box.height;
-//                                            std::cout << rect << std::endl;
-//                                            cv::rectangle(image, rect, cv::Scalar(100));
-//                                            cv::imshow("test", image);
-//                                            cv::waitKey(0);
-//                                        }
+                                        bool tmp_isface=true;
+                                        float tmp_fi=0;
+                                        
+                                        //这个时候，自己在第stage_, landmark_index_的i树上
+                                        cv::Mat_<float> shape = augmented_current_shapes[idx].clone();
+                                        casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
+                                                                      shape, new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
+                                        if ( tmp_isface){
+                                            faceFound = true;
+                                            current_fi[idx] = tmp_fi;
+                                            current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
+                                            augmented_current_shapes[idx] = shape;
+                                            find_times[idx] = 256*256*256*orient + 256*256*ss + 256*sx + sy;
+    //                                        cv::Rect rect;
+    //                                        rect.x = new_box.start_x;
+    //                                        rect.y = new_box.start_y;
+    //                                        rect.width = new_box.width;
+    //                                        rect.height = new_box.height;
+    //                                        std::cout << rect << std::endl;
+                                            //测试看看
+    //                                        if ( landmark_index_ > 25 ){
+    //                                            cv::Mat_<uchar> image = images[augmented_images_index[idx]].clone();
+    //                                            cv::Rect rect;
+    //                                            rect.x = new_box.start_x;
+    //                                            rect.y = new_box.start_y;
+    //                                            rect.width = new_box.width;
+    //                                            rect.height = new_box.height;
+    //                                            std::cout << rect << std::endl;
+    //                                            cv::rectangle(image, rect, cv::Scalar(100));
+    //                                            cv::imshow("test", image);
+    //                                            cv::waitKey(0);
+    //                                        }
+                                            break;
+                                        }
+                                    }
+                                    if ( faceFound ){
                                         break;
                                     }
+                                    sy = 0;
                                 }
-                                if ( faceFound ){
+                                if ( faceFound){
                                     break;
                                 }
-                                sy = 0;
+                                sx = 0; sy = 0;
                             }
                             if ( faceFound){
                                 break;
                             }
-                            sx = 0;
+                            ss = 0; sx = 0; sy = 0;
+                            //把图片旋转90度
+                            cv::Mat_<uchar> temp = images[augmented_images_index[idx]];
+//                            cv::imshow("origin", temp);
+//                            cv::waitKey(0);
+                            cv::transpose(temp, temp);
+//                            cv::imshow("transpose", temp);
+//                            cv::waitKey(0);
+                            cv::flip(temp, temp, 1);
+//                            cv::imshow("flip", temp);
+//                            cv::waitKey(0);
+                            images[augmented_images_index[idx]] = temp;
                         }
                     }
                     if ( !faceFound ){
@@ -396,43 +415,52 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 //                            augmented_images_index[idx] = p;
                             images[augmented_images_index[idx]] = images[p];
                             std::vector<BoundingBox> boxes;
-                            //加二分之一大小的框
-                            for ( int ix = 0; ix < 5 ; ix++){
-                                for ( int iy = 0; iy < 5; iy++ ){
-                                    BoundingBox box = augmented_bboxes[p];
-                                    box.start_x = box.start_x + ix * box.width / 8.0;
-                                    box.start_y = box.start_y + iy * box.height / 8.0;
-                                    box.width = box.width / 2.0;
-                                    box.height = box.height / 2.0;
-                                    box.center_x = box.start_x + box.width / 2.0;
+                            //加二分之一到四分之一大小的框
+                            for ( float is = 1.6; is <= 4.01; is+=0.2 ){
+                                for ( int ix = 0; ix <= 8; ix++){
+                                    for ( int iy = 0; iy <= 8; iy++ ){
+                                        BoundingBox box = augmented_bboxes[p];
+                                        box.start_x = box.start_x + ix * (box.width - box.width/is)/8;
+                                        box.start_y = box.start_y + iy * (box.height - box.width/is)/8;
+                                        box.width = box.width / is;
+                                        box.height = box.height / is;
+                                        box.center_x = box.start_x + box.width / 2.0;
+                                        box.center_y = box.start_y + box.height / 2.0;
+                                        boxes.push_back(box);
+                                    }
+                                }
+                            }
+                            //加同等大小上下位移的框
+                            for ( int iy = -1; iy <=1; iy++){
+                                BoundingBox box = augmented_bboxes[p];
+                                box.start_y = box.start_y - box.height / 2.0 + iy * box.height/6.0;
+                                if ( box.start_y >= 0 ){
+                                    box.center_y = box.start_y + box.height / 2.0;
+                                    boxes.push_back(box);
+                                }
+                                box = augmented_bboxes[p];
+                                box.start_y = box.start_y + box.height / 2.0 + iy * box.height/6.0;
+                                if ( ( box.start_y + box.height ) < images[p].rows ){
                                     box.center_y = box.start_y + box.height / 2.0;
                                     boxes.push_back(box);
                                 }
                             }
-                            //加同等大小上下位移的框
-                            BoundingBox box = augmented_bboxes[p];
-                            box.start_y = box.start_y - box.height / 2.0;
-                            if ( box.start_y >= 0 ){
-                                box.center_y = box.start_y + box.height / 2.0;
-                                boxes.push_back(box);
-                            }
-                            box = augmented_bboxes[p];
-                            box.start_y = box.start_y + box.height / 2.0;
-                            if ( ( box.start_y + box.height ) < images[p].rows ){
-                                box.center_y = box.start_y + box.height / 2.0;
-                                boxes.push_back(box);
-                            }
                             //加一倍大的框
-                            box = augmented_bboxes[p];
-                            box.start_x = box.start_x - box.width / 2.0;
-                            box.start_y = box.start_y - box.height / 2.0;
-                            box.width = 2 * box.width;
-                            box.height = 2 * box.height;
-                            if ((( box.start_x + box.width ) < images[p].cols ) && ((box.start_y + box.height ) < images[p].rows )){
-                                box.center_x = box.start_x + box.width / 2.0;
-                                box.center_y = box.start_y + box.height / 2.0;
-                                boxes.push_back(box);
+                            for ( float ix=0; ix<=2.01; ix+=0.5){
+                                for ( float iy=0; iy<=2.01; iy+=0.5 ){
+                                    BoundingBox box = augmented_bboxes[p];
+                                    box.start_x = box.start_x - ix * box.width / 2.0;
+                                    box.start_y = box.start_y - iy * box.height / 2.0;
+                                    box.width = 2 * box.width;
+                                    box.height = 2 * box.height;
+                                    if (box.start_x > 0 && box.start_y > 0 && (( box.start_x + box.width ) < images[p].cols ) && ((box.start_y + box.height ) < images[p].rows )){
+                                        box.center_x = box.start_x + box.width / 2.0;
+                                        box.center_y = box.start_y + box.height / 2.0;
+                                        boxes.push_back(box);
+                                    }
+                                }
                             }
+
                             for (int ib = 0; ib < boxes.size(); ib++ ){
                                 BoundingBox box = boxes[ib];
                                 

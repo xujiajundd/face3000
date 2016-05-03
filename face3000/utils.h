@@ -14,7 +14,7 @@
 //using namespace cv;
 #include <Accelerate/Accelerate.h>
 
-#define MAXFINDTIMES 256*256*256
+#define MAXFINDTIMES 16*256*256*256
 
 //std::mutex m;
 class BoundingBox {
