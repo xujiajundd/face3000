@@ -276,14 +276,24 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
             continue;
         }
 
-		if (image.cols > 2000){
-			cv::resize(image, image, cv::Size(image.cols / 4, image.rows / 4), 0, 0, cv::INTER_LINEAR);
-			ground_truth_shape /= 4.0;
-		}
-		else if (image.cols > 1500 && image.cols <= 2000){
-			cv::resize(image, image, cv::Size(image.cols / 3, image.rows / 3), 0, 0, cv::INTER_LINEAR);
-			ground_truth_shape /= 3.0;
-		}
+//		if (image.cols > 2000){
+//			cv::resize(image, image, cv::Size(image.cols / 4, image.rows / 4), 0, 0, cv::INTER_LINEAR);
+//			ground_truth_shape /= 4.0;
+//		}
+//		else if (image.cols > 1500 && image.cols <= 2000){
+//			cv::resize(image, image, cv::Size(image.cols / 3, image.rows / 3), 0, 0, cv::INTER_LINEAR);
+//			ground_truth_shape /= 3.0;
+//		}
+//        else if (image.cols > 1000 && image.cols <= 1500){
+//            cv::resize(image, image, cv::Size(image.cols / 2, image.rows / 2), 0, 0, cv::INTER_LINEAR);
+//            ground_truth_shape /= 2.0;
+//        }
+        
+        float scale = image.cols / 500.0;
+        if ( image.cols > 500 ){
+            cv::resize(image, image, cv::Size(image.cols / scale, image.rows / scale), 0, 0, cv::INTER_LINEAR);
+            ground_truth_shape /= scale;
+        }
 
 //        std::vector<cv::Rect> faces;
 //        haar_cascade.detectMultiScale(image, faces, 1.1, 2, 0

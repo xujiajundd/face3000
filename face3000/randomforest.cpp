@@ -416,47 +416,51 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             images[augmented_images_index[idx]] = images[p];
                             std::vector<BoundingBox> boxes;
                             //加二分之一到四分之一大小的框
-                            for ( float is = 1.6; is <= 4.01; is+=0.2 ){
-                                for ( int ix = 0; ix <= 8; ix++){
-                                    for ( int iy = 0; iy <= 8; iy++ ){
+                            for ( float is = 1.5; is <= 5.0; is+=0.2 ){
+                                for ( int ix = -4; ix <= 12; ix++){
+                                    for ( int iy = -4; iy <= 12; iy++ ){
                                         BoundingBox box = augmented_bboxes[p];
-                                        box.start_x = box.start_x + ix * (box.width - box.width/is)/8;
-                                        box.start_y = box.start_y + iy * (box.height - box.width/is)/8;
+                                        box.start_x = box.start_x + ix * (box.width - box.width/is)/8.0;
+                                        box.start_y = box.start_y + iy * (box.height - box.width/is)/8.0;
                                         box.width = box.width / is;
                                         box.height = box.height / is;
                                         box.center_x = box.start_x + box.width / 2.0;
                                         box.center_y = box.start_y + box.height / 2.0;
-                                        boxes.push_back(box);
+                                        if ( box.start_x >=0 && box.start_y >=0 && (box.start_x + box.width) < images[p].cols && (box.start_y + box.height) < images[p].rows){
+                                            boxes.push_back(box);
+                                        }
                                     }
                                 }
                             }
                             //加同等大小上下位移的框
-                            for ( int iy = -1; iy <=1; iy++){
+                            for ( int iy = -3; iy <=3; iy++){
                                 BoundingBox box = augmented_bboxes[p];
-                                box.start_y = box.start_y - box.height / 2.0 + iy * box.height/6.0;
+                                box.start_y = box.start_y - box.height / 2.0 + iy * box.height/18.0;
                                 if ( box.start_y >= 0 ){
                                     box.center_y = box.start_y + box.height / 2.0;
                                     boxes.push_back(box);
                                 }
                                 box = augmented_bboxes[p];
-                                box.start_y = box.start_y + box.height / 2.0 + iy * box.height/6.0;
+                                box.start_y = box.start_y + box.height / 2.0 + iy * box.height/18.0;
                                 if ( ( box.start_y + box.height ) < images[p].rows ){
                                     box.center_y = box.start_y + box.height / 2.0;
                                     boxes.push_back(box);
                                 }
                             }
-                            //加一倍大的框
-                            for ( float ix=0; ix<=2.01; ix+=0.5){
-                                for ( float iy=0; iy<=2.01; iy+=0.5 ){
-                                    BoundingBox box = augmented_bboxes[p];
-                                    box.start_x = box.start_x - ix * box.width / 2.0;
-                                    box.start_y = box.start_y - iy * box.height / 2.0;
-                                    box.width = 2 * box.width;
-                                    box.height = 2 * box.height;
-                                    if (box.start_x > 0 && box.start_y > 0 && (( box.start_x + box.width ) < images[p].cols ) && ((box.start_y + box.height ) < images[p].rows )){
-                                        box.center_x = box.start_x + box.width / 2.0;
-                                        box.center_y = box.start_y + box.height / 2.0;
-                                        boxes.push_back(box);
+                            //加1.5-2倍大的框
+                            for ( float is = 0.5; is<=1.0; is+=0.1){
+                                for ( float ix=0; ix<=is; ix+=0.1){
+                                    for ( float iy=0; iy<=is; iy+=0.1 ){
+                                        BoundingBox box = augmented_bboxes[p];
+                                        box.start_x = box.start_x - ix * box.width;
+                                        box.start_y = box.start_y - iy * box.height;
+                                        box.width = (1.0 + is) * box.width;
+                                        box.height = (1.0 + is) * box.height;
+                                        if (box.start_x > 0 && box.start_y > 0 && (( box.start_x + box.width ) < images[p].cols ) && ((box.start_y + box.height ) < images[p].rows )){
+                                            box.center_x = box.start_x + box.width / 2.0;
+                                            box.center_y = box.start_y + box.height / 2.0;
+                                            boxes.push_back(box);
+                                        }
                                     }
                                 }
                             }
