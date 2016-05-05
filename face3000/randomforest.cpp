@@ -416,7 +416,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             images[augmented_images_index[idx]] = images[p];
                             std::vector<BoundingBox> boxes;
                             //加二分之一到四分之一大小的框
-                            for ( float is = 1.5; is <= 5.0; is+=0.2 ){
+                            for ( float is = 1.4; is <= 5.0; is+=0.2 ){
                                 for ( int ix = -4; ix <= 12; ix++){
                                     for ( int iy = -4; iy <= 12; iy++ ){
                                         BoundingBox box = augmented_bboxes[p];
