@@ -529,8 +529,8 @@ Node* RandomForest::BuildTree(std::set<int>& selected_feature_indexes, cv::Mat_<
 			node->leaf_identity = all_leaf_nodes_;
 			all_leaf_nodes_++;
             //计算叶子节点的score
-            float leaf_pos_weight = 0;
-            float leaf_neg_weight = 0;
+            float leaf_pos_weight = FLT_EPSILON;
+            float leaf_neg_weight = FLT_EPSILON;
             for ( int i=0; i<images_indexes.size(); i++){
                 if ( augmented_ground_truth_faces[images_indexes[i]] == 1){
                     leaf_pos_weight += current_weight[images_indexes[i]];
@@ -539,7 +539,8 @@ Node* RandomForest::BuildTree(std::set<int>& selected_feature_indexes, cv::Mat_<
                     leaf_neg_weight += current_weight[images_indexes[i]];
                 }
             }
-            node->score_ = 0.5*(((leaf_pos_weight-0.0)<FLT_EPSILON)?0:log(leaf_pos_weight))-0.5*(((leaf_neg_weight-0.0)<FLT_EPSILON)?0:log(leaf_neg_weight))/*/log(2.0)*/;
+//            node->score_ = 0.5*(((leaf_pos_weight-0.0)<FLT_EPSILON)?0:log(leaf_pos_weight))-0.5*(((leaf_neg_weight-0.0)<FLT_EPSILON)?0:log(leaf_neg_weight))/*/log(2.0)*/;
+             node->score_ = 0.5*(log(leaf_pos_weight)- log(leaf_neg_weight))/*/log(2.0)*/;
 			return node;
 		}
 
@@ -551,8 +552,8 @@ Node* RandomForest::BuildTree(std::set<int>& selected_feature_indexes, cv::Mat_<
 			node->leaf_identity = all_leaf_nodes_;
 			all_leaf_nodes_++;
             //计算叶子节点的score, 同上
-            float leaf_pos_weight = 0;
-            float leaf_neg_weight = 0;
+            float leaf_pos_weight = FLT_EPSILON;
+            float leaf_neg_weight = FLT_EPSILON;
             for ( int i=0; i<images_indexes.size(); i++){
                 if ( augmented_ground_truth_faces[images_indexes[i]] == 1){
                     leaf_pos_weight += current_weight[images_indexes[i]];
@@ -561,7 +562,8 @@ Node* RandomForest::BuildTree(std::set<int>& selected_feature_indexes, cv::Mat_<
                     leaf_neg_weight += current_weight[images_indexes[i]];
                 }
             }
-            node->score_ = 0.5*(((leaf_pos_weight-0.0)<FLT_EPSILON)?0:log(leaf_pos_weight))-0.5*(((leaf_neg_weight-0.0)<FLT_EPSILON)?0:log(leaf_neg_weight))/*/log(2.0)*/;
+//            node->score_ = 0.5*(((leaf_pos_weight-0.0)<FLT_EPSILON)?0:log(leaf_pos_weight))-0.5*(((leaf_neg_weight-0.0)<FLT_EPSILON)?0:log(leaf_neg_weight))/*/log(2.0)*/;
+            node->score_ = 0.5*(log(leaf_pos_weight)- log(leaf_neg_weight));
 			return node;
 		}
 

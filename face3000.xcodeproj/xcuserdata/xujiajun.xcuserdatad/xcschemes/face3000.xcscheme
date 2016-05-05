@@ -75,12 +75,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "hello"
-            isEnabled = "NO">
+            argument = "train model_jda_detect"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "train model_jda_n4"
-            isEnabled = "YES">
+            argument = "test model_jda_n4"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "test model_jda_n8i3"
