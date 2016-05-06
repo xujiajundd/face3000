@@ -208,7 +208,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 		std::vector<int> images_indexes;
 		for (int j = start_index; j < end_index; j++){
             if ( find_times[j] < MAXFINDTIMES){
-			    images_indexes.push_back(j);
+                if ( j % ( 2 * trees_num_per_forest_ ) != i ) //让每棵树的样本有点不一样
+			        images_indexes.push_back(j);
             }
 		}
         
@@ -310,18 +311,18 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 
                 //接下来开始挖掘hard neg example
                 if ( augmented_ground_truth_faces[idx] == -1 && find_times[idx] < MAXFINDTIMES ){
-                    BoundingBox new_box;
+                    
 //                    BoundingBox max_fi_box;
 //                    cv::Mat_<float> max_fi_shape;
 //                    float max_fi = -100000000.0;
-                    if ( find_times[idx] < MAXFINDTIMES - 1){ //先普通挖掘
+                    int so = (find_times[idx] & 0x7f000000) >> 24;
+                    int ss = (find_times[idx] & 0x00ff0000) >> 16;
+                    int sx = (find_times[idx] & 0x0000ff00) >> 8;
+                    int sy = (find_times[idx] & 0x000000ff);
+                    if ( so < 4 ){ //先普通挖掘
                         //int ss = find_times[idx] / ( MAXFINDTIMES / 32 );
     //                    for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.1, ss++)){
     //                    int sw_size = 50 + 10 * ss;
-                        int so = (find_times[idx] & 0x7f000000) >> 24;
-                        int ss = (find_times[idx] & 0x00ff0000) >> 16;
-                        int sx = (find_times[idx] & 0x0000ff00) >> 8;
-                        int sy = (find_times[idx] & 0x000000ff);
                         for ( int orient = so; orient < 4; orient++ ){
                             float cols = images[augmented_images_index[idx]].cols;
                             float rows = images[augmented_images_index[idx]].rows;
@@ -332,6 +333,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                     sx++;
                                     for ( int sw_y = shuffle_size * sy; sw_y<rows - sw_size && sy < 256; sw_y+=shuffle_size){
                                         sy++;
+                                        BoundingBox new_box;
                                         new_box.start_x=sw_x;
                                         new_box.start_y=sw_y;
                                         new_box.width= sw_size;
@@ -405,15 +407,22 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 //                            cv::waitKey(0);
                             images[augmented_images_index[idx]] = temp;
                         }
+                        if ( !faceFound ){
+                            find_times[idx] = 256*256*256*4;
+                            so = 4;
+                            ss = 0;
+                            sx = 0;
+                            sy = 0;
+                        }
                     }
                     if ( !faceFound ){
                         //再从正例中找特别负例，以后都得从这儿找，不能再执行上面那部分
-                        find_times[idx] = MAXFINDTIMES - 1;
 //                        std::cout<<"得从正例中找负例:" << idx << std::endl;
                         int p = augmented_images_index[idx] - true_pos_num_;
                         if ( p < true_pos_num_ ){
 //                            augmented_images_index[idx] = p;
                             images[augmented_images_index[idx]] = images[p];
+/*
                             std::vector<BoundingBox> boxes;
                             //加二分之一到四分之一大小的框
                             for ( float is = 1.4; is <= 5.0; is+=0.2 ){
@@ -487,6 +496,72 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                     augmented_current_shapes[idx] = shape;
                                     break;
                                 }
+                            }
+*/
+                            float cols = images[augmented_images_index[idx]].cols;
+                            float rows = images[augmented_images_index[idx]].rows;
+                            
+                            BoundingBox pos_box = augmented_bboxes[p];
+                            BoundingBox search_box;
+                            search_box.start_x = pos_box.start_x - 0.8 * pos_box.width;
+                            search_box.start_y = pos_box.start_y - 0.8 * pos_box.height;
+                            search_box.width = 2.6 * pos_box.width;
+                            search_box.height = 2.6 * pos_box.height;
+                            if ( search_box.start_x < 0 ) search_box.start_x = 0;
+                            if ( search_box.start_y < 0 ) search_box.start_y = 0;
+                            if (( search_box.start_x + search_box.width ) > cols ) search_box.width = cols - search_box.start_x;
+                            if (( search_box.start_y + search_box.height) > rows ) search_box.height = rows - search_box.start_y;
+                            
+                            
+                            for ( int sw_size = 50 * std::pow(1.08, ss); sw_size < std::min(search_box.width, search_box.height); sw_size = 50 * std::pow(1.08, ss)){
+                                ss++;
+                                float shuffle_size = sw_size * 0.08;
+                                for ( int sw_x = shuffle_size * sx; sw_x<search_box.width - sw_size && sx < 256; sw_x+=shuffle_size){
+                                    sx++;
+                                    for ( int sw_y = shuffle_size * sy; sw_y<search_box.height - sw_size && sy < 256; sw_y+=shuffle_size){
+                                        sy++;
+                                        BoundingBox new_box;
+                                        new_box.start_x= search_box.start_x + sw_x;
+                                        new_box.start_y= search_box.start_y + sw_y;
+                                        new_box.width= sw_size;
+                                        new_box.height=new_box.width;
+                                        new_box.center_x=new_box.start_x + new_box.width/2.0;
+                                        new_box.center_y=new_box.start_y + new_box.height/2.0;
+                                        
+                                        float delta_start = sqrtf(powf((new_box.start_x - pos_box.start_x), 2.0) + powf((new_box.start_y - pos_box.start_y), 2.0));
+                                        float delta_end = sqrtf(powf((new_box.start_x + new_box.width - pos_box.start_x - pos_box.width), 2.0) + powf((new_box.start_y + new_box.height - pos_box.start_y - pos_box.height), 2.0));
+                                        if ( delta_start < 0.2 * pos_box.width && delta_end < 0.2 * pos_box.width ) continue; //判断与正例的位置接近则不采用
+                                        
+                                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[p], augmented_bboxes[p]);
+                                        augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
+                                        cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[p], augmented_bboxes[p]);
+                                        augmented_current_shapes[idx]=ReProjection(temp2, new_box);
+                                        augmented_bboxes[idx]=new_box;
+                                        
+                                        bool tmp_isface=true;
+                                        float tmp_fi=0;
+                                        
+                                        cv::Mat_<float> shape = augmented_current_shapes[idx].clone();
+                                        casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
+                                                                      shape, new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
+                                        if ( tmp_isface){
+                                            faceFound = true;
+                                            current_fi[idx] = tmp_fi;
+                                            current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
+                                            augmented_current_shapes[idx] = shape;
+                                            find_times[idx] = 256*256*256*4 + 256*256*ss + 256*sx + sy;
+                                            break;
+                                        }
+                                    }
+                                    if ( faceFound ){
+                                        break;
+                                    }
+                                    sy = 0;
+                                }
+                                if ( faceFound){
+                                    break;
+                                }
+                                sx = 0; sy = 0;
                             }
                             if ( faceFound ){
                                 mineHardNegNumber++;
