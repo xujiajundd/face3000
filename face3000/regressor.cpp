@@ -268,9 +268,9 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
                     delta_y = scale*delta_y*bbox.height / 2.0;
                     int real_x = delta_x + current_shape(pos.lmark1, 0);
                     int real_y = delta_y + current_shape(pos.lmark1, 1);
-                    real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                    real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                    int tmp = (int)image(real_y, real_x); //real_y at first
+                    real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
+                    real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
+                    int tmp = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ; //real_y at first
 
                     delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
                     delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
@@ -278,9 +278,10 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
                     delta_y = scale*delta_y*bbox.height / 2.0;
                     real_x = delta_x + current_shape(pos.lmark2, 0);
                     real_y = delta_y + current_shape(pos.lmark2, 1);
-                    real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                    real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                    if ((tmp - (int)image(real_y, real_x)) < node->threshold_){
+                    real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
+                    real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
+                    int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
+                    if ((tmp - tmp2) < node->threshold_){
                         node = node->left_child_;// go left
                     }
                     else{
@@ -612,7 +613,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
     }
 
     for ( int c=0; c<candidates.size(); c++){
-        if ( candidates[c].neighbors >= minNeighbors-1 ){
+        if ( candidates[c].neighbors >= minNeighbors - 1 ){
             cv::Rect rect;
             rect.x = candidates[c].box.start_x;
             rect.width = candidates[c].box.width;
@@ -844,9 +845,9 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
                 int real_x = delta_x + current_shape(pos.lmark1, 0);
                 int real_y = delta_y + current_shape(pos.lmark1, 1);
-                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                int tmp = (int)image(real_y, real_x); //real_y at first
+                real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
+                real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
+                int tmp = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ; //real_y at first
                 
                 delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
                 delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
@@ -854,9 +855,10 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
                 real_x = delta_x + current_shape(pos.lmark2, 0);
                 real_y = delta_y + current_shape(pos.lmark2, 1);
-                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                if ( (tmp - (int)image(real_y, real_x)) < node->threshold_){
+                real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
+                real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
+                int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
+                if ( (tmp - tmp2) < node->threshold_){
                     node = node->left_child_;// go left
                 }
                 else{
@@ -909,9 +911,9 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
                 delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
                 int real_x = delta_x + current_shape(pos.lmark1, 0);
                 int real_y = delta_y + current_shape(pos.lmark1, 1);
-                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                int tmp = (int)image(real_y, real_x); //real_y at first
+                real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
+                real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
+                int tmp = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ; //real_y at first
                 
                 delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
                 delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
@@ -919,9 +921,10 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
                 delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
                 real_x = delta_x + current_shape(pos.lmark2, 0);
                 real_y = delta_y + current_shape(pos.lmark2, 1);
-                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                if ( (tmp - (int)image(real_y, real_x)) < node->threshold_){
+                real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
+                real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
+                int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
+                if ( (tmp - tmp2) < node->threshold_){
                     node = node->left_child_;// go left
                 }
                 else{

@@ -75,16 +75,16 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "train model_jda_detect"
+            argument = "video model_jda_detect"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "test model_jda_detect_n8"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "train model_jda_3pixel"
             isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "test model_jda_n4"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "test model_jda_n8i3"
-            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "test model_jda500 /Users/xujiajun/developer/face3000/face3000/test.jpg"

@@ -167,9 +167,9 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 delta_y = scale*delta_y*augmented_bboxes[n].height / 2.0;
                 int real_x = delta_x + augmented_current_shapes[n](pos.lmark1, 0);
                 int real_y = delta_y + augmented_current_shapes[n](pos.lmark1, 1);
-                real_x = std::max(0, std::min(real_x, images[augmented_images_index[n]].cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, images[augmented_images_index[n]].rows - 1)); // which rows
-                int tmp = (int)images[augmented_images_index[n]](real_y, real_x); //real_y at first
+                real_x = std::max(1, std::min(real_x, images[augmented_images_index[n]].cols - 2)); // which cols
+                real_y = std::max(1, std::min(real_y, images[augmented_images_index[n]].rows - 2)); // which rows
+                int tmp = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-1, real_x) + images[augmented_images_index[n]](real_y+1, real_x) + images[augmented_images_index[n]](real_y, real_x-1) +images[augmented_images_index[n]](real_y, real_x+1)) / 6 ; //real_y at first
 
                 delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
                 delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
@@ -177,9 +177,10 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 delta_y = scale*delta_y*augmented_bboxes[n].height / 2.0;
                 real_x = delta_x + augmented_current_shapes[n](pos.lmark2, 0);
                 real_y = delta_y + augmented_current_shapes[n](pos.lmark2, 1);
-                real_x = std::max(0, std::min(real_x, images[augmented_images_index[n]].cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, images[augmented_images_index[n]].rows - 1)); // which rows
-                pixel_differences(j, n) = tmp - (int)images[augmented_images_index[n]](real_y, real_x);
+                real_x = std::max(1, std::min(real_x, images[augmented_images_index[n]].cols - 2)); // which cols
+                real_y = std::max(1, std::min(real_y, images[augmented_images_index[n]].rows - 2)); // which rows
+                int tmp2 = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-1, real_x) + images[augmented_images_index[n]](real_y+1, real_x) + images[augmented_images_index[n]](real_y, real_x-1) +images[augmented_images_index[n]](real_y, real_x+1)) / 6 ;
+                pixel_differences(j, n) = tmp - tmp2;
             }
         }
 
@@ -326,9 +327,9 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                         for ( int orient = so; orient < 4; orient++ ){
                             float cols = images[augmented_images_index[idx]].cols;
                             float rows = images[augmented_images_index[idx]].rows;
-                            for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.1, ss)){
+                            for ( int sw_size = 50 * std::pow(1.08, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.08, ss)){
                                 ss++;
-                                float shuffle_size = sw_size * 0.1;
+                                float shuffle_size = sw_size * 0.08;
                                 for ( int sw_x = shuffle_size * sx; sw_x<cols - sw_size && sx < 256; sw_x+=shuffle_size){
                                     sx++;
                                     for ( int sw_y = shuffle_size * sy; sw_y<rows - sw_size && sy < 256; sw_y+=shuffle_size){
@@ -530,7 +531,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         
                                         float delta_start = sqrtf(powf((new_box.start_x - pos_box.start_x), 2.0) + powf((new_box.start_y - pos_box.start_y), 2.0));
                                         float delta_end = sqrtf(powf((new_box.start_x + new_box.width - pos_box.start_x - pos_box.width), 2.0) + powf((new_box.start_y + new_box.height - pos_box.start_y - pos_box.height), 2.0));
-                                        if ( delta_start < 0.2 * pos_box.width && delta_end < 0.2 * pos_box.width ) continue; //判断与正例的位置接近则不采用
+                                        if ( delta_start < 0.15 * pos_box.width && delta_end < 0.15 * pos_box.width ) continue; //判断与正例的位置接近则不采用
                                         
                                         cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[p], augmented_bboxes[p]);
                                         augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
@@ -922,9 +923,9 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<float>& i
 		delta_y = scale*delta_y*bbox.height / 2.0;
 		int real_x = delta_x + current_shape(pos.lmark1, 0);
 		int real_y = delta_y + current_shape(pos.lmark1, 1);
-		real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-		real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-		int tmp = (int)image(real_y, real_x); //real_y at first
+		real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
+		real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
+		int tmp = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ; //real_y at first
 
 		delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
 		delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
@@ -932,9 +933,10 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<float>& i
 		delta_y = scale*delta_y*bbox.height / 2.0;
 		real_x = delta_x + current_shape(pos.lmark2, 0);
 		real_y = delta_y + current_shape(pos.lmark2, 1);
-		real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-		real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-		if ((tmp - (int)image(real_y, real_x)) < node->threshold_){
+		real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
+		real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
+        int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
+		if ((tmp - tmp2) < node->threshold_){
 			node = node->left_child_;// go left
 		}
 		else{
