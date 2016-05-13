@@ -633,14 +633,15 @@ cv::Mat_<float> CascadeRegressor::NegMinePredict(cv::Mat_<uchar>& image,
                                           cv::Mat_<float>& current_shape, BoundingBox& bbox, bool &is_face, float &fi, int stage, int landmark, int tree){
     //    cv::Mat_<float> rshape = ProjectShape( current_shape.clone(), bbox);
     
-    float score = 0;
+//    float score = 0;
     for (int i = 0; i <= stage; i++){
         cv::Mat_<float> rotation;
         float scale;
         getSimilarityTransform(ProjectShape(current_shape, bbox), params_.mean_shape_, rotation, scale);
-        cv::Mat_<float> shape_increaments = regressors_[i].NegMinePredict(image, current_shape, bbox, rotation, scale, score, is_face, stage, i, landmark, tree);
+        cv::Mat_<float> shape_increaments = regressors_[i].NegMinePredict(image, current_shape, bbox, rotation, scale, fi, is_face, stage, i, landmark, tree);
         if ( !is_face || shape_increaments.empty()){
 //            std::cout << "挖掘负例，不是face!!!!!!!!!!!!!!!!!!!!!!"<< std::endl;
+//            fi = score;
             return current_shape;
         }
         current_shape = shape_increaments + ProjectShape(current_shape, bbox);
@@ -662,7 +663,7 @@ cv::Mat_<float> CascadeRegressor::NegMinePredict(cv::Mat_<uchar>& image,
         //        stage_delta_.push_back(delta);
     }
     cv::Mat_<float> res = current_shape;
-    fi = score;
+//    fi = score;
     return res;
 }
 
@@ -890,7 +891,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
 }
 
 struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
-                                                        cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face, int stage, int currentStage, int landmark, int tree, bool &stop){
+                                                        cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, bool &is_face, int stage, int currentStage, int landmark, int tree, bool &stop){
     int index = 1;
     if ( tmp_binary_features == NULL ){
         //        struct feature_node* binary_features = new feature_node[params_.trees_num_per_forest_*params_.groups_[groupNum].size()+1]; //这条性能可能可以优化
@@ -1020,7 +1021,7 @@ cv::Mat_<float> Regressor::Predict(cv::Mat_<uchar>& image,
 }
 
 cv::Mat_<float> Regressor::NegMinePredict(cv::Mat_<uchar>& image,
-                                   cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face,  int stage, int currentStage, int landmark, int tree){
+                                   cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, bool& is_face,  int stage, int currentStage, int landmark, int tree){
     
     cv::Mat_<float> predict_result;
 
