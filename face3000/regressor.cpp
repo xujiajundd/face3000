@@ -613,7 +613,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
     }
 
     for ( int c=0; c<candidates.size(); c++){
-        if ( candidates[c].neighbors >= minNeighbors - 1 ){
+        if ( candidates[c].neighbors >= minNeighbors  ){
             cv::Rect rect;
             rect.x = candidates[c].box.start_x;
             rect.width = candidates[c].box.width;

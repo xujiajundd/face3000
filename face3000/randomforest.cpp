@@ -324,7 +324,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                         //int ss = find_times[idx] / ( MAXFINDTIMES / 32 );
     //                    for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.1, ss++)){
     //                    int sw_size = 50 + 10 * ss;
-                        for ( int orient = so; orient < 4; orient++ ){
+                        for ( int orient = so; orient < 1; orient++ ){
                             float cols = images[augmented_images_index[idx]].cols;
                             float rows = images[augmented_images_index[idx]].rows;
                             for ( int sw_size = 32 * std::pow(1.08, ss); sw_size < std::min(cols, rows); sw_size = 32 * std::pow(1.08, ss)){
@@ -581,6 +581,9 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                     else{
                         mineNormalNegNumber++;
                     }
+                }
+                else{
+                    std::cout << "no mine for idx:" << idx << " find_times:" << find_times[idx] << " " << augmented_ground_truth_faces[idx] <<std::endl;
                 }
             }
         }
