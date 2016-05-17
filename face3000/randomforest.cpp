@@ -192,8 +192,10 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
             if ( current_weight[k] > 10000.0 ) {
                 //current_weight[k] = 10000.0;
                 //这个地方如果按照参考的搞法，会丢弃太多example
+                std::cout << "drop too high weight:" << k << "face:" << augmented_ground_truth_faces[k] << std::endl;
                 find_times[k] = MAXFINDTIMES+8;
                 augmented_ground_truth_faces[k] = -1; //这种情况等于把这个训练数据抛弃了。。。
+
             }
         }
         
