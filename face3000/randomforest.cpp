@@ -185,19 +185,22 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         }
 
         //计算每个训练实例的weight
+        int drop_count = 0;
         for(int k=0;k<current_weight.size();++k)
         {
             current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
             //current_weight[k]=1;
-            if ( current_weight[k] > 100000000.0  && find_times[k] < MAXFINDTIMES ) {
+            if ( current_weight[k] > 1000000000000.0  && find_times[k] < MAXFINDTIMES ) {
                 //current_weight[k] = 10000.0;
                 //这个地方如果按照参考的搞法，会丢弃太多example
-                std::cout << "drop too high weight:" << k << "face:" << augmented_ground_truth_faces[k] << std::endl;
+                //std::cout << "drop too high weight:" << k << "face:" << augmented_ground_truth_faces[k] << std::endl;
                 find_times[k] = MAXFINDTIMES+8;
                 augmented_ground_truth_faces[k] = -1; //这种情况等于把这个训练数据抛弃了。。。
-
+                drop_count++;
             }
         }
+        if ( drop_count > 0 )
+            std::cout << "drop too high weight:" << drop_count << std::endl;
         
         //这个地方这么做不对了，因为负例都在后面，这么一分，后面的树都是负例。先全部实例都拿去训练算了，所以start和end都搞成全量吧。。。
         int start_index = 0;//i*step;
@@ -296,6 +299,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         int deleteNumber = 0;
         int mineHardNegNumber = 0;
         int mineNormalNegNumber = 0;
+//        int maxFindRepeat = 2;
         
         for ( int n=0; n<fiSort.size(); ++n){
             if ( fiSort[n].first < root->score_ ){
@@ -574,6 +578,12 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             }
                             else{
                                 find_times[idx] = MAXFINDTIMES;
+//                                if ( find_times[idx] >= MAXFINDTIMES - maxFindRepeat ){
+//                                    find_times[idx]++;
+//                                }
+//                                else{
+//                                    find_times[idx] = MAXFINDTIMES - maxFindRepeat;
+//                                }
                             }
                         } //没有对应的正例可以用
                         else{
