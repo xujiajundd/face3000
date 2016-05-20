@@ -190,7 +190,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         {
             current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
             //current_weight[k]=1;
-            if ( current_weight[k] > 1000000000000.0  && find_times[k] < MAXFINDTIMES ) {
+            if ( current_weight[k] > 10000000000000.0  && find_times[k] < MAXFINDTIMES ) {
                 //current_weight[k] = 10000.0;
                 //这个地方如果按照参考的搞法，会丢弃太多example
                 //std::cout << "drop too high weight:" << k << "face:" << augmented_ground_truth_faces[k] << std::endl;

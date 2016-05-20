@@ -304,14 +304,14 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
     std::cout << "\n";
 
     struct problem* prob = new struct problem;
-    prob->l = augmented_current_shapes.size();
+    prob->l = pos_num; //augmented_current_shapes.size();
     prob->n = num_feature;
     prob->x = global_binary_features;
     prob->bias = -1;
 
     struct parameter* regression_params = new struct parameter;
     regression_params-> solver_type = L2R_L2LOSS_SVR_DUAL;
-    regression_params->C = 1.0/augmented_current_shapes.size();
+    regression_params->C = 1.0/pos_num; //augmented_current_shapes.size();
     regression_params->p = 0;
 
     std::cout << "Global Regression of stage " << stage_ << std::endl;
@@ -319,20 +319,20 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
     linear_model_y_.resize(params_.landmarks_num_per_face_);
     float** targets = new float*[params_.landmarks_num_per_face_];
     for (int i = 0; i < params_.landmarks_num_per_face_; ++i){
-        targets[i] = new float[augmented_current_shapes.size()];
+        targets[i] = new float[pos_num];
     }
     #pragma omp parallel for
     for (int i = 0; i < params_.landmarks_num_per_face_; ++i){
 
         std::cout << "regress landmark " << i << std::endl;
-        for(int j = 0; j< augmented_current_shapes.size();j++){
+        for(int j = 0; j< pos_num;j++){
             targets[i][j] = regression_targets[j](i, 0);
         }
         prob->y = targets[i];
         check_parameter(prob, regression_params);
         struct model* regression_model = train(prob, regression_params);
         linear_model_x_[i] = regression_model;
-        for(int j = 0; j < augmented_current_shapes.size(); j++){
+        for(int j = 0; j < pos_num; j++){
             targets[i][j] = regression_targets[j](i, 1);
         }
         prob->y = targets[i];
