@@ -929,7 +929,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 //	return res;
 //}
 
-int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<float>& image,
+int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<uchar>& image,
 	const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale, float& score){
 	Node* node = trees_[tree_index];
 	while (!node->is_leaf_){

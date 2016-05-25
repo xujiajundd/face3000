@@ -63,12 +63,12 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "genneg /Users/xujiajun/developer/dataset/xujj"
-            isEnabled = "NO">
+            argument = "train test"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "video model_neg_t5d4n8i2"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "video model_neg_t6d4n4i2"
