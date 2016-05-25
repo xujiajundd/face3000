@@ -33,7 +33,7 @@ int my_cmp(std::pair<float,int> p1, std::pair<float,int> p2)
 };
 
 bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_targets,
-	std::vector<cv::Mat_<uchar> >& images,
+	std::vector<cv::Mat_<cv::Vec3b> >& images,
 	std::vector<int>& augmented_images_index,
 	std::vector<cv::Mat_<float>>& augmented_ground_truth_shapes,
 	std::vector<BoundingBox>& augmented_bboxes,
@@ -169,8 +169,9 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 int real_y = delta_y + augmented_current_shapes[n](pos.lmark1, 1);
                 real_x = std::max(1, std::min(real_x, images[augmented_images_index[n]].cols - 2)); // which cols
                 real_y = std::max(1, std::min(real_y, images[augmented_images_index[n]].rows - 2)); // which rows
-                int tmp = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-1, real_x) + images[augmented_images_index[n]](real_y+1, real_x) + images[augmented_images_index[n]](real_y, real_x-1) +images[augmented_images_index[n]](real_y, real_x+1)) / 6 ; //real_y at first
-
+                //int tmp = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-1, real_x) + images[augmented_images_index[n]](real_y+1, real_x) + images[augmented_images_index[n]](real_y, real_x-1) +images[augmented_images_index[n]](real_y, real_x+1)) / 6 ; //real_y at first
+                cv::Vec3b tmp = images[augmented_images_index[n]](real_y, real_x);
+                
                 delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
                 delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
                 delta_x = scale*delta_x*augmented_bboxes[n].width / 2.0;
@@ -179,8 +180,9 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 real_y = delta_y + augmented_current_shapes[n](pos.lmark2, 1);
                 real_x = std::max(1, std::min(real_x, images[augmented_images_index[n]].cols - 2)); // which cols
                 real_y = std::max(1, std::min(real_y, images[augmented_images_index[n]].rows - 2)); // which rows
-                int tmp2 = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-1, real_x) + images[augmented_images_index[n]](real_y+1, real_x) + images[augmented_images_index[n]](real_y, real_x-1) +images[augmented_images_index[n]](real_y, real_x+1)) / 6 ;
-                pixel_differences(j, n) = tmp - tmp2;
+                //int tmp2 = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-1, real_x) + images[augmented_images_index[n]](real_y+1, real_x) + images[augmented_images_index[n]](real_y, real_x-1) +images[augmented_images_index[n]](real_y, real_x+1)) / 6 ;
+                cv::Vec3b tmp2 = images[augmented_images_index[n]](real_y, real_x);
+                pixel_differences(j, n) = colorDistance(tmp, tmp2);
             }
         }
 
@@ -375,7 +377,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
     //                                        std::cout << rect << std::endl;
                                             //测试看看
     //                                        if ( landmark_index_ > 25 ){
-    //                                            cv::Mat_<uchar> image = images[augmented_images_index[idx]].clone();
+    //                                            cv::Mat_<cv::Vec3b> image = images[augmented_images_index[idx]].clone();
     //                                            cv::Rect rect;
     //                                            rect.x = new_box.start_x;
     //                                            rect.y = new_box.start_y;
@@ -404,7 +406,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             }
                             ss = 0; sx = 0; sy = 0;
                             //把图片旋转90度
-                            cv::Mat_<uchar> temp = images[augmented_images_index[idx]];
+                            cv::Mat_<cv::Vec3b> temp = images[augmented_images_index[idx]];
 //                            cv::imshow("origin", temp);
 //                            cv::waitKey(0);
                             cv::transpose(temp, temp);
@@ -929,7 +931,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 //	return res;
 //}
 
-int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<float>& image,
+int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<cv::Vec3b>& image,
 	const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale, float& score){
 	Node* node = trees_[tree_index];
 	while (!node->is_leaf_){
@@ -942,8 +944,9 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<float>& i
 		int real_y = delta_y + current_shape(pos.lmark1, 1);
 		real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
 		real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
-		int tmp = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ; //real_y at first
-
+		//int tmp = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ; //real_y at first
+        cv::Vec3b tmp = image(real_y, real_x);
+        
 		delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
 		delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
 		delta_x = scale*delta_x*bbox.width / 2.0;
@@ -952,8 +955,10 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<float>& i
 		real_y = delta_y + current_shape(pos.lmark2, 1);
 		real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
 		real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
-        int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
-		if ((tmp - tmp2) < node->threshold_){
+        //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
+		cv::Vec3b tmp2 = image(real_y, real_x);
+        
+        if (colorDistance(tmp, tmp2) < node->threshold_){
 			node = node->left_child_;// go left
 		}
 		else{

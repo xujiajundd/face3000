@@ -35,7 +35,7 @@ using namespace std;
 //correlation_tracker tracker;
 bool faceDetected = false;
 
-void DrawPredictedImage(cv::Mat_<uchar> image, cv::Mat_<float>& shape){
+void DrawPredictedImage(cv::Mat_<cv::Vec3b> image, cv::Mat_<float>& shape){
     for (int i = 0; i < shape.rows; i++){
         cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, (255));
         if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
@@ -60,7 +60,7 @@ void DrawPredictedImageContinue(cv::Mat image, cv::Mat_<float>& shape){
 void Test(const char* ModelName){
 	CascadeRegressor cas_load;
 	cas_load.LoadCascadeRegressor(ModelName);
-	std::vector<cv::Mat_<uchar> > images;
+	std::vector<cv::Mat_<cv::Vec3b> > images;
 	std::vector<cv::Mat_<float> > ground_truth_shapes;
     std::vector<int> ground_truth_faces;
 	std::vector<BoundingBox> bboxes;
@@ -122,7 +122,7 @@ void Test(const char* ModelName){
                     cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, box, is_face, score);
                     if ( is_face){
                         std::cout << "score:" << score << std::endl;
-                        cv::Mat_<uchar> img = images[i].clone();
+                        cv::Mat_<cv::Vec3b> img = images[i].clone();
                         cv::Rect rect;
                         rect.x = box.start_x;
                         rect.y = box.start_y;
@@ -181,7 +181,7 @@ void TestVideo(const char* ModelName){
         return;
     }
     cv::Mat frame;
-    Mat_<uchar> image;
+    Mat_<cv::Vec3b> image;
     
     cv::Mat_<float> last_shape;
     bool lastShaped = false;
@@ -311,7 +311,7 @@ void TestImage(const char* name, CascadeRegressor& rg){
 	cv::CascadeClassifier haar_cascade;
 	bool yes = haar_cascade.load(fn_haar);
 	std::cout << "detector: " << yes << std::endl;
-	cv::Mat_<uchar> image = cv::imread(name, 0);
+	cv::Mat_<cv::Vec3b> image = cv::imread(name, 1);
 		if (image.cols > 2000){
 			cv::resize(image, image, cv::Size(image.cols / 3, image.rows / 3), 0, 0, cv::INTER_LINEAR);
 			//ground_truth_shape /= 3.0;
@@ -347,7 +347,7 @@ void TestImage(const char* name, CascadeRegressor& rg){
         gettimeofday(&t2, NULL);
         cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
         
-        cv::Mat_<uchar> img = image.clone();
+        cv::Mat_<cv::Vec3b> img = image.clone();
         cv::rectangle(img, faceRec, (255), 1);
         //cv::imshow("show image", image);
         //cv::waitKey(0);
@@ -387,7 +387,7 @@ void TestImage(const char* name, CascadeRegressor& rg){
                 if ( is_face){
                     faceFound++;
                     std::cout << "score:" << score << std::endl;
-                    cv::Mat_<uchar> img = image.clone();
+                    cv::Mat_<cv::Vec3b> img = image.clone();
                     cv::Rect rect;
                     rect.x = box.start_x;
                     rect.y = box.start_y;
@@ -426,7 +426,7 @@ void Test(const char* ModelName, const char* name){
 //TODO: detect multiscale, regression performance improve
 
 void Train(const char* ModelName){
-	std::vector<cv::Mat_<uchar> > images;
+	std::vector<cv::Mat_<cv::Vec3b> > images;
 	std::vector<cv::Mat_<float> > ground_truth_shapes;
     std::vector<int> ground_truth_faces;
 	std::vector<BoundingBox> bboxes;
@@ -491,7 +491,7 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.0);
     
     params.tree_depth_ = 4;
-    params.trees_num_per_forest_ = 8;
+    params.trees_num_per_forest_ = 4;
     params.initial_guess_ = 2;
     
 //    params.group_num_ = 6;
@@ -686,8 +686,8 @@ void GenNeg(const char* path){
         std::cout << name << std::endl;
 //        std::string pts = name.substr(0, name.length() - 3) + "pts";
         
-        cv::Mat_<uchar> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 0);
-//        cv::Mat_<uchar> image = cv::imread(files[i], 1);
+        cv::Mat_<cv::Vec3b> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 1);
+//        cv::Mat_<cv::Vec3b> image = cv::imread(files[i], 1);
         if (image.cols > 2000){
             cv::resize(image, image, cv::Size(image.cols / 3, image.rows / 3), 0, 0, cv::INTER_LINEAR);
         }

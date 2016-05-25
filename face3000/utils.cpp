@@ -177,7 +177,7 @@ bool ShapeInRect(cv::Mat_<float>& shape, cv::Rect& ret){
 	return true;
 }
 
-std::vector<cv::Rect> DetectFaces(cv::Mat_<uchar>& image, cv::CascadeClassifier& classifier){
+std::vector<cv::Rect> DetectFaces(cv::Mat_<cv::Vec3b>& image, cv::CascadeClassifier& classifier){
 	std::vector<cv::Rect_<int> > faces;
 	classifier.detectMultiScale(image, faces, 1.1, 2, 0, cv::Size(30, 30));
 	return faces;
@@ -226,7 +226,7 @@ BoundingBox CalculateBoundingBox(cv::Mat_<float>& shape){
     return bbx;
 }
 
-int LoadImages(std::vector<cv::Mat_<uchar> >& images,
+int LoadImages(std::vector<cv::Mat_<cv::Vec3b> >& images,
 	std::vector<cv::Mat_<float> >& ground_truth_shapes,
     std::vector<int>& ground_truth_faces,
 	//const std::vector<cv::Mat_<float> >& current_shapes,
@@ -269,7 +269,9 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
 		std::cout << name << std::endl;
 		std::string pts = name.substr(0, name.length() - 3) + "pts";
         
-        cv::Mat_<uchar> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 0);
+        cv::Mat_<cv::Vec3b> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 1);
+//        cv::imshow("show image", image);
+//        cv::waitKey(0);
         cv::Mat_<float> ground_truth_shape = LoadGroundTruthShape(("/Users/xujiajun/developer/dataset/helen/" + pts).c_str());
         if ( ground_truth_shape.rows != 68 || ground_truth_shape.cols != 2){
             std::cout<<"error:" << pts << std::endl;
@@ -344,7 +346,7 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
 //                bboxes.push_back(nbbox);
 
                 //翻转图片, add by xujj
-                cv::Mat_<uchar> flippedImage;
+                cv::Mat_<cv::Vec3b> flippedImage;
                 flip(image, flippedImage, 1);
                 images.push_back(flippedImage);
                 
@@ -432,7 +434,7 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
     fin.open(neg_file_names.c_str(), std::ifstream::in);
     while (fin >> name){
         std::cout << name << std::endl;
-        cv::Mat_<uchar> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 0);
+        cv::Mat_<cv::Vec3b> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 1);
         cv::Mat_<float> ground_truth_shape = ground_truth_shapes[neg_num % pos_num];
         BoundingBox bbox = bboxes[neg_num % pos_num];
         BoundingBox nbbox;
@@ -453,7 +455,7 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
     
     std::cout << "add negative samples:" << neg_num << std::endl;
 //    for ( int i=0; i<pos_num; i++){
-//        cv::Mat_<uchar> image = images[i];
+//        cv::Mat_<cv::Vec3b> image = images[i];
 //        cv::Mat_<float> ground_truth_shape = ground_truth_shapes[i];
 //        BoundingBox bbox = bboxes[i];
 //        //加负例
@@ -527,7 +529,7 @@ float CalculateError(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predi
 
 
 
-void DrawPredictImage(cv::Mat_<uchar> image, cv::Mat_<float>& shape){
+void DrawPredictImage(cv::Mat_<cv::Vec3b> image, cv::Mat_<float>& shape){
 	for (int i = 0; i < shape.rows; i++){
 		cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, (255));
 	}
@@ -569,3 +571,7 @@ BoundingBox GetBoundingBox(cv::Mat_<float>& shape, int width, int height){
 	return bbox;
 }
 
+int colorDistance(cv::Vec3b p1, cv::Vec3b p2){
+    int p = (p1[0]-p2[0])*(p1[0]-p2[0]) + (p1[1]-p2[1])*(p1[1]-p2[1]) + (p1[2]-p2[2])*(p1[2]-p2[2]);
+    return (int)sqrt(p);
+}

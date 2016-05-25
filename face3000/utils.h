@@ -85,18 +85,19 @@ void getSimilarityTransform(const cv::Mat_<float>& shape_to,
 //cv::Mat_<float> LoadGroundTruthShape(std::string& name);
 cv::Mat_<float> LoadGroundTruthShape(const char* name);
 
-int LoadImages(std::vector<cv::Mat_<uchar> >& images, std::vector<cv::Mat_<float> >& ground_truth_shapes, std::vector<int> & ground_truth_faces,
+int LoadImages(std::vector<cv::Mat_<cv::Vec3b> >& images, std::vector<cv::Mat_<float> >& ground_truth_shapes, std::vector<int> & ground_truth_faces,
 	std::vector<BoundingBox>& bboxes, std::string file_names, std::string neg_file_names);
 
 bool ShapeInRect(cv::Mat_<float>& ground_truth_shape, cv::Rect&);
 
-std::vector<cv::Rect_<int> > DetectFaces(cv::Mat_<uchar>& image);
-std::vector<cv::Rect> DetectFaces(cv::Mat_<uchar>& image, cv::CascadeClassifier& classifier);
+std::vector<cv::Rect_<int> > DetectFaces(cv::Mat_<cv::Vec3b>& image);
+std::vector<cv::Rect> DetectFaces(cv::Mat_<cv::Vec3b>& image, cv::CascadeClassifier& classifier);
 
 float CalculateError(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predicted_shape);
 
-void DrawPredictImage(cv::Mat_<uchar>& image, cv::Mat_<float>& shapes);
+void DrawPredictImage(cv::Mat_<cv::Vec3b>& image, cv::Mat_<float>& shapes);
 
 BoundingBox GetBoundingBox(cv::Mat_<float>& shape, int width, int height);
+int colorDistance(cv::Vec3b p1, cv::Vec3b p2);
 
 #endif
