@@ -67,12 +67,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "video model_groups_t5d5n8i5"
-            isEnabled = "NO">
+            argument = "video model_neg_t5d4n8i2"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "train model_neg_t6d4n4i2"
-            isEnabled = "YES">
+            argument = "video model_neg_t6d4n4i2"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "test model_neg_d5n4i2"

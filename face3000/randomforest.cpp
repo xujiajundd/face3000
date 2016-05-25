@@ -190,7 +190,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         {
             current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
             //current_weight[k]=1;
-            if ( current_weight[k] > 10000000000000.0  && find_times[k] < MAXFINDTIMES ) {
+            if ( current_weight[k] > 1000000000000000.0  && find_times[k] < MAXFINDTIMES ) {
                 //current_weight[k] = 10000.0;
                 //这个地方如果按照参考的搞法，会丢弃太多example
                 //std::cout << "drop too high weight:" << k << "face:" << augmented_ground_truth_faces[k] << std::endl;
@@ -214,7 +214,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 		std::vector<int> images_indexes;
 		for (int j = start_index; j < end_index; j++){
             if ( find_times[j] < MAXFINDTIMES){
-                if ( j % ( 2 * trees_num_per_forest_ ) != i ) //让每棵树的样本有点不一样
+                //if ( j % ( 2 * trees_num_per_forest_ ) != i ) //让每棵树的样本有点不一样
 			        images_indexes.push_back(j);
             }
 		}
@@ -712,7 +712,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
                 float total_r_pos_weight = 0.0, total_r_neg_weight = 0.0;
                 
                 // random generate threshold
-                int tmp_index = floor((int)(images_indexes.size()*(0.5 + 0.9*(rd.uniform(0.0, 1.0) - 0.5))));
+                int tmp_index = floor((int)(images_indexes.size()*(0.5 + 0.8*(rd.uniform(0.0, 1.0) - 0.5))));
                 int tmp_threshold = data[tmp_index];
                 for (int i = 0; i < images_indexes.size(); i++){
                     int index = images_indexes[i];
