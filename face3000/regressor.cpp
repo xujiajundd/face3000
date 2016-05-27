@@ -135,6 +135,16 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<cv::Vec3b> >& images,
     pos_num += pos_num * params_.initial_guess_;
     
     std::cout << "augmented size: " << augmented_current_shapes.size() << std::endl;
+    float error = 0.0;
+    int count = 0;
+    for (int j = 0; j < augmented_ground_truth_shapes.size(); j++){
+        if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
+            error += CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
+            count++;
+        }
+    }
+    std::cout << "initial error: " <<  error << ": " << error/count << std::endl;
+    
 
 	std::vector<cv::Mat_<float> > shape_increaments;
 

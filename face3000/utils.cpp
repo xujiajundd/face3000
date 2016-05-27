@@ -573,5 +573,5 @@ BoundingBox GetBoundingBox(cv::Mat_<float>& shape, int width, int height){
 
 int colorDistance(cv::Vec3b p1, cv::Vec3b p2){
     int p = (p1[0]-p2[0])*(p1[0]-p2[0]) + (p1[1]-p2[1])*(p1[1]-p2[1]) + (p1[2]-p2[2])*(p1[2]-p2[2]);
-    return (int)sqrt(p);
+    return (int)sqrt(p)/3;
 }
