@@ -367,7 +367,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         augmented_current_shapes[idx]=ReProjection(temp2, new_box);
                                         augmented_bboxes[idx]=new_box;
 
-                                        bool tmp_isface=true;
+                                        int tmp_isface=1;
                                         float tmp_fi=0;
                                         
                                         //这个时候，自己在第stage_, landmark_index_的i树上
@@ -560,7 +560,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         augmented_current_shapes[idx]=ReProjection(temp2, new_box);
                                         augmented_bboxes[idx]=new_box;
                                         
-                                        bool tmp_isface=true;
+                                        int tmp_isface=1;
                                         float tmp_fi=0;
                                         
                                         cv::Mat_<float> shape = augmented_current_shapes[idx].clone();

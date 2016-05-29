@@ -84,10 +84,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "video model_neg_color_n6"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "test model_jda500 /Users/xujiajun/developer/face3000/face3000/test.jpg"
+            argument = "test model_neg_color_n6 /Users/xujiajun/developer/xcode/face3000/face3000/test.jpg"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>

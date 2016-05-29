@@ -74,7 +74,7 @@ void Test(const char* ModelName){
 		cv::Mat_<float> current_shape = ReProjection(cas_load.params_.mean_shape_, bboxes[i]);
         //struct timeval t1, t2;
         //gettimeofday(&t1, NULL);
-        bool is_face = true;
+        int is_face = 1;
         float score = 0;
         cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, bboxes[i], is_face, score);//, ground_truth_shapes[i]);
 
@@ -116,11 +116,11 @@ void Test(const char* ModelName){
                     box.height = currentSize;
                     box.center_x = box.start_x + box.width/2.0;
                     box.center_y = box.start_y + box.width/2.0;
-                    bool is_face = true;
+                    int is_face = 1;
                     cv::Mat_<float> current_shape = ReProjection(cas_load.params_.mean_shape_, box);
                     float score = 0;
                     cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, box, is_face, score);
-                    if ( is_face){
+                    if ( is_face == 1){
                         std::cout << "score:" << score << std::endl;
                         cv::Mat_<cv::Vec3b> img = images[i].clone();
                         cv::Rect rect;
@@ -260,11 +260,11 @@ void TestVideo(const char* ModelName){
                 //cv::Mat_<float> tmp = image.clone();
                 //DrawPredictedImage(tmp, current_shape);
                 gettimeofday(&t1, NULL);
-                bool is_face = true;
+                int is_face = 1;
                 float score = 0;
                 cv::Mat_<float> res = rg.Predict(image, current_shape, bbox, is_face, score);//, ground_truth_shapes[i]);
                 gettimeofday(&t2, NULL);
-                if ( !is_face ) continue;
+                if ( is_face != 1 ) continue;
     //            last_shape = res.clone(); lastShaped = true;
                 cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " isface" << is_face << " score:" << score << endl;
                 
@@ -286,7 +286,7 @@ void TestVideo(const char* ModelName){
         else{ //用新的方法
             gettimeofday(&t1, NULL);
             std::vector<cv::Mat_<float>> shapes;
-            std::vector<cv::Rect> rects = rg.detectMultiScale(image, shapes, 1.1, 2, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, 120);
+            std::vector<cv::Rect> rects = rg.detectMultiScale(image, shapes, 1.1, 2, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, 150);
             gettimeofday(&t2, NULL);
             //            last_shape = res.clone(); lastShaped = true;
             cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " faces:" << rects.size() <<  endl;
@@ -332,8 +332,8 @@ void TestImage(const char* name, CascadeRegressor& rg){
         cv::Rect faceRec = faces[i];
         BoundingBox bbox;
         bbox.start_x = faceRec.x;
-        bbox.start_y = faceRec.y;
-        bbox.width = faceRec.width;
+        bbox.start_y = faceRec.y+50;
+        bbox.width = faceRec.width-50;
         bbox.height = faceRec.height;
         bbox.center_x = bbox.start_x + bbox.width / 2.0;
         bbox.center_y = bbox.start_y + bbox.height / 2.0;
@@ -341,11 +341,11 @@ void TestImage(const char* name, CascadeRegressor& rg){
         //cv::Mat_<float> tmp = image.clone();
         //DrawPredictedImage(tmp, current_shape);
         gettimeofday(&t1, NULL);
-        bool is_face = true;
+        int is_face = 1;
         float score = 0;
         cv::Mat_<float> res = rg.Predict(image, current_shape, bbox, is_face, score);//, ground_truth_shapes[i]);
         gettimeofday(&t2, NULL);
-        cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
+        cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " isface:" << is_face << " score:" << score << endl;
         
         cv::Mat_<cv::Vec3b> img = image.clone();
         cv::rectangle(img, faceRec, (255), 1);
@@ -355,37 +355,37 @@ void TestImage(const char* name, CascadeRegressor& rg){
         break;
     }
     
+
     float scale = 1.1;
     float shuffle = 0.1;
-    int minSize = image.cols/4;
+    int minSize = 50;
     int order = -1;
     int currentSize;
     bool biggest_only;
-    int faceFound = 0;
-    int nonface = 0;
+    int faceFound=0, nonface=0;
+
     if ( order == 1 ){
         currentSize = minSize;
     }
     else{
         currentSize = std::min(image.cols, image.rows);
     }
-    gettimeofday(&t1, NULL);
+
     while ( currentSize >= minSize && currentSize <= std::min(image.cols, image.rows)){
-        for ( int i=0; i<image.cols-currentSize; i+= currentSize*shuffle){
-            for ( int j=0; j<image.rows-currentSize; j+=currentSize*shuffle){
+        for ( int ix=0; ix<image.cols-currentSize; ix+= currentSize*shuffle){
+            for ( int jy=0; jy<image.rows-currentSize; jy+=currentSize*shuffle){
                 BoundingBox box;
-                box.start_x = i;
-                box.start_y = j;
+                box.start_x = ix;
+                box.start_y = jy;
                 box.width = currentSize;
                 box.height = currentSize;
                 box.center_x = box.start_x + box.width/2.0;
                 box.center_y = box.start_y + box.width/2.0;
-                bool is_face = true;
+                int is_face = 1;
                 cv::Mat_<float> current_shape = ReProjection(rg.params_.mean_shape_, box);
                 float score = 0;
                 cv::Mat_<float> res = rg.Predict(image, current_shape, box, is_face, score);
-                if ( is_face){
-                    faceFound++;
+                if ( is_face == 1){
                     std::cout << "score:" << score << std::endl;
                     cv::Mat_<cv::Vec3b> img = image.clone();
                     cv::Rect rect;
@@ -396,12 +396,20 @@ void TestImage(const char* name, CascadeRegressor& rg){
                     cv::rectangle(img, rect, (255), 1);
                     DrawPredictedImage(img, res);
                 }
-                else{
-                    nonface++;
+                else if ( is_face < 0 ){
+                    std::cout<< "isface:" << is_face << std::endl;
+                    cv::Mat_<cv::Vec3b> img = image.clone();
+                    cv::Rect rect;
+                    rect.x = box.start_x;
+                    rect.y = box.start_y;
+                    rect.width = box.width;
+                    rect.height = box.height;
+                    cv::rectangle(img, rect, (255,0,0), 3 );
+                    DrawPredictedImageContinue(img, res);
                 }
             }
         }
-        
+
         if ( order == 1 ){
             currentSize *= scale;
         }
@@ -409,7 +417,7 @@ void TestImage(const char* name, CascadeRegressor& rg){
             currentSize /= scale;
         }
     }
-    
+
     gettimeofday(&t2, NULL);
     cout << "jda face detected " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " face found:" << faceFound << " nonface checked:" << nonface << endl;
     

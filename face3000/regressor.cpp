@@ -426,23 +426,25 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<cv::Vec3b> >
 
 
 cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<cv::Vec3b>& image,
-	cv::Mat_<float>& current_shape, BoundingBox& bbox, bool &is_face, float &score){
-//    cv::Mat_<float> rshape = ProjectShape( current_shape.clone(), bbox);
+	cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float &score){
 
-//    float score = 0;
 	for (int i = 0; i < params_.predict_regressor_stages_; i++){
         cv::Mat_<float> rotation;
 		float scale;
+//        struct timeval t1, t2;
+//        gettimeofday(&t1, NULL);
+        //这个耗时百分之一毫秒左右，
 		getSimilarityTransform(ProjectShape(current_shape, bbox), params_.mean_shape_, rotation, scale);
+//        gettimeofday(&t2, NULL);
+//        std::cout << "transform: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << std::endl;
 		cv::Mat_<float> shape_increaments = regressors_[i].Predict(image, current_shape, bbox, rotation, scale, score, is_face);
-        if ( !is_face ){
+        if ( is_face != 1){
             //std::cout << "检测不是face!!!!!!!!!!!!!!!!!!!!!!"<< std::endl;
             return current_shape;
         }
-		current_shape = shape_increaments + ProjectShape(current_shape, bbox);
+        current_shape = shape_increaments + ProjectShape(current_shape, bbox);
 		current_shape = ReProjection(current_shape, bbox);
 	}
-
     cv::Mat_<float> res = current_shape;
     
     //add by xujj, 做一个小幅抖动滤波，这个在detect时无效了。。。//TODO：可放到检测合并结束的时候再做
@@ -566,7 +568,17 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<cv::Vec3b>& im
 
     std::vector<struct candidate> candidates;
     BoundingBox box;
-    
+
+    //测试一下初始位置旋转过来的效果，可用于下一步做跟踪
+    cv::Mat_<float> mean_shape(params_.landmarks_num_per_face_, 2, 0.0);
+    for ( int i=0; i<params_.landmarks_num_per_face_; i++){
+        float cos = 1.0;
+        float sin = 0.0;
+        mean_shape(i,0)=  cos*params_.mean_shape_(i,0) + sin*params_.mean_shape_(i,1);
+        mean_shape(i,1)= -sin*params_.mean_shape_(i,0) + cos*params_.mean_shape_(i,1);
+    }
+
+    //TODO:可以根据返回的score或者stage，改变shuffle及scale的尺度？不同尺度下，也可以利用改信息？
     while ( currentSize >= minSize && currentSize <= std::min(image.cols, image.rows)){
         box.width = currentSize;
         box.height = currentSize;
@@ -576,11 +588,11 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<cv::Vec3b>& im
             for ( int j=0; j<image.rows-currentSize; j+=currentSize*shuffle){
                 box.start_y = j;
                 box.center_y = box.start_y + box.width/2.0;
-                bool is_face = true;
-                cv::Mat_<float> current_shape = ReProjection(params_.mean_shape_, box);
+                int is_face = 1;
+                cv::Mat_<float> current_shape = ReProjection(mean_shape, box);
                 float score = 0;
                 cv::Mat_<float> res = Predict(image, current_shape, box, is_face, score);
-                if ( is_face){
+                if ( is_face == 1){
                     faceFound++;
                     bool has_overlap = false;
                     for ( int c=0; c<candidates.size(); c++){
@@ -643,7 +655,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<cv::Vec3b>& im
 
 
 cv::Mat_<float> CascadeRegressor::NegMinePredict(cv::Mat_<cv::Vec3b>& image,
-                                          cv::Mat_<float>& current_shape, BoundingBox& bbox, bool &is_face, float &fi, int stage, int landmark, int tree){
+                                          cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float &fi, int stage, int landmark, int tree){
     //    cv::Mat_<float> rshape = ProjectShape( current_shape.clone(), bbox);
     
 //    float score = 0;
@@ -652,7 +664,7 @@ cv::Mat_<float> CascadeRegressor::NegMinePredict(cv::Mat_<cv::Vec3b>& image,
         float scale;
         getSimilarityTransform(ProjectShape(current_shape, bbox), params_.mean_shape_, rotation, scale);
         cv::Mat_<float> shape_increaments = regressors_[i].NegMinePredict(image, current_shape, bbox, rotation, scale, fi, is_face, stage, i, landmark, tree);
-        if ( !is_face || shape_increaments.empty()){
+        if ( is_face != 1 || shape_increaments.empty()){
 //            std::cout << "挖掘负例，不是face!!!!!!!!!!!!!!!!!!!!!!"<< std::endl;
 //            fi = score;
             return current_shape;
@@ -838,12 +850,13 @@ void Regressor::GetFeaThread(){
 //}
 
 struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<cv::Vec3b>& image,
-    cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face){
+    cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, int& is_face){
     int index = 1;
     if ( tmp_binary_features == NULL ){
 //        struct feature_node* binary_features = new feature_node[params_.trees_num_per_forest_*params_.groups_[groupNum].size()+1]; //这条性能可能可以优化
         tmp_binary_features = new feature_node[params_.trees_num_per_forest_*params_.landmarks_num_per_face_ +1];
     }
+
     int ind = 0;
     float ss = scale * bbox.width / 2.0; //add by xujj
     for (int j = 0; j < params_.landmarks_num_per_face_; ++j)
@@ -882,7 +895,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<cv::Vec3b>& ima
             }
             score += node->score_;
             if ( score < rd_forests_[j].trees_[k]->score_ ){
-                is_face = false;
+                is_face = - stage_;
                 //std::cout <<"stage:"<<stage_ << "lmark=" << j << " tree=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
                 return tmp_binary_features;
             }
@@ -905,7 +918,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<cv::Vec3b>& ima
 }
 
 struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<cv::Vec3b>& image,
-                                                        cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, bool &is_face, int stage, int currentStage, int landmark, int tree, bool &stop){
+                                                        cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, int stage, int currentStage, int landmark, int tree, bool &stop){
     int index = 1;
     if ( tmp_binary_features == NULL ){
         //        struct feature_node* binary_features = new feature_node[params_.trees_num_per_forest_*params_.groups_[groupNum].size()+1]; //这条性能可能可以优化
@@ -950,7 +963,7 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<cv::Vec3
             }
             score += node->score_;
             if ( score < rd_forests_[j].trees_[k]->score_ ){
-                is_face = false;
+                is_face = - currentStage;
                 //std::cout <<"stage:"<<stage_ << "j=" << j << " k=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
                 return tmp_binary_features;
             }
@@ -963,7 +976,7 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<cv::Vec3
             ind++;
             //std::cout << binary_features[ind].index << " ";
             if ( stage == currentStage && landmark == j && tree == k){
-                is_face = true;
+                is_face = 1;
                 stop = true;
                 return tmp_binary_features;
             }
@@ -979,11 +992,11 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<cv::Vec3
 }
 
 cv::Mat_<float> Regressor::Predict(cv::Mat_<cv::Vec3b>& image,
-	cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, bool &is_face){
+	cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float &score, int& is_face){
 
     cv::Mat_<float> predict_result;
     feature_node* binary_features = GetGlobalBinaryFeatures(image, current_shape, bbox, rotation, scale, score, is_face);
-    if ( !is_face ){
+    if ( is_face != 1 ){
         return predict_result;
     }
 //    struct timeval t1, t2;
@@ -1037,13 +1050,13 @@ cv::Mat_<float> Regressor::Predict(cv::Mat_<cv::Vec3b>& image,
 }
 
 cv::Mat_<float> Regressor::NegMinePredict(cv::Mat_<cv::Vec3b>& image,
-                                   cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, bool& is_face,  int stage, int currentStage, int landmark, int tree){
+                                   cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face,  int stage, int currentStage, int landmark, int tree){
     
     cv::Mat_<float> predict_result;
 
         bool stop = false;
         feature_node* binary_features = NegMineGetGlobalBinaryFeatures(image, current_shape, bbox, rotation, scale, score, is_face, stage, currentStage, landmark, tree, stop);
-        if ( !is_face ){
+        if ( is_face != 1 ){
             return predict_result;
         }
         if ( stop ){
@@ -1104,6 +1117,7 @@ void CascadeRegressor::LoadCascadeRegressor(std::string ModelName){
 	for (int i = 0; i < params_.landmarks_num_per_face_; i++){
 		fin >> mean_shape(i, 0) >> mean_shape(i, 1);
 	}
+
 	params_.mean_shape_ = mean_shape;
 
     fin.close();
