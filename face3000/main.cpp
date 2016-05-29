@@ -160,7 +160,8 @@ void TestVideo(const char* ModelName){
 //    for (int i = 0; i < rg.params_.regressor_stages_; i++){
 //        rg.regressors_[i].params_ = rg.params_;
 //    }
-//    rg.params_.predict_regressor_stages_ = 3;
+    
+//    rg.params_.predict_regressor_stages_ = 5;
     std::string fn_haar = "/Users/xujiajun/developer/dataset/haarcascade_frontalface_alt2.xml";
     cv::CascadeClassifier haar_cascade;
     bool yes = haar_cascade.load(fn_haar);
@@ -459,7 +460,7 @@ void Train(const char* ModelName){
 //        DrawPredictedImage(images[i], ground_truth_shapes[i]);
 //    }
     
-    params.local_features_num_ = 2000;
+    params.local_features_num_ = 3000;
 	params.landmarks_num_per_face_ = 68;
     params.regressor_stages_ = 6;
 //    params.local_radius_by_stage_.push_back(0.6);
@@ -485,13 +486,13 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.7);
     params.detect_factor_by_stage_.push_back(0.6);
     params.detect_factor_by_stage_.push_back(0.5);
+    params.detect_factor_by_stage_.push_back(0.3);
     params.detect_factor_by_stage_.push_back(0.2);
-    params.detect_factor_by_stage_.push_back(0.1);
     params.detect_factor_by_stage_.push_back(0.1);
     
     params.tree_depth_ = 4;
-    params.trees_num_per_forest_ = 8;
-    params.initial_guess_ = 2;
+    params.trees_num_per_forest_ = 6;
+    params.initial_guess_ = 3;
     
 //    params.group_num_ = 6;
 //    std::vector<int> group1, group2, group3, group4, group5, group6, group7;
