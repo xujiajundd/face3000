@@ -468,7 +468,7 @@ void Train(const char* ModelName){
 //        DrawPredictedImage(images[i], ground_truth_shapes[i]);
 //    }
     
-    params.local_features_num_ = 3000;
+    params.local_features_num_ = 3600;
 	params.landmarks_num_per_face_ = 68;
     params.regressor_stages_ = 6;
 //    params.local_radius_by_stage_.push_back(0.6);
@@ -478,7 +478,7 @@ void Train(const char* ModelName){
     params.local_radius_by_stage_.push_back(0.2);
 	params.local_radius_by_stage_.push_back(0.1);//0.1
     params.local_radius_by_stage_.push_back(0.08);//0.08
-    params.local_radius_by_stage_.push_back(0.05);
+    params.local_radius_by_stage_.push_back(0.08);
     params.local_radius_by_stage_.push_back(0.04);
     params.local_radius_by_stage_.push_back(0.03);
 
@@ -489,7 +489,7 @@ void Train(const char* ModelName){
 //    params.local_radius_by_stage_.push_back(0.05);
 //    params.local_radius_by_stage_.push_back(0.03);
     
-    params.detect_factor_by_stage_.push_back(0.8);
+    params.detect_factor_by_stage_.push_back(0.9);
     params.detect_factor_by_stage_.push_back(0.8);
     params.detect_factor_by_stage_.push_back(0.7);
     params.detect_factor_by_stage_.push_back(0.6);
@@ -500,7 +500,7 @@ void Train(const char* ModelName){
     
     params.tree_depth_ = 4;
     params.trees_num_per_forest_ = 6;
-    params.initial_guess_ = 3;
+    params.initial_guess_ = 2;
     
 //    params.group_num_ = 6;
 //    std::vector<int> group1, group2, group3, group4, group5, group6, group7;

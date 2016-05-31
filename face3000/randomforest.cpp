@@ -130,18 +130,18 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
             do{
                 x = rd.uniform(-local_radius_, local_radius_);
                 y = rd.uniform(-local_radius_, local_radius_);
-                //            if ( i < 4 && x < -local_radius_/5.0) continue; //add by xujj, 避免脸部外侧的pixel
-                //            if ( (i>13 && i<17) && x > local_radius_/5.0) continue;
-                //            if ( (i>6 && i<10 ) && y > local_radius_/5.0) continue;
+//                            if ( i < 4 && x < -local_radius_/5.0) continue; //add by xujj, 避免脸部外侧的pixel
+//                            if ( (i>13 && i<17) && x > local_radius_/5.0) continue;
+//                            if ( (i>6 && i<10 ) && y > local_radius_/5.0) continue;
             } while (x*x + y*y > local_radius_*local_radius_);
             cv::Point2f a(x, y);
 
             do{
                 x = rd.uniform(-local_radius_, local_radius_);
                 y = rd.uniform(-local_radius_, local_radius_);
-                //            if ( i < 4 && x < -local_radius_/5.0) continue;
-                //            if ( (i>13 && i<17) && x > local_radius_/5.0) continue;
-                //            if ( (i>6 && i<10 ) && y > local_radius_/5.0) continue;
+//                            if ( i < 4 && x < -local_radius_/5.0) continue;
+//                            if ( (i>13 && i<17) && x > local_radius_/5.0) continue;
+//                            if ( (i>6 && i<10 ) && y > local_radius_/5.0) continue;
             } while (x*x + y*y > local_radius_*local_radius_);
             cv::Point2f b(x, y);
 
@@ -204,7 +204,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         {
             current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
             //current_weight[k]=1;
-            if ( current_weight[k] > 1000000000000000.0  && find_times[k] < MAXFINDTIMES ) {
+            if ( current_weight[k] > 10000000000000000.0  && find_times[k] < MAXFINDTIMES ) {
                 //current_weight[k] = 10000.0;
                 //这个地方如果按照参考的搞法，会丢弃太多example
                 //std::cout << "drop too high weight:" << k << "face:" << augmented_ground_truth_faces[k] << std::endl;
@@ -552,7 +552,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         
                                         float delta_start = sqrtf(powf((new_box.start_x - pos_box.start_x), 2.0) + powf((new_box.start_y - pos_box.start_y), 2.0));
                                         float delta_end = sqrtf(powf((new_box.start_x + new_box.width - pos_box.start_x - pos_box.width), 2.0) + powf((new_box.start_y + new_box.height - pos_box.start_y - pos_box.height), 2.0));
-                                        if ( delta_start < 0.15 * pos_box.width && delta_end < 0.15 * pos_box.width ) continue; //判断与正例的位置接近则不采用
+                                        if ( delta_start < 0.1 * pos_box.width && delta_end < 0.1 * pos_box.width ) continue; //判断与正例的位置接近则不采用
                                         
                                         cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[p], augmented_bboxes[p]);
                                         augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);

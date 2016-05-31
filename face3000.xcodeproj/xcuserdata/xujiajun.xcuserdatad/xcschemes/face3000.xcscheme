@@ -63,12 +63,12 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "video model_neg_color_n8"
-            isEnabled = "NO">
+            argument = "train model_t6d4n6i2"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "train model_neg_color_t6n6i3"
-            isEnabled = "YES">
+            argument = "test model_neg_color_t6n6i3"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "video model_neg_t6d4n4i2"
@@ -84,10 +84,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "video model_neg_color_n6"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "test model_neg_color_n6 /Users/xujiajun/developer/xcode/face3000/face3000/test.jpg"
+            argument = "test model_jda500 /Users/xujiajun/developer/face3000/face3000/test.jpg"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
