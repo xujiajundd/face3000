@@ -297,7 +297,7 @@ void TestVideo(const char* ModelName){
             //            }
             //            cout << endl;
             for ( int c=0; c<rects.size(); c++){
-                //cv::rectangle(image, rects[c], (255), 1);
+                cv::rectangle(frame, rects[c], (255), 1);
                 DrawPredictedImageContinue(frame, shapes[c]);
             }
         }
