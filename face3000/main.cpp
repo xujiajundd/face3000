@@ -36,9 +36,14 @@ using namespace std;
 bool faceDetected = false;
 
 void DrawPredictedImage(cv::Mat_<cv::Vec3b> image, cv::Mat_<float>& shape){
+    cv::line(image, cv::Point2f(shape(15, 0), shape(15, 1)), cv::Point2f(shape(0, 0), shape(0, 1)), (255));
+    cv::line(image, cv::Point2f(shape(16, 0), shape(16, 1)), cv::Point2f(shape(0, 0), shape(0, 1)), (255));
     for (int i = 0; i < shape.rows; i++){
         cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, (255));
-        if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
+        if ( i > 2 && i < 17 ){
+            cv::line(image, cv::Point2f(shape(i-2, 0), shape(i-2, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), (255));
+        }
+        else if ( i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
             cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), (255));
     }
     cv::imshow("show image", image);
@@ -46,9 +51,14 @@ void DrawPredictedImage(cv::Mat_<cv::Vec3b> image, cv::Mat_<float>& shape){
 }
 
 void DrawPredictedImageContinue(cv::Mat image, cv::Mat_<float>& shape){
+    cv::line(image, cv::Point2f(shape(15, 0), shape(15, 1)), cv::Point2f(shape(0, 0), shape(0, 1)), (255));
+    cv::line(image, cv::Point2f(shape(16, 0), shape(16, 1)), cv::Point2f(shape(0, 0), shape(0, 1)), (255));
     for (int i = 0; i < shape.rows; i++){
         cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, Scalar(255,255,255));
-        if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!= 48 && i!=68 && i!=69)
+        if ( i > 2 && i < 17 ){
+            cv::line(image, cv::Point2f(shape(i-2, 0), shape(i-2, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), (255));
+        }
+        else if ( i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!= 48 && i!=68 && i!=69)
             cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), Scalar(0,255,0));
     }
     cv::imshow("show image", image);
@@ -468,7 +478,7 @@ void Train(const char* ModelName){
 //        DrawPredictedImage(images[i], ground_truth_shapes[i]);
 //    }
     
-    params.local_features_num_ = 3600;
+    params.local_features_num_ = 4800;
 	params.landmarks_num_per_face_ = 68;
     params.regressor_stages_ = 6;
 //    params.local_radius_by_stage_.push_back(0.6);
@@ -499,7 +509,7 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.1);
     
     params.tree_depth_ = 4;
-    params.trees_num_per_forest_ = 6;
+    params.trees_num_per_forest_ = 8;
     params.initial_guess_ = 2;
     
 //    params.group_num_ = 6;

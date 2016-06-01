@@ -264,7 +264,7 @@ parse_ifile(int argc,
   ifile = ""; return 0;
 }
 //==============================================================================
-int main(int argc,char** argv)
+int main1(int argc,char** argv)
 {
   //parse cmd line options
   if(parse_help(argc,argv)){
@@ -364,6 +364,7 @@ int main(int argc,char** argv)
 //    annotation.idx = annotation.data.imnames.size()-1;
     }
   }
-//  save_ft(fname.c_str(),annotation.data); destroyWindow("Annotate"); return 0;
+//  save_ft(fname.c_str(),annotation.data); destroyWindow("Annotate");
+    return 0;
 }
 //==============================================================================

@@ -129,6 +129,29 @@ cv::Mat_<float> LoadGroundTruthShape(const char* name){
 //    shape(69,0) = (shape(43,0) + shape(44,0) + shape(46, 0) + shape(47, 0))/4.0;
 //    shape(69,1) = (shape(43,1) + shape(44,1) + shape(46, 1) + shape(47, 1))/4.0;
 	fin.close();
+    //add by xujj
+    if (  shape.rows != 68 || shape.cols != 2) return shape; //错误，有调用者去处理
+    
+    cv::Mat_<float> stemp(17, 2);
+    for ( int i=0; i<17; i++){
+        int si;
+        if( i==0){
+            si = 8;
+        }
+        else if ( i % 2 == 0 ){
+            si = 17 - i/2;
+        }
+        else{
+            si = (i-1)/2;
+        }
+        stemp(i,0) = shape(si,0);
+        stemp(i,1) = shape(si,1);
+    }
+    for ( int i=0; i<17; i++){
+        shape(i,0) = stemp(i,0);
+        shape(i,1) = stemp(i,1);
+    }
+    
 	return shape;
 }
 
@@ -352,9 +375,19 @@ int LoadImages(std::vector<cv::Mat_<cv::Vec3b> >& images,
                 
                 cv::Mat_<float> flipped_ground_truth_shape(ground_truth_shape.rows, 2);
                 for ( int p = 0; p < ground_truth_shape.rows; p++ ){
-                    if ( p <= 16){
-                        flipped_ground_truth_shape(p,0) = image.cols - ground_truth_shape(16-p, 0);
-                        flipped_ground_truth_shape(p,1) = ground_truth_shape(16-p,1);
+                    if ( p == 0 ){
+                        flipped_ground_truth_shape(p,0) = image.cols - ground_truth_shape(p, 0);
+                        flipped_ground_truth_shape(p,1) = ground_truth_shape(p,1);
+                    }
+                    if ( p >0 && p <= 16){
+                        if ( p % 2 != 0 ){
+                            flipped_ground_truth_shape(p,0) = image.cols - ground_truth_shape(p+1, 0);
+                            flipped_ground_truth_shape(p,1) = ground_truth_shape(p+1,1);
+                        }
+                        else {
+                            flipped_ground_truth_shape(p,0) = image.cols - ground_truth_shape(p-1, 0);
+                            flipped_ground_truth_shape(p,1) = ground_truth_shape(p-1,1);
+                        }
                     }
                     if ( p >=17 && p <= 26 ){
                         flipped_ground_truth_shape(p,0) = image.cols - ground_truth_shape(17+26-p, 0);
