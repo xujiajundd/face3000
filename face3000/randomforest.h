@@ -40,6 +40,8 @@ public:
 	std::vector<cv::Mat_<float> >* regression_targets_;
 //    std::vector<int> augmented_ground_truth_faces_;
 //    std::vector<float> current_weight_;
+    std::vector<cv::Mat_<float> > augmented_ground_truth_shapes_;
+    std::vector<cv::Mat_<float> > augmented_current_shapes_;
     CascadeRegressor *casRegressor_;
     
 	bool TrainForest(//std::vector<cv::Mat_<float> >& regression_targets, 

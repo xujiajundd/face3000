@@ -78,7 +78,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<cv::Vec3b> >& images,
                 ibox.center_y = ibox.start_y + ibox.height / 2.0;
                 //这个地方对box也做了一点小小的扰动
                 augmented_images_index.push_back(i);
-                augmented_ground_truth_shapes.push_back(ReProjection(ProjectShape(ground_truth_shapes_[i], bboxes_[i]), ibox));
+                augmented_ground_truth_shapes.push_back(ground_truth_shapes_[i]);// ReProjection(ProjectShape(ground_truth_shapes_[i], bboxes_[i]), ibox));
                 augmented_ground_truth_faces.push_back(ground_truth_faces[i]);
                 augmented_bboxes.push_back(ibox);
                 cv::Mat_<float> temp = ground_truth_shapes_[index];

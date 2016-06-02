@@ -45,7 +45,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 	const std::vector<cv::Mat_<float> >& rotations,
 	const std::vector<float>& scales){
     
-//    augmented_ground_truth_faces_ = augmented_ground_truth_faces;
+    augmented_ground_truth_shapes_ = augmented_ground_truth_shapes;
+    augmented_current_shapes_ = augmented_current_shapes;
 //    current_weight_ = current_weight;
     //std::cout << "build forest of landmark: " << landmark_index_ << " of stage: " << stage_ << std::endl;
 	//regression_targets_ = &regression_targets;
@@ -669,7 +670,25 @@ Node* RandomForest::BuildTree(std::set<int>& selected_feature_indexes, cv::Mat_<
                 }
             }
 //            node->score_ = 0.5*(((leaf_pos_weight-0.0)<FLT_EPSILON)?0:log(leaf_pos_weight))-0.5*(((leaf_neg_weight-0.0)<FLT_EPSILON)?0:log(leaf_neg_weight))/*/log(2.0)*/;
-             node->score_ = 0.5*(log(leaf_pos_weight)- log(leaf_neg_weight))/*/log(2.0)*/;
+            node->score_ = 0.5*(log(leaf_pos_weight)- log(leaf_neg_weight))/*/log(2.0)*/;
+
+            //加上一个shape alignment误差，试验下是否有道理，或者看这里与regression target的情况？
+//            if ( stage_ >= 3){
+//                float error=0;
+//                int count=0;
+//                for ( int i=0; i<images_indexes.size(); i++ ){
+//                    if ( augmented_ground_truth_faces[images_indexes[i]] == 1){ //pos example才计算误差
+//                        error += CalculateError(augmented_ground_truth_shapes_[images_indexes[i]], augmented_current_shapes_[images_indexes[i]]);
+//                        count++;
+//                    }
+//                }
+//                if ( count > 0 ){
+//                    float plus = 0.1 - error / count;
+//                    node->score_ += plus;
+//                    std::cout << "score add:" << plus << " count=" << count << std::endl;
+//                }
+//            }
+
 			return node;
 		}
 
