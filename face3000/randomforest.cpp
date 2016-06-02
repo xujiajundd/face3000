@@ -45,8 +45,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 	const std::vector<cv::Mat_<float> >& rotations,
 	const std::vector<float>& scales){
     
-    augmented_ground_truth_shapes_ = augmented_ground_truth_shapes;
-    augmented_current_shapes_ = augmented_current_shapes;
+//    augmented_ground_truth_shapes_ = augmented_ground_truth_shapes;
+//    augmented_current_shapes_ = augmented_current_shapes;
 //    current_weight_ = current_weight;
     //std::cout << "build forest of landmark: " << landmark_index_ << " of stage: " << stage_ << std::endl;
 	//regression_targets_ = &regression_targets;
@@ -686,7 +686,7 @@ Node* RandomForest::BuildTree(std::set<int>& selected_feature_indexes, cv::Mat_<
 //            node->score_ = 0.5*(((leaf_pos_weight-0.0)<FLT_EPSILON)?0:log(leaf_pos_weight))-0.5*(((leaf_neg_weight-0.0)<FLT_EPSILON)?0:log(leaf_neg_weight))/*/log(2.0)*/;
             node->score_ = 0.5*(log(leaf_pos_weight)- log(leaf_neg_weight)) - var/*/log(2.0)*/;
 
-            //加上一个shape alignment误差，试验下是否有道理，或者看这里与regression target的情况？
+            //加上一个shape alignment误差，试验下是否有道理，或者看这里与regression target的情况？取消，这个应该没意义
 //            if ( stage_ >= 3){
 //                float error=0;
 //                int count=0;
