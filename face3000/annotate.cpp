@@ -264,17 +264,19 @@ parse_ifile(int argc,
   ifile = ""; return 0;
 }
 //==============================================================================
-int main1(int argc,char** argv)
+int annotate_main(const char *path)
 {
   //parse cmd line options
-  if(parse_help(argc,argv)){
-    cout << "usage: ./annotate [-v video] [-m muct_dir] [-d output_dir]" 
-     << endl; return 0;
-  }
-  string odir = parse_odir(argc,argv);
-  string ifile; int type = parse_ifile(argc,argv,ifile);
-  string fname = odir + "annotations.yaml"; //file to save annotation data to
+//  if(parse_help(argc,argv)){
+//    cout << "usage: ./annotate [-v video] [-m muct_dir] [-d output_dir]" 
+//     << endl; return 0;
+//  }
+//  string odir = parse_odir(argc,argv);
+//  string ifile; int type = parse_ifile(argc,argv,ifile);
+//  string fname = odir + "annotations.yaml"; //file to save annotation data to
 
+    
+    int type=0;
   //get data
   namedWindow(annotation.wname);  
   if(type == 2){ //MUCT data
@@ -282,7 +284,7 @@ int main1(int argc,char** argv)
   }else{
     //open video stream
     VideoCapture cam; 
-    if(type == 1)cam.open(ifile); else cam.open(0);
+    if(type == 1)cam.open(path); else cam.open(0);
     if(!cam.isOpened()){
       cout << "Failed opening video file." << endl
        << "usage: ./annotate [-v video] [-m muct_dir] [-d output_dir]" 

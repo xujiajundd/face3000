@@ -35,6 +35,7 @@
 
 /* Begin PBXFileReference section */
 		CA13B2BA1CAB92D000EE2276 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		CA36A0E21D0030D4003F86C0 /* annotate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = annotate.h; sourceTree = "<group>"; };
 		CA49B0E71C817C4800A0951B /* face3000 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = face3000; sourceTree = BUILT_PRODUCTS_DIR; };
 		CA49B0F11C817CEE00A0951B /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		CA49B0F31C817D0600A0951B /* detect.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = detect.png; sourceTree = "<group>"; };
@@ -118,6 +119,7 @@
 				CA49B0FE1C817D0600A0951B /* utils.h */,
 				CA49B0F11C817CEE00A0951B /* main.cpp */,
 				CAEF28DF1CFD670F0021664F /* annotate.cpp */,
+				CA36A0E21D0030D4003F86C0 /* annotate.h */,
 				CA49B1021C817D1300A0951B /* liblinear */,
 			);
 			path = face3000;

@@ -6,4 +6,5 @@
 #include "regressor.h"
 #include "randomforest.h"
 #include "liblinear/linear.h"
+#include "annotate.h"
 #endif

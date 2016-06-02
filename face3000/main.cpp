@@ -773,12 +773,22 @@ int main(int argc, char* argv[])
             }
             return 0;
         }
+        if (strcmp(argv[1], "annotate") == 0){
+            std::cout << "annotate image\n";
+            if ( argc == 3){
+                annotate_main(argv[2]);
+            }
+        }
 	}
     else if ( argc == 2){
         if (strcmp(argv[1], "hello") == 0)
         {
             Hello();
             return 0;
+        }
+        if (strcmp(argv[1], "annotate") == 0){
+            std::cout << "annotate image\n";
+            annotate_main("");
         }
     }
 
