@@ -659,18 +659,32 @@ Node* RandomForest::BuildTree(std::set<int>& selected_feature_indexes, cv::Mat_<
 			node->leaf_identity = all_leaf_nodes_;
 			all_leaf_nodes_++;
             //计算叶子节点的score
+            int num_shapes=0;
+            float var=0.0, Ex=0.0, Ey=0.0, Ex_2=0.0, Ey_2=0.0;
             float leaf_pos_weight = FLT_EPSILON;
             float leaf_neg_weight = FLT_EPSILON;
             for ( int i=0; i<images_indexes.size(); i++){
-                if ( augmented_ground_truth_faces[images_indexes[i]] == 1){
-                    leaf_pos_weight += current_weight[images_indexes[i]];
+                int index = images_indexes[i];
+                if ( augmented_ground_truth_faces[index] == 1){
+                    num_shapes++;
+                    float value = regression_targets_->at(index)(landmark_index_, 0);
+                    Ex_2 += pow(value, 2);
+                    Ex += value;
+                    value = regression_targets_->at(index)(landmark_index_, 1);
+                    Ey_2 += pow(value, 2);
+                    Ey += value;
+                    leaf_pos_weight += current_weight[index];
                 }
                 else{
-                    leaf_neg_weight += current_weight[images_indexes[i]];
+                    leaf_neg_weight += current_weight[index];
                 }
             }
+            if ( num_shapes > 0 && stage_ >= 3 ){ //第三个stage后，开始加上alignment的结果情况
+                var = Ex_2 / num_shapes - pow(Ex / num_shapes, 2) + Ey_2 / num_shapes - pow(Ey / num_shapes, 2);
+                var = sqrtf(var);
+            }
 //            node->score_ = 0.5*(((leaf_pos_weight-0.0)<FLT_EPSILON)?0:log(leaf_pos_weight))-0.5*(((leaf_neg_weight-0.0)<FLT_EPSILON)?0:log(leaf_neg_weight))/*/log(2.0)*/;
-            node->score_ = 0.5*(log(leaf_pos_weight)- log(leaf_neg_weight))/*/log(2.0)*/;
+            node->score_ = 0.5*(log(leaf_pos_weight)- log(leaf_neg_weight)) - var/*/log(2.0)*/;
 
             //加上一个shape alignment误差，试验下是否有道理，或者看这里与regression target的情况？
 //            if ( stage_ >= 3){
