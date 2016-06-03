@@ -253,14 +253,21 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
             
             //正例权重过高给删掉，负例是不是不管他？
             if ( find_times[k] < MAXFINDTIMES ){
-                if ( augmented_ground_truth_faces[k] == 1 && current_weight[k] > 5000.0 ){
+//                if ( augmented_ground_truth_faces[k] == 1 && current_weight[k] > 100000000.0 * trees_num_per_forest_){
+//                    find_times[k] = MAXFINDTIMES+8;
+//                    augmented_ground_truth_faces[k] = -1; //这种情况等于把这个训练数据抛弃了。。。
+//                    drop_pos_count++;
+//                }
+//                else
+                if ( current_weight[k] > 10000000000000000.0 ){
                     find_times[k] = MAXFINDTIMES+8;
-                    augmented_ground_truth_faces[k] = -1; //这种情况等于把这个训练数据抛弃了。。。
-                    drop_pos_count++;
-                }
-                else if ( current_weight[k] > 10000000000000000.0 ){
-                    find_times[k] = MAXFINDTIMES+8;
-                    drop_neg_count++;
+                    augmented_ground_truth_faces[k] = -1;
+                    if ( augmented_ground_truth_faces[k] == 1 ){
+                        drop_pos_count++;
+                    }
+                    else{
+                        drop_neg_count++;
+                    }
                 }
             }
         }
@@ -683,25 +690,10 @@ Node* RandomForest::BuildTree(std::set<int>& selected_feature_indexes, cv::Mat_<
                 var = Ex_2 / num_shapes - pow(Ex / num_shapes, 2) + Ey_2 / num_shapes - pow(Ey / num_shapes, 2);
                 var = sqrtf(var);
             }
+            
+             //加上一个shape alignment的情况来影响score试试，让shape不好的正例score降低
 //            node->score_ = 0.5*(((leaf_pos_weight-0.0)<FLT_EPSILON)?0:log(leaf_pos_weight))-0.5*(((leaf_neg_weight-0.0)<FLT_EPSILON)?0:log(leaf_neg_weight))/*/log(2.0)*/;
             node->score_ = 0.5*(log(leaf_pos_weight)- log(leaf_neg_weight)) - var/*/log(2.0)*/;
-
-            //加上一个shape alignment误差，试验下是否有道理，或者看这里与regression target的情况？取消，这个应该没意义
-//            if ( stage_ >= 3){
-//                float error=0;
-//                int count=0;
-//                for ( int i=0; i<images_indexes.size(); i++ ){
-//                    if ( augmented_ground_truth_faces[images_indexes[i]] == 1){ //pos example才计算误差
-//                        error += CalculateError(augmented_ground_truth_shapes_[images_indexes[i]], augmented_current_shapes_[images_indexes[i]]);
-//                        count++;
-//                    }
-//                }
-//                if ( count > 0 ){
-//                    float plus = 0.1 - error / count;
-//                    node->score_ += plus;
-//                    std::cout << "score add:" << plus << " count=" << count << std::endl;
-//                }
-//            }
 
 			return node;
 		}
