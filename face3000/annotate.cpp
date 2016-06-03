@@ -43,7 +43,7 @@ public:
   }
     
     void draw_image(){  //画图片，画各点，选中点高亮
-        cv::imshow(file_name, image);
+        cv::imshow(wname, image);
     }
     
     void save_pts(){ //保存pts到文件
@@ -164,7 +164,7 @@ protected:
 
 
 //==============================================================================
-void p_MouseCallback(int event, int x, int y, int /*flags*/, void* /*param*/)
+void p_MouseCallback(int event, int x, int y, int flags, void* param)
 {
     if(event == CV_EVENT_LBUTTONDOWN){
         int imin = annotation.find_closest_point(Point2f(x,y));
