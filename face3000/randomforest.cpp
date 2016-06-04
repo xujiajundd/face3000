@@ -201,10 +201,24 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         }
 
         //计算每个训练实例的weight
+        int drop_pos_count = 0;
+        int drop_neg_count = 0;
         for(int k=0;k<current_weight.size();++k)
         {
             current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
+            if ( current_weight[k] > 10000000000000000.0 && find_times[k] < MAXFINDTIMES){
+                find_times[k] = MAXFINDTIMES+8;
+                if ( augmented_ground_truth_faces[k] == 1 ){
+                    drop_pos_count++;
+                }
+                else{
+                    drop_neg_count++;
+                }
+                augmented_ground_truth_faces[k] = -1;
+            }
         }
+        if ( drop_pos_count > 0 || drop_neg_count > 0 )
+            std::cout << "drop too high weight, pos:" << drop_pos_count << " neg:" << drop_neg_count << std::endl;
         
         //这个地方这么做不对了，因为负例都在后面，这么一分，后面的树都是负例。先全部实例都拿去训练算了，所以start和end都搞成全量吧。。。
         int start_index = 0;//i*step;
@@ -237,42 +251,6 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
             GetBinaryFeatureIndex(i, images[augmented_images_index[n]], augmented_bboxes[n], augmented_current_shapes[n], rotations[n] , scales[n], score);
             current_fi[n] += score;
         }
-        
-        int drop_pos_count = 0;
-        int drop_neg_count = 0;
-        for(int k=0;k<current_weight.size();++k)
-        {
-//            if ( current_weight[k] > 10000000000000000.0  && find_times[k] < MAXFINDTIMES ) {
-//                //current_weight[k] = 10000.0;
-//                //这个地方如果按照参考的搞法，会丢弃太多example
-//                //std::cout << "drop too high weight:" << k << "face:" << augmented_ground_truth_faces[k] << std::endl;
-//                find_times[k] = MAXFINDTIMES+8;
-//                augmented_ground_truth_faces[k] = -1; //这种情况等于把这个训练数据抛弃了。。。
-//                drop_count++;
-//            }
-            
-            //正例权重过高给删掉，负例是不是不管他？
-            if ( find_times[k] < MAXFINDTIMES ){
-//                if ( augmented_ground_truth_faces[k] == 1 && current_weight[k] > 100000000.0 * trees_num_per_forest_){
-//                    find_times[k] = MAXFINDTIMES+8;
-//                    augmented_ground_truth_faces[k] = -1; //这种情况等于把这个训练数据抛弃了。。。
-//                    drop_pos_count++;
-//                }
-//                else
-                if ( current_weight[k] > 10000000000000000.0 ){
-                    find_times[k] = MAXFINDTIMES+8;
-                    augmented_ground_truth_faces[k] = -1;
-                    if ( augmented_ground_truth_faces[k] == 1 ){
-                        drop_pos_count++;
-                    }
-                    else{
-                        drop_neg_count++;
-                    }
-                }
-            }
-        }
-        if ( drop_pos_count > 0 || drop_neg_count > 0 )
-            std::cout << "drop too high weight, pos:" << drop_pos_count << " neg:" << drop_neg_count << std::endl;
         
         //开始计算这棵树的detection threshold
         std::vector<std::pair<float,int>> fiSort;
