@@ -86,7 +86,8 @@ void Test(const char* ModelName){
         //gettimeofday(&t1, NULL);
         int is_face = 1;
         float score = 0;
-        cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, bboxes[i], is_face, score);//, ground_truth_shapes[i]);
+        float variance = 0;
+        cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, bboxes[i], is_face, score, variance);//, ground_truth_shapes[i]);
 
         //cout << res << std::endl;
         //cout << res - ground_truth_shapes[i] << std::endl;
@@ -129,9 +130,10 @@ void Test(const char* ModelName){
                     int is_face = 1;
                     cv::Mat_<float> current_shape = ReProjection(cas_load.params_.mean_shape_, box);
                     float score = 0;
-                    cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, box, is_face, score);
+                    float variance = 0;
+                    cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, box, is_face, score, variance);
                     if ( is_face == 1){
-                        std::cout << "score:" << score << std::endl;
+                        std::cout << "score:" << score << " variance:" << variance << std::endl;
                         cv::Mat_<cv::Vec3b> img = images[i].clone();
                         cv::Rect rect;
                         rect.x = box.start_x;
@@ -272,7 +274,8 @@ void TestVideo(const char* ModelName){
                 gettimeofday(&t1, NULL);
                 int is_face = 1;
                 float score = 0;
-                cv::Mat_<float> res = rg.Predict(image, current_shape, bbox, is_face, score);//, ground_truth_shapes[i]);
+                float variance = 0;
+                cv::Mat_<float> res = rg.Predict(image, current_shape, bbox, is_face, score, variance);//, ground_truth_shapes[i]);
                 gettimeofday(&t2, NULL);
                 if ( is_face != 1 ) continue;
     //            last_shape = res.clone(); lastShaped = true;
@@ -353,7 +356,8 @@ void TestImage(const char* name, CascadeRegressor& rg){
         gettimeofday(&t1, NULL);
         int is_face = 1;
         float score = 0;
-        cv::Mat_<float> res = rg.Predict(image, current_shape, bbox, is_face, score);//, ground_truth_shapes[i]);
+        float variance = 0;
+        cv::Mat_<float> res = rg.Predict(image, current_shape, bbox, is_face, score, variance);//, ground_truth_shapes[i]);
         gettimeofday(&t2, NULL);
         cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " isface:" << is_face << " score:" << score << endl;
         
@@ -394,7 +398,8 @@ void TestImage(const char* name, CascadeRegressor& rg){
                 int is_face = 1;
                 cv::Mat_<float> current_shape = ReProjection(rg.params_.mean_shape_, box);
                 float score = 0;
-                cv::Mat_<float> res = rg.Predict(image, current_shape, box, is_face, score);
+                float variance = 0;
+                cv::Mat_<float> res = rg.Predict(image, current_shape, box, is_face, score, variance);
                 if ( is_face == 1){
                     std::cout << "score:" << score << std::endl;
                     cv::Mat_<cv::Vec3b> img = image.clone();
