@@ -15,151 +15,232 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
 #include <fstream>
+#include "headers.h"
 //==============================================================================
 using namespace cv;
 using namespace std;
 class annotate{
 public:
-  int idx;                       //index of image to annotate
-  int pidx;                      //index of point to manipulate
+    int idx;                       //index of image to annotate
+    int pidx;                      //index of point to manipulate
     cv::Mat_<float> shape;
     cv::Mat_<cv::Vec3b> image;
     cv::Mat_<cv::Vec3b> image_clean;
-//  Mat image;                     //current image to display
-//  Mat image_clean;               //clean image to display
-  const char* wname;             //display window name
-  vector<string> instructions;   //annotation instructions
-  std::vector<std::string> lists;
+    //  Mat image;                     //current image to display
+    //  Mat image_clean;               //clean image to display
+    const char* wname;             //display window name
+    vector<string> instructions;   //annotation instructions
+    std::vector<std::string> lists;
     std::string file_name;
-    
-  annotate(){wname = "Annotate"; idx = 0; pidx = -1;}
+    std::string shape_file_name;
+    CascadeRegressor face_detector;
 
-  int set_current_image(const int cidx = 0){ //读取图片，读取pts，如果没有pts，调用shape程序自动计算一个
-      pidx = -1;
-      idx = cidx;
-      file_name = lists[idx];
-      image = cv::imread(file_name, 1);
+
+    annotate(){
+        wname = "Annotate"; idx = 0; pidx = -1;
+        const char *ModelName = "model_neg_color_n6";
+        face_detector.LoadCascadeRegressor(ModelName);
+    }
+
+    int set_current_image(const int cidx = 0){ //读取图片，读取pts，如果没有pts，调用shape程序自动计算一个
+        pidx = -1;
+        idx = cidx;
+        file_name = lists[idx];
+        image = cv::imread(file_name, 1);
+
+        shape_file_name  = file_name.substr(0, file_name.length() - 3) + "pts";
+        int landmarks = 0;
+        std::ifstream fin;
+        std::string temp;
+        fin.open(shape_file_name, std::fstream::in);
+        if ( !fin ){
+            cout << "pts文件不存在";
+            std::vector<cv::Mat_<float>> shapes;
+            std::vector<cv::Rect> rects = face_detector.detectMultiScale(image, shapes, 1.1, 2, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, 150);
+            if ( rects.size() > 0 ){
+                shape = shapes[0];
+            }
+        }
+        else{
+            getline(fin, temp);// read first line
+            fin >> temp >> landmarks;
+            //    landmarks = 17; //add by xujj
+            cv::Mat_<float> s(landmarks, 2);
+            getline(fin, temp); // read '\n' of the second line
+            getline(fin, temp); // read third line
+            for (int i = 0; i<landmarks; i++){
+                fin >> s(i, 0) >> s(i, 1);
+            }
+            shape = s;
+            fin.close();
+        }
+        set_clean_image();
       return 1;
-  }
-    
+    }
+
     void draw_image(){  //画图片，画各点，选中点高亮
+//        cv::line(image, cv::Point2f(shape(15, 0), shape(15, 1)), cv::Point2f(shape(0, 0), shape(0, 1)), (255));
+//        cv::line(image, cv::Point2f(shape(16, 0), shape(16, 1)), cv::Point2f(shape(0, 0), shape(0, 1)), (255));
+        for (int i = 0; i < shape.rows; i++){
+            if ( i == pidx ){
+                cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 4, Scalar(0,0,255));
+            }
+            else{
+                cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 4, (255));
+            }
+//            if ( i > 2 && i < 17 ){
+//                cv::line(image, cv::Point2f(shape(i-2, 0), shape(i-2, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), (255));
+//            }
+            if ( i!=0 && i!=17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
+                cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), (255));
+        }
         cv::imshow(wname, image);
     }
-    
+
     void save_pts(){ //保存pts到文件
-        
+        std::ofstream fout;
+        fout.open(shape_file_name, std::fstream::out);
+        if ( !fout ){
+            std::cout<<"file open fail" << std::endl;
+        }
+        else{
+//        version: 1
+//        n_points:  68
+//        {
+//        }
+            fout << "version: 1" << endl;
+            fout << "n_points:  68" << endl;
+            fout << "{" << std::endl;
+            for (int i=0; i<68; i++ ){
+                fout << shape(i,0) << " " << shape(i,1) << std::endl;
+            }
+            fout << "}" << std::endl;
+        }
+        fout.close();
     }
-    
+
     int delete_image(){
         return idx;
     }
-    
-  void set_clean_image(){
+
+    void set_clean_image(){
     image_clean = image.clone();
-  }
-  void copy_clean_image(){
+    }
+    void copy_clean_image(){
     image_clean.copyTo(image);
-  }
-    
-  void draw_instructions(){
+    }
+
+    void draw_instructions(){
     if(image.empty())return;
     this->draw_strings(image,instructions);
-  }
-    
-  void draw_points(){
+    }
 
-  }
-  void draw_chosen_point(){
-//    if(pidx >= 0)circle(image,data.points[idx][pidx],1,CV_RGB(0,255,0),2,CV_AA);
-  }
-  void draw_connections(){
-//    int m = data.connections.size();
-//    if(m == 0)this->draw_points();
-//    else{
-//      if(data.connections[m-1][1] < 0){
-//    int i = data.connections[m-1][0];
-//    data.connections[m-1][1] = i;
-//    data.draw_connect(image,idx); this->draw_points();
-//    circle(image,data.points[idx][i],1,CV_RGB(0,255,0),2,CV_AA);
-//    data.connections[m-1][1] = -1;
-//      }else{data.draw_connect(image,idx); this->draw_points();}
-//    }
-  }
-  void draw_symmetry(){
-//    this->draw_points(); this->draw_connections();
-//    for(int i = 0; i < int(data.symmetry.size()); i++){
-//      int j = data.symmetry[i];
-//      if(j != i){
-//    circle(image,data.points[idx][i],1,CV_RGB(255,255,0),2,CV_AA);
-//    circle(image,data.points[idx][j],1,CV_RGB(255,255,0),2,CV_AA);
-//      }
-//    }
-//    if(pidx >= 0)circle(image,data.points[idx][pidx],1,CV_RGB(0,255,0),2,CV_AA);
-  }
-  void set_capture_instructions(){
+    void draw_points(){
+
+    }
+    void draw_chosen_point(){
+    //    if(pidx >= 0)circle(image,data.points[idx][pidx],1,CV_RGB(0,255,0),2,CV_AA);
+    }
+    void draw_connections(){
+    //    int m = data.connections.size();
+    //    if(m == 0)this->draw_points();
+    //    else{
+    //      if(data.connections[m-1][1] < 0){
+    //    int i = data.connections[m-1][0];
+    //    data.connections[m-1][1] = i;
+    //    data.draw_connect(image,idx); this->draw_points();
+    //    circle(image,data.points[idx][i],1,CV_RGB(0,255,0),2,CV_AA);
+    //    data.connections[m-1][1] = -1;
+    //      }else{data.draw_connect(image,idx); this->draw_points();}
+    //    }
+    }
+    void draw_symmetry(){
+    //    this->draw_points(); this->draw_connections();
+    //    for(int i = 0; i < int(data.symmetry.size()); i++){
+    //      int j = data.symmetry[i];
+    //      if(j != i){
+    //    circle(image,data.points[idx][i],1,CV_RGB(255,255,0),2,CV_AA);
+    //    circle(image,data.points[idx][j],1,CV_RGB(255,255,0),2,CV_AA);
+    //      }
+    //    }
+    //    if(pidx >= 0)circle(image,data.points[idx][pidx],1,CV_RGB(0,255,0),2,CV_AA);
+    }
+    void set_capture_instructions(){
     instructions.clear();
     instructions.push_back(string("Select expressive frames."));
     instructions.push_back(string("s - use this frame"));
     instructions.push_back(string("q - done"));
-  }
-  void set_pick_points_instructions(){
+    }
+    void set_pick_points_instructions(){
     instructions.clear();
     instructions.push_back(string("Pick Points"));
     instructions.push_back(string("q - done"));
-  }
-  void set_connectivity_instructions(){
+    }
+    void set_connectivity_instructions(){
     instructions.clear();
     instructions.push_back(string("Pick Connections"));
     instructions.push_back(string("q - done"));
-  }
-  void set_symmetry_instructions(){
+    }
+    void set_symmetry_instructions(){
     instructions.clear();
     instructions.push_back(string("Pick Symmetric Points"));
     instructions.push_back(string("q - done"));
-  }
-  void set_move_points_instructions(){
+    }
+    void set_move_points_instructions(){
     instructions.clear();
     instructions.push_back(string("Move Points"));
     instructions.push_back(string("p - next image"));
     instructions.push_back(string("o - previous image"));
     instructions.push_back(string("q - done"));
-  }
-  void initialise_symmetry(const int index){
-//    int n = data.points[index].size(); data.symmetry.resize(n);
-//    for(int i = 0; i < n; i++)data.symmetry[i] = i;
-  }
-  void replicate_annotations(const int index){
-//    if((index < 0) || (index >= int(data.points.size())))return;
-//    for(int i = 0; i < int(data.points.size()); i++){
-//      if(i == index)continue;
-//      data.points[i] = data.points[index];
-//    }
-  }
-  int find_closest_point(const Point2f p,
+    }
+    void initialise_symmetry(const int index){
+    //    int n = data.points[index].size(); data.symmetry.resize(n);
+    //    for(int i = 0; i < n; i++)data.symmetry[i] = i;
+    }
+    void replicate_annotations(const int index){
+    //    if((index < 0) || (index >= int(data.points.size())))return;
+    //    for(int i = 0; i < int(data.points.size()); i++){
+    //      if(i == index)continue;
+    //      data.points[i] = data.points[index];
+    //    }
+    }
+    int find_closest_point(const Point2f p,
              const double thresh = 10.0){
-//        int n = data.points[idx].size(),imin = -1; double dmin = -1;
-//        for(int i = 0; i < n; i++){
-//          double d = norm(p-data.points[idx][i]);
-//          if((imin < 0) || (d < dmin)){imin = i; dmin = d;}
-//        }
-//        if((dmin >= 0) && (dmin < thresh))return imin; else return -1;
+        int n = shape.rows;
+        int imin = -1;
+        double dmin = 10000000.0;
+        for(int i = 0; i < n; i++){
+            Point2f ps;
+            ps.x = shape(i,0);
+            ps.y = shape(i,1);
+            double d = norm(p - ps);
+            if (d < dmin){
+                imin = i;
+                dmin = d;
+            }
+        }
+        if (dmin < thresh)
+            return imin;
+        else
+            return -1;
       return 0;
-  }
-protected:
-  void draw_strings(Mat img,
+    }
+
+    protected:
+    void draw_strings(Mat img,
            const vector<string> &text){
     for(int i = 0; i < int(text.size()); i++)this->draw_string(img,text[i],i+1);
-  }
-  void draw_string(Mat img,
+    }
+    void draw_string(Mat img,
           const string text,
           const int level)
-  {
-    Size size = getTextSize(text,FONT_HERSHEY_COMPLEX,0.6f,1,NULL);
-    putText(img,text,Point(0,level*size.height),FONT_HERSHEY_COMPLEX,0.6f,
-        Scalar::all(0),1,CV_AA);
-    putText(img,text,Point(1,level*size.height+1),FONT_HERSHEY_COMPLEX,0.6f,
-        Scalar::all(255),1,CV_AA);
-  }
+    {
+        cv::Size size = getTextSize(text,FONT_HERSHEY_COMPLEX,0.6f,1,NULL);
+        putText(img,text,cv::Point(0,level*size.height),FONT_HERSHEY_COMPLEX,0.6f,
+            Scalar::all(0),1,CV_AA);
+        putText(img,text,cv::Point(1,level*size.height+1),FONT_HERSHEY_COMPLEX,0.6f,
+            Scalar::all(255),1,CV_AA);
+    }
 } annotation;
 
 
@@ -167,19 +248,30 @@ protected:
 void p_MouseCallback(int event, int x, int y, int flags, void* param)
 {
     if(event == CV_EVENT_LBUTTONDOWN){
-        int imin = annotation.find_closest_point(Point2f(x,y));
-        //    if(imin >= 0){ //add connection
-        //      int m = annotation.data.connections.size();
-        //      if(m == 0)annotation.data.connections.push_back(Vec2i(imin,-1));
-        //      else{
-        //    if(annotation.data.connections[m-1][1] < 0)//1st connecting point chosen
-        //      annotation.data.connections[m-1][1] = imin;
-        //    else annotation.data.connections.push_back(Vec2i(imin,-1));
-        //      }
-        //      annotation.draw_connections();
-        //      imshow(annotation.wname,annotation.image); 
-        //    }
-        std::cout<<"mouse clicked:" << x << " " << y << std::endl;
+        if ( annotation.pidx >= 0 ){
+            annotation.shape(annotation.pidx, 0) = x;
+            annotation.shape(annotation.pidx, 1) = y;
+            annotation.pidx = -1;
+            annotation.copy_clean_image();
+            annotation.draw_image();
+        }
+        else{
+            int imin = annotation.find_closest_point(Point2f(x,y));
+            annotation.pidx = imin;
+            annotation.draw_image();
+            //    if(imin >= 0){ //add connection
+            //      int m = annotation.data.connections.size();
+            //      if(m == 0)annotation.data.connections.push_back(Vec2i(imin,-1));
+            //      else{
+            //    if(annotation.data.connections[m-1][1] < 0)//1st connecting point chosen
+            //      annotation.data.connections[m-1][1] = imin;
+            //    else annotation.data.connections.push_back(Vec2i(imin,-1));
+            //      }
+            //      annotation.draw_connections();
+            //      imshow(annotation.wname,annotation.image); 
+            //    }
+            std::cout<<"mouse clicked:" << x << " " << y << " point:" << imin << std::endl;
+        }
     }
 }
 

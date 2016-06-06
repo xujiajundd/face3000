@@ -335,6 +335,17 @@ void TestImage(const char* name, CascadeRegressor& rg){
 		}
     std::vector<cv::Rect> faces;
 
+//    cv::imshow("show image", image);
+//    cv::waitKey(0);
+//    cvtColor(image,image,COLOR_BGRA2BGR);
+//    cv::imshow("show image", image);
+//    cv::waitKey(0);
+    cv::Mat_<uchar> imageyuv;
+    cvtColor(image, imageyuv, COLOR_BGR2YUV_YV12);
+    std::cout << (int)imageyuv(0,2) << std::endl;
+    cv::imshow("show image", imageyuv);
+    cv::waitKey(0);
+
     struct timeval t1, t2;
     float timeuse;
     gettimeofday(&t1, NULL);
