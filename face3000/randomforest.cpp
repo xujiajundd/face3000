@@ -681,24 +681,39 @@ Node* RandomForest::BuildTree(std::set<int>& selected_feature_indexes, cv::Mat_<
                                    current_weight, left_indexes, right_indexes);
 		// actually it won't enter the if block, when the random function is good enough
 		if (ret == 1){ // the current node contain all sample when reaches max variance reduction, it is leaf node
-            std::cout<< "the current node contain all sample when reaches max variance reduction, it is leaf node" << std::endl;
+            std::cout<< "the current node contain all sample when reaches max variance reduction, it is leaf node" << " images:" << images_indexes.size() << std::endl;
 			node->is_leaf_ = true;
 			node->leaf_identity = all_leaf_nodes_;
 			all_leaf_nodes_++;
             //计算叶子节点的score, 同上
+            int num_shapes=0;
+            float variance=0.0, Ex=0.0, Ey=0.0, Ex_2=0.0, Ey_2=0.0;
             float leaf_pos_weight = FLT_EPSILON;
             float leaf_neg_weight = FLT_EPSILON;
             for ( int i=0; i<images_indexes.size(); i++){
-                if ( augmented_ground_truth_faces[images_indexes[i]] == 1){
-                    leaf_pos_weight += current_weight[images_indexes[i]];
+                int index = images_indexes[i];
+                if ( augmented_ground_truth_faces[index] == 1){
+                    num_shapes++;
+                    float value = regression_targets_->at(index)(landmark_index_, 0);
+                    Ex_2 += pow(value, 2);
+                    Ex += value;
+                    value = regression_targets_->at(index)(landmark_index_, 1);
+                    Ey_2 += pow(value, 2);
+                    Ey += value;
+                    leaf_pos_weight += current_weight[index];
                 }
                 else{
-                    leaf_neg_weight += current_weight[images_indexes[i]];
+                    leaf_neg_weight += current_weight[index];
                 }
             }
+            if ( num_shapes > 0 ){ //第三个stage后，开始加上alignment的结果情况
+                variance = Ex_2 / num_shapes - pow(Ex / num_shapes, 2) + Ey_2 / num_shapes - pow(Ey / num_shapes, 2);
+                variance = sqrtf(variance);
+            }
+            
 //            node->score_ = 0.5*(((leaf_pos_weight-0.0)<FLT_EPSILON)?0:log(leaf_pos_weight))-0.5*(((leaf_neg_weight-0.0)<FLT_EPSILON)?0:log(leaf_neg_weight))/*/log(2.0)*/;
             node->score_ = 0.5*(log(leaf_pos_weight)- log(leaf_neg_weight));
-            node->variance_ = 0.0;
+            node->variance_ = variance;
 			return node;
 		}
 
@@ -749,7 +764,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
                 float Ex_2_lc = 0.0, Ex_lc = 0.0, Ey_2_lc = 0.0, Ey_lc = 0.0;
                 float Ex_2_rc = 0.0, Ex_rc = 0.0, Ey_2_rc = 0.0, Ey_rc = 0.0;
                 
-                int num_l_pos_faces = 0, num_l_neg_faces = 0, num_r_pos_faces = 0, num_r_neg_faces;
+                int num_l_pos_faces = 0, num_l_neg_faces = 0, num_r_pos_faces = 0, num_r_neg_faces = 0;
                 float total_l_pos_weight = 0.0, total_l_neg_weight = 0.0;
                 float total_r_pos_weight = 0.0, total_r_neg_weight = 0.0;
                 
@@ -880,8 +895,8 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
     float summin = FLT_MAX;
     float indexmin = 0;
     for ( int i=0; i<vars.size(); i++){
-        float tmpvar = ( vars[i] - minvar ) / (maxvar - minvar);
-        float tmpent = ( entropys[i] - minent ) / (maxent - minent);
+        float tmpvar = ( vars[i] - minvar ) / (maxvar - minvar + FLT_EPSILON);
+        float tmpent = ( entropys[i] - minent ) / (maxent - minent + FLT_EPSILON);
         float tmpsum = (1.0 - detect_factor_) * tmpvar + detect_factor_ * tmpent; //这个可以根据stage用不同的系数，TODO:要不要根据depth也调整？
         if ( tmpsum < summin ){
             summin = tmpsum;
@@ -906,6 +921,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 	{
 		if (left_indexes.size() == 0 || right_indexes.size() == 0){
 			node->is_leaf_ = true; // the node can contain all the samples
+            std::cout << "minvar:" << minvar << " maxvar:" << maxvar << " minent:" << minent << " maxent:" << maxent << " threshhold:" << threshold << " size:" << images_indexes.size() << std::endl;
 			return 1;
 		}
 		node->threshold_ = threshold;

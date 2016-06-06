@@ -67,12 +67,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "train model_t6d4n8i2"
+            argument = "video model_t6d4n8i2"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "video model_neg_t6d4n4i2"
-            isEnabled = "NO">
+            argument = "train model_t5d4n6i2"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "test model_neg_d5n4i2"
@@ -83,8 +83,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "annotate"
-            isEnabled = "YES">
+            argument = "video model_neg_color_n6"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "test model_jda500 /Users/xujiajun/developer/face3000/face3000/test.jpg"

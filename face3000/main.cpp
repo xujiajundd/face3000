@@ -43,7 +43,7 @@ void DrawPredictedImage(cv::Mat_<cv::Vec3b> image, cv::Mat_<float>& shape){
         if ( i > 2 && i < 17 ){
             cv::line(image, cv::Point2f(shape(i-2, 0), shape(i-2, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), (255));
         }
-        else if ( i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
+        else if ( i > 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
             cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), (255));
     }
     cv::imshow("show image", image);
@@ -51,14 +51,15 @@ void DrawPredictedImage(cv::Mat_<cv::Vec3b> image, cv::Mat_<float>& shape){
 }
 
 void DrawPredictedImageContinue(cv::Mat image, cv::Mat_<float>& shape){
-    cv::line(image, cv::Point2f(shape(15, 0), shape(15, 1)), cv::Point2f(shape(0, 0), shape(0, 1)), (255));
-    cv::line(image, cv::Point2f(shape(16, 0), shape(16, 1)), cv::Point2f(shape(0, 0), shape(0, 1)), (255));
+    cv::line(image, cv::Point2f(shape(15, 0), shape(15, 1)), cv::Point2f(shape(0, 0), shape(0, 1)), Scalar(0,255,0));
+    cv::line(image, cv::Point2f(shape(16, 0), shape(16, 1)), cv::Point2f(shape(0, 0), shape(0, 1)), Scalar(0,255,0));
     for (int i = 0; i < shape.rows; i++){
         cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, Scalar(255,255,255));
         if ( i > 2 && i < 17 ){
-            cv::line(image, cv::Point2f(shape(i-2, 0), shape(i-2, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), (255));
+            cv::line(image, cv::Point2f(shape(i-2, 0), shape(i-2, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), Scalar(0,255,0));
         }
-        else if ( i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!= 48 && i!=68 && i!=69)
+        else if ( i > 17 &&
+                 i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!= 48 && i!=68 && i!=69)
             cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), Scalar(0,255,0));
     }
     cv::imshow("show image", image);
@@ -299,7 +300,7 @@ void TestVideo(const char* ModelName){
         else{ //用新的方法
             gettimeofday(&t1, NULL);
             std::vector<cv::Mat_<float>> shapes;
-            std::vector<cv::Rect> rects = rg.detectMultiScale(image, shapes, 1.1, 2, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, 150);
+            std::vector<cv::Rect> rects = rg.detectMultiScale(image, shapes, 1.1, 2, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, 100);
             gettimeofday(&t2, NULL);
             //            last_shape = res.clone(); lastShaped = true;
             cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " faces:" << rects.size() <<  endl;
@@ -496,7 +497,7 @@ void Train(const char* ModelName){
     
     params.local_features_num_ = 4800;
 	params.landmarks_num_per_face_ = 68;
-    params.regressor_stages_ = 6;
+    params.regressor_stages_ = 5;
 //    params.local_radius_by_stage_.push_back(0.6);
 //    params.local_radius_by_stage_.push_back(0.5);
 	params.local_radius_by_stage_.push_back(0.45);
@@ -525,7 +526,7 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.1);
     
     params.tree_depth_ = 4;
-    params.trees_num_per_forest_ = 8;
+    params.trees_num_per_forest_ = 6;
     params.initial_guess_ = 2;
     
 //    params.group_num_ = 6;

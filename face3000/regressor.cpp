@@ -65,7 +65,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<cv::Vec3b> >& images,
             else{
                 BoundingBox ibox = bboxes_[i];
                 float minor = random_generator.uniform(-ibox.width, ibox.width);
-                minor = 0.05 * minor;
+                minor = 0.02 * minor;
                 ibox.start_x -= minor/2.0;
                 ibox.start_y -= minor/2.0;
                 ibox.width += minor;
