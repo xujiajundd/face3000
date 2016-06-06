@@ -367,24 +367,25 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         new_box.height=new_box.width;
                                         new_box.center_x=new_box.start_x + new_box.width/2.0;
                                         new_box.center_y=new_box.start_y + new_box.height/2.0;
-                                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[idx], augmented_bboxes[idx]);
-                                        augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
-                                        cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[idx], augmented_bboxes[idx]);
-                                        augmented_current_shapes[idx]=ReProjection(temp2, new_box);
-                                        augmented_bboxes[idx]=new_box;
+//                                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[idx], augmented_bboxes[idx]);
+//                                        augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
+//                                        cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[idx], augmented_bboxes[idx]);
+//                                        augmented_current_shapes[idx]=ReProjection(temp2, new_box);
+//                                        augmented_bboxes[idx]=new_box;
 
                                         int tmp_isface=1;
                                         float tmp_fi=0;
                                         
                                         //这个时候，自己在第stage_, landmark_index_的i树上
                                         cv::Mat_<float> shape = augmented_current_shapes[idx].clone();
+                                        shape = ReProjection(ProjectShape(shape, augmented_bboxes[idx]), new_box);
                                         casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
                                                                       shape, new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
                                         if ( tmp_isface){
                                             faceFound = true;
                                             current_fi[idx] = tmp_fi;
                                             current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
-                                            augmented_current_shapes[idx] = shape;
+                                            //augmented_current_shapes[idx] = shape;
                                             find_times[idx] = 256*256*256*orient + 256*256*ss + 256*sx + sy;
                                             //std::cout << tmp_fi << " so:" << so << " ss:" << ss << " sx:" << sx << " sy:" << sy << " idx:" << idx << std::endl;;
     //                                        cv::Rect rect;
@@ -560,23 +561,24 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         float delta_end = sqrtf(powf((new_box.start_x + new_box.width - pos_box.start_x - pos_box.width), 2.0) + powf((new_box.start_y + new_box.height - pos_box.start_y - pos_box.height), 2.0));
                                         if ( delta_start < 0.1 * pos_box.width && delta_end < 0.1 * pos_box.width ) continue; //判断与正例的位置接近则不采用
                                         
-                                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[p], augmented_bboxes[p]);
-                                        augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
-                                        cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[p], augmented_bboxes[p]);
-                                        augmented_current_shapes[idx]=ReProjection(temp2, new_box);
-                                        augmented_bboxes[idx]=new_box;
+//                                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[p], augmented_bboxes[p]);
+//                                        augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
+//                                        cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[p], augmented_bboxes[p]);
+//                                        augmented_current_shapes[idx]=ReProjection(temp2, new_box);
+                                        //augmented_bboxes[idx]=new_box;
                                         
                                         int tmp_isface=1;
                                         float tmp_fi=0;
                                         
-                                        cv::Mat_<float> shape = augmented_current_shapes[idx].clone();
+                                        cv::Mat_<float> shape = augmented_current_shapes[p].clone();
+                                        shape = ReProjection(ProjectShape(shape, augmented_bboxes[p]), new_box);
                                         casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
                                                                       shape, new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
                                         if ( tmp_isface){
                                             faceFound = true;
                                             current_fi[idx] = tmp_fi;
                                             current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
-                                            augmented_current_shapes[idx] = shape;
+                                            //augmented_current_shapes[idx] = shape;
                                             find_times[idx] = 256*256*256*4 + 256*256*ss + 256*sx + sy;
                                             //std::cout << "hard:" << tmp_fi << " so:" << so << " ss:" << ss << " sx:" << sx << " sy:" << sy << " idx:" << idx << std::endl;
                                             break;
