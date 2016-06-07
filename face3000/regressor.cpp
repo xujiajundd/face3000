@@ -226,10 +226,11 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<cv::Vec3b> >
 	rd_forests_.resize(params_.landmarks_num_per_face_);
 //    #pragma omp parallel for
 	for (int i = 0; i < params_.landmarks_num_per_face_; ++i){
-        std::cout << "landmark: " << i << std::endl;
+        int ii = ( i + 17 ) % params_.landmarks_num_per_face_;
+        std::cout << "landmark: " << ii << std::endl;
         int true_pos_num = pos_num / ( params.initial_guess_ + 1 );
-		rd_forests_[i] = RandomForest(params_, i, stage_, regression_targets, casRegressor, true_pos_num);
-        rd_forests_[i].TrainForest(
+		rd_forests_[ii] = RandomForest(params_, ii, stage_, regression_targets, casRegressor, true_pos_num);
+        rd_forests_[ii].TrainForest(
 			images,augmented_images_index, augmented_ground_truth_shapes, augmented_bboxes, augmented_current_shapes,
             augmented_ground_truth_faces, current_fi, current_weight, find_times,
 			rotations_, scales_);
@@ -927,8 +928,9 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<cv::Vec3
     }
     int ind = 0;
     float ss = scale * bbox.width / 2.0; //add by xujj
-    for (int j = 0; j < params_.landmarks_num_per_face_; ++j)
+    for (int jj = 0; jj < params_.landmarks_num_per_face_; ++jj)
     {
+        int j = (jj + 17) % params_.landmarks_num_per_face_;
         for (int k = 0; k < params_.trees_num_per_forest_; ++k)
         {
             Node* node = rd_forests_[j].trees_[k];

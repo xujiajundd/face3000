@@ -342,6 +342,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 //                    BoundingBox max_fi_box;
 //                    cv::Mat_<float> max_fi_shape;
 //                    float max_fi = -100000000.0;
+                    int p = idx % true_pos_num_;
                     int so = (find_times[idx] & 0x7f000000) >> 24;
                     int ss = (find_times[idx] & 0x00ff0000) >> 16;
                     int sx = (find_times[idx] & 0x0000ff00) >> 8;
@@ -369,7 +370,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         new_box.center_y=new_box.start_y + new_box.height/2.0;
 //                                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[idx], augmented_bboxes[idx]);
 //                                        augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
-                                        cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[idx], augmented_bboxes[idx]);
+                                        cv::Mat_<float> temp2 = ProjectShape(augmented_ground_truth_shapes[p], augmented_bboxes[p]);
                                         augmented_current_shapes[idx]=ReProjection(temp2, new_box);
                                         augmented_bboxes[idx]=new_box;
 
@@ -377,15 +378,15 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         float tmp_fi=0;
                                         
                                         //这个时候，自己在第stage_, landmark_index_的i树上
-                                        cv::Mat_<float> shape = augmented_current_shapes[idx].clone();
+                                        //cv::Mat_<float> shape = augmented_current_shapes[idx].clone();
                                         casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
-                                                                      shape, new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
+                                                                      augmented_current_shapes[idx], new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
                                         if ( tmp_isface){
                                             faceFound = true;
                                             current_fi[idx] = tmp_fi;
                                             current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
-                                            augmented_current_shapes[idx] = shape;
-                                            augmented_bboxes[idx]=new_box;
+                                            //augmented_current_shapes[idx] = shape;
+                                            //augmented_bboxes[idx]=new_box;
                                             find_times[idx] = 256*256*256*orient + 256*256*ss + 256*sx + sy;
                                             //std::cout << tmp_fi << " so:" << so << " ss:" << ss << " sx:" << sx << " sy:" << sy << " idx:" << idx << std::endl;;
     //                                        cv::Rect rect;
@@ -570,17 +571,17 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         int tmp_isface=1;
                                         float tmp_fi=0;
                                         
-                                        cv::Mat_<float> shape = augmented_current_shapes[idx].clone();
+                                        //cv::Mat_<float> shape = augmented_current_shapes[idx].clone();
                                         casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
-                                                                      shape, new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
+                                                                      augmented_current_shapes[idx], new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
                                         if ( tmp_isface){
-                                            float error = CalculateError2(augmented_ground_truth_shapes[p], shape);
+                                            float error = CalculateError2(augmented_ground_truth_shapes[p], augmented_current_shapes[idx]);
                                             if ( error > 0.1 || delta_start > 0.15 * pos_box.width || delta_end > 0.15 * pos_box.width){
                                                 faceFound = true;
                                                 current_fi[idx] = tmp_fi;
                                                 current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
-                                                augmented_current_shapes[idx] = shape;
-                                                augmented_bboxes[idx]=new_box;
+//                                                augmented_current_shapes[idx] = shape;
+//                                                augmented_bboxes[idx]=new_box;
                                                 find_times[idx] = 256*256*256*4 + 256*256*ss + 256*sx + sy;
                                                 //std::cout << "hard:" << tmp_fi << " so:" << so << " ss:" << ss << " sx:" << sx << " sy:" << sy << " idx:" << idx << std::endl;
                                                 break;
@@ -899,10 +900,12 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
     
     float summin = FLT_MAX;
     float indexmin = 0;
+    float df = detect_factor_;
+    if ( landmark_index_ < 17 && df > 0.3 ) df = 0.3;
     for ( int i=0; i<vars.size(); i++){
         float tmpvar = ( vars[i] - minvar ) / (maxvar - minvar + FLT_EPSILON);
         float tmpent = ( entropys[i] - minent ) / (maxent - minent + FLT_EPSILON);
-        float tmpsum = (1.0 - detect_factor_) * tmpvar + detect_factor_ * tmpent; //这个可以根据stage用不同的系数，TODO:要不要根据depth也调整？
+        float tmpsum = (1.0 - df) * tmpvar + df * tmpent; //这个可以根据stage用不同的系数，TODO:要不要根据depth也调整？
         if ( tmpsum < summin ){
             summin = tmpsum;
             indexmin = i;

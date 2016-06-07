@@ -83,7 +83,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "video model_neg_color_n6"
+            argument = "annotate"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
