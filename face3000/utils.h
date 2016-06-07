@@ -94,6 +94,7 @@ std::vector<cv::Rect_<int> > DetectFaces(cv::Mat_<cv::Vec3b>& image);
 std::vector<cv::Rect> DetectFaces(cv::Mat_<cv::Vec3b>& image, cv::CascadeClassifier& classifier);
 
 float CalculateError(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predicted_shape);
+float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predicted_shape);
 
 void DrawPredictImage(cv::Mat_<cv::Vec3b>& image, cv::Mat_<float>& shapes);
 

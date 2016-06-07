@@ -560,6 +560,24 @@ float CalculateError(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predi
     return sum/(ground_truth_shape.rows*interocular_distance);
 }
 
+float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predicted_shape){
+    cv::Mat_<float> temp;
+    if ( ground_truth_shape.rows >= 68 ){
+        temp = ground_truth_shape.rowRange(36, 41)-ground_truth_shape.rowRange(42, 47);
+    }
+    else{
+        temp = ground_truth_shape.rowRange(0, 1)-ground_truth_shape.rowRange(1, 2);
+    }
+    //    temp = ground_truth_shape.rowRange(0, 7)-ground_truth_shape.rowRange(9, 16); //add by xujj
+    float x =mean(temp.col(0))[0];
+    float y = mean(temp.col(1))[1];
+    float interocular_distance = sqrt(x*x+y*y);
+    float sum = 0;
+    for (int i=0;i<17;i++){
+        sum += norm(ground_truth_shape.row(i)-predicted_shape.row(i));
+    }
+    return sum/(17*interocular_distance);
+}
 
 
 void DrawPredictImage(cv::Mat_<cv::Vec3b> image, cv::Mat_<float>& shape){
