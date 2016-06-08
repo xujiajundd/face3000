@@ -879,7 +879,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
                 
                 entropy = entropy_lc + entropy_rc;
                 if ( entropy != entropy ){ //判断是不是Nan
-                    std::cout<<"entropy:"<<entropy<<" lc:"<<entropy_lc<<" rc:"<<entropy_rc<<" tlw:"<<total_l_weight<<" trw:"<<total_r_weight<< " tlpw:" << total_l_pos_weight << " trpw:" << total_r_pos_weight << " tmp" << entropy_tmp << std::endl;
+                    std::cout<<"entropy:"<<entropy<<" lc:"<<entropy_lc<<" rc:"<<entropy_rc<< " tw:"<<total_weight<< " tlw:"<<total_l_weight<<" trw:"<<total_r_weight<< " tlpw:" << total_l_pos_weight << " trpw:" << total_r_pos_weight << " tmp" << entropy_tmp << std::endl;
                     entropy = 0;
                 }
                 entropys.push_back(entropy);
