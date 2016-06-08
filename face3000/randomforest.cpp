@@ -168,7 +168,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         //std::cout << "get pixel differences" << std::endl;
         cv::Mat_<int> pixel_differences(local_features_num_, augmented_images_index.size()); // matrix: features*images
 
-#pragma omp parallel for
+//#pragma omp parallel for
         for (int n = 0; n < augmented_images_index.size(); n++){
 
             cv::Mat_<float> rotation = rotations[n];
@@ -833,6 +833,9 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
                 }
     //			var_red = -var_lc*num_l_shapes - var_rc*num_r_shapes;
                 var_red = var_lc*num_l_shapes + var_rc*num_r_shapes;
+                if ( var_red != var_red){
+                    std::cout<<"var_red:"<<var_red << " var_lc:" << var_lc << " var_rc:" << var_rc << std::endl;
+                }
                 thresholds.push_back(std::pair<int,int>(tmp_threshold, j));
                 vars.push_back(var_red);
                 
@@ -846,17 +849,18 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
                 float total_weight = total_l_weight + total_r_weight;
                 
                 float entropy = 0.0, entropy_lc = 0.0, entropy_rc = 0.0;
+                float entropy_tmp = 0.0;
                 
                 if ( left_sample_num == 0 ){
                     entropy_lc = 0.0;
                 }
                 else{
-                    float entropy_tmp = total_l_pos_weight / ( total_l_weight + FLT_MIN );
+                    entropy_tmp = total_l_pos_weight / ( total_l_weight + FLT_MIN );
                     if ( (entropy_tmp-0.0) < FLT_EPSILON){
                         entropy_lc = 0.0;
                     }
                     else{
-                        entropy_lc = - ( total_l_weight / ( total_weight + FLT_MIN)) * ((entropy_tmp + FLT_MIN) * log(entropy_tmp + FLT_MIN)/log(2.0) + ( 1 - entropy_tmp + FLT_MIN) * log(1-entropy_tmp + FLT_MIN)/log(2.0));
+                        entropy_lc = - ( total_l_weight / ( total_weight + FLT_MIN)) * ((entropy_tmp) * log(entropy_tmp)/log(2.0) + ( 1.0 - entropy_tmp) * log(1.0-entropy_tmp)/log(2.0));
                     }
                 }
                 
@@ -864,18 +868,19 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
                     entropy_rc = 0.0;
                 }
                 else{
-                    float entropy_tmp = total_r_pos_weight / ( total_r_weight + FLT_MIN );
+                    entropy_tmp = total_r_pos_weight / ( total_r_weight + FLT_MIN );
                     if ( (entropy_tmp-0.0) < FLT_EPSILON){
                         entropy_rc = 0.0;
                     }
                     else{
-                        entropy_rc = - ( total_r_weight / ( total_weight + FLT_MIN)) * ((entropy_tmp + FLT_MIN) * log(entropy_tmp + FLT_MIN)/log(2.0) + ( 1 - entropy_tmp + FLT_MIN) * log(1-entropy_tmp + FLT_MIN)/log(2.0));
+                        entropy_rc = - ( total_r_weight / ( total_weight + FLT_MIN)) * ((entropy_tmp ) * log(entropy_tmp)/log(2.0) + ( 1.0 - entropy_tmp) * log(1.0-entropy_tmp)/log(2.0));
                     }
                 }
                 
                 entropy = entropy_lc + entropy_rc;
                 if ( entropy != entropy ){ //判断是不是Nan
-                    std::cout<<"entropy:"<<entropy<<" lc:"<<entropy_lc<<" rc:"<<entropy_rc<<" lw:"<<total_l_weight<<" rw:"<<total_r_weight<<std::endl;
+                    std::cout<<"entropy:"<<entropy<<" lc:"<<entropy_lc<<" rc:"<<entropy_rc<<" tlw:"<<total_l_weight<<" trw:"<<total_r_weight<< " tlpw:" << total_l_pos_weight << " trpw:" << total_r_pos_weight << " tmp" << entropy_tmp << std::endl;
+                    entropy = 0;
                 }
                 entropys.push_back(entropy);
             }

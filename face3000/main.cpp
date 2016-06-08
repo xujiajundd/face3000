@@ -578,6 +578,19 @@ void Train(const char* ModelName){
 //
 
 void Hello(){
+    
+    float total_r_pos_weight, total_r_weight, entropy_rc;
+    total_r_pos_weight = 0.1052417682134123412341234123412341234123412341234;
+    total_r_weight = total_r_pos_weight;
+    float entropy_tmp = total_r_pos_weight / ( total_r_weight + FLT_MIN );
+    if ( (entropy_tmp-0.0) < FLT_EPSILON){
+        entropy_rc = 0.0;
+    }
+    else{
+        entropy_rc = - ((entropy_tmp + FLT_MIN) * log(entropy_tmp + FLT_MIN)/log(2.0) + ( 1 - entropy_tmp + FLT_MIN) * log(1-entropy_tmp + FLT_MIN)/log(2.0));
+    }
+    
+    
     int modellen = 2000;
     int stride = 16;
     int dim = 68;
