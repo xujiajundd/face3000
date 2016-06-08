@@ -855,12 +855,12 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
                     entropy_lc = 0.0;
                 }
                 else{
-                    entropy_tmp = total_l_pos_weight / ( total_l_weight + FLT_MIN );
+                    entropy_tmp = total_l_pos_weight / ( total_l_weight + 0.00000000000001);
                     if ( (entropy_tmp-0.0) < FLT_EPSILON){
                         entropy_lc = 0.0;
                     }
                     else{
-                        entropy_lc = - ( total_l_weight / ( total_weight + FLT_MIN)) * ((entropy_tmp) * log(entropy_tmp)/log(2.0) + ( 1.0 - entropy_tmp) * log(1.0-entropy_tmp)/log(2.0));
+                        entropy_lc = - ( total_l_weight / ( total_weight + 0.00000000000001)) * ((entropy_tmp) * log(entropy_tmp)/log(2.0) + ( 1.0 - entropy_tmp) * log(1.0-entropy_tmp)/log(2.0));
                     }
                 }
                 
@@ -868,12 +868,12 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
                     entropy_rc = 0.0;
                 }
                 else{
-                    entropy_tmp = total_r_pos_weight / ( total_r_weight + FLT_MIN );
+                    entropy_tmp = total_r_pos_weight / ( total_r_weight + 0.00000000000001);
                     if ( (entropy_tmp-0.0) < FLT_EPSILON){
                         entropy_rc = 0.0;
                     }
                     else{
-                        entropy_rc = - ( total_r_weight / ( total_weight + FLT_MIN)) * ((entropy_tmp ) * log(entropy_tmp)/log(2.0) + ( 1.0 - entropy_tmp) * log(1.0-entropy_tmp)/log(2.0));
+                        entropy_rc = - ( total_r_weight / ( total_weight + 0.00000000000001)) * ((entropy_tmp ) * log(entropy_tmp)/log(2.0) + ( 1.0 - entropy_tmp) * log(1.0-entropy_tmp)/log(2.0));
                     }
                 }
                 
