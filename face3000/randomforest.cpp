@@ -856,7 +856,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
                 }
                 else{
                     entropy_tmp = total_l_pos_weight / ( total_l_weight + 0.00000000000001);
-                    if ( (entropy_tmp-0.0) < FLT_EPSILON){
+                    if ( (entropy_tmp-0.0) < FLT_EPSILON || (1.0-entropy_tmp) < FLT_EPSILON){
                         entropy_lc = 0.0;
                     }
                     else{
@@ -869,7 +869,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
                 }
                 else{
                     entropy_tmp = total_r_pos_weight / ( total_r_weight + 0.00000000000001);
-                    if ( (entropy_tmp-0.0) < FLT_EPSILON){
+                    if ( (entropy_tmp-0.0) < FLT_EPSILON || (1.0-entropy_tmp) < FLT_EPSILON){
                         entropy_rc = 0.0;
                     }
                     else{
