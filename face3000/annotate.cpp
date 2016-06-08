@@ -64,7 +64,6 @@ public:
         else{
             getline(fin, temp);// read first line
             fin >> temp >> landmarks;
-            //    landmarks = 17; //add by xujj
             cv::Mat_<float> s(landmarks, 2);
             getline(fin, temp); // read '\n' of the second line
             getline(fin, temp); // read third line
@@ -79,20 +78,15 @@ public:
     }
 
     void draw_image(){  //画图片，画各点，选中点高亮
-//        cv::line(image, cv::Point2f(shape(15, 0), shape(15, 1)), cv::Point2f(shape(0, 0), shape(0, 1)), (255));
-//        cv::line(image, cv::Point2f(shape(16, 0), shape(16, 1)), cv::Point2f(shape(0, 0), shape(0, 1)), (255));
         for (int i = 0; i < shape.rows; i++){
             if ( i == pidx ){
                 cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 4, Scalar(0,0,255));
             }
             else{
-                cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 4, (255));
+                cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 4, Scalar(255,255,255));
             }
-//            if ( i > 2 && i < 17 ){
-//                cv::line(image, cv::Point2f(shape(i-2, 0), shape(i-2, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), (255));
-//            }
-            if ( i!=0 && i!=17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
-                cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), (255));
+            if ( i != 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
+                cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), Scalar(0,255,0));
         }
         cv::imshow(wname, image);
     }

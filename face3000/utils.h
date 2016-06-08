@@ -100,5 +100,7 @@ void DrawPredictImage(cv::Mat_<cv::Vec3b>& image, cv::Mat_<float>& shapes);
 
 BoundingBox GetBoundingBox(cv::Mat_<float>& shape, int width, int height);
 int colorDistance(cv::Vec3b p1, cv::Vec3b p2);
+cv::Mat_<float> convertShape(cv::Mat_<float> shape);
+cv::Mat_<float> reConvertShape(cv::Mat_<float> shape);
 
 #endif

@@ -226,11 +226,10 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<cv::Vec3b> >
 	rd_forests_.resize(params_.landmarks_num_per_face_);
 //    #pragma omp parallel for
 	for (int i = 0; i < params_.landmarks_num_per_face_; ++i){
-        int ii = ( i + 17 ) % params_.landmarks_num_per_face_;
-        std::cout << "landmark: " << ii << std::endl;
+        std::cout << "landmark: " << i << std::endl;
         int true_pos_num = pos_num / ( params.initial_guess_ + 1 );
-		rd_forests_[ii] = RandomForest(params_, ii, stage_, regression_targets, casRegressor, true_pos_num);
-        rd_forests_[ii].TrainForest(
+		rd_forests_[i] = RandomForest(params_, i, stage_, regression_targets, casRegressor, true_pos_num);
+        rd_forests_[i].TrainForest(
 			images,augmented_images_index, augmented_ground_truth_shapes, augmented_bboxes, augmented_current_shapes,
             augmented_ground_truth_faces, current_fi, current_weight, find_times,
 			rotations_, scales_);
@@ -672,21 +671,6 @@ cv::Mat_<float> CascadeRegressor::NegMinePredict(cv::Mat_<cv::Vec3b>& image,
         }
         current_shape = shape_increaments + ProjectShape(current_shape, bbox);
         current_shape = ReProjection(current_shape, bbox);
-        
-        //        for (int ii = 0; ii < current_shape.rows; ii++){
-        //            cv::circle(image, cv::Point2f(current_shape(ii, 0), current_shape(ii, 1)), 2, (255));
-        //            if ( ii > 0 && ii != 17 && ii != 22 && ii != 27 && ii!= 36 && ii != 42 && ii!= 48 )
-        //                cv::line(image, cv::Point2f(current_shape(ii-1, 0), current_shape(ii-1, 1)), cv::Point2f(current_shape(ii, 0), current_shape(ii, 1)), cvScalar(30*i,255,0));
-        //        }
-        //        cv::imshow("show image", image);
-        //        cv::waitKey(0);
-        
-        //        cv::Mat_<float> temp = current_shape.rowRange(36, 41)-current_shape.rowRange(42, 47);
-        //        float x =mean(temp.col(0))[0];
-        //        float y = mean(temp.col(1))[1];
-        //        float interocular_distance = sqrt(x*x+y*y);
-        //        float delta = norm(shape_increaments)/(current_shape.rows*interocular_distance * params_.local_radius_by_stage_[i]);
-        //        stage_delta_.push_back(delta);
     }
     cv::Mat_<float> res = current_shape;
 //    fi = score;
@@ -928,9 +912,8 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<cv::Vec3
     }
     int ind = 0;
     float ss = scale * bbox.width / 2.0; //add by xujj
-    for (int jj = 0; jj < params_.landmarks_num_per_face_; ++jj)
+    for (int j = 0; j < params_.landmarks_num_per_face_; ++j)
     {
-        int j = (jj + 17) % params_.landmarks_num_per_face_;
         for (int k = 0; k < params_.trees_num_per_forest_; ++k)
         {
             Node* node = rd_forests_[j].trees_[k];

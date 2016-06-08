@@ -116,66 +116,55 @@ cv::Mat_<float> LoadGroundTruthShape(const char* name){
 	fin.open(name, std::fstream::in);
 	getline(fin, temp);// read first line
 	fin >> temp >> landmarks;
-//    landmarks = 17; //add by xujj
 	cv::Mat_<float> shape(landmarks, 2);
 	getline(fin, temp); // read '\n' of the second line
 	getline(fin, temp); // read third line
 	for (int i = 0; i<landmarks; i++){
 		fin >> shape(i, 0) >> shape(i, 1);
 	}
-    //add by xujj, 用于校验的点
-//    shape(68,0) = (shape(37,0) + shape(38,0) + shape(40, 0) + shape(41, 0))/4.0;
-//    shape(68,1) = (shape(37,1) + shape(38,1) + shape(40, 1) + shape(41, 1))/4.0;
-//    shape(69,0) = (shape(43,0) + shape(44,0) + shape(46, 0) + shape(47, 0))/4.0;
-//    shape(69,1) = (shape(43,1) + shape(44,1) + shape(46, 1) + shape(47, 1))/4.0;
 	fin.close();
-    //add by xujj
-    if (  shape.rows != 68 || shape.cols != 2) return shape; //错误，有调用者去处理
-    
-    cv::Mat_<float> stemp(17, 2);
-    for ( int i=0; i<17; i++){
-        int si;
-        if( i==0){
-            si = 8;
-        }
-        else if ( i % 2 == 0 ){
-            si = 17 - i/2;
-        }
-        else{
-            si = (i-1)/2;
-        }
-        stemp(i,0) = shape(si,0);
-        stemp(i,1) = shape(si,1);
-    }
-    for ( int i=0; i<17; i++){
-        shape(i,0) = stemp(i,0);
-        shape(i,1) = stemp(i,1);
-    }
+//    //add by xujj
+//    if (  shape.rows != 68 || shape.cols != 2) return shape; //错误，有调用者去处理
+//    
+//    cv::Mat_<float> stemp(17, 2);
+//    for ( int i=0; i<17; i++){
+//        int si;
+//        if( i==0){
+//            si = 8;
+//        }
+//        else if ( i % 2 == 0 ){
+//            si = 17 - i/2;
+//        }
+//        else{
+//            si = (i-1)/2;
+//        }
+//        stemp(i,0) = shape(si,0);
+//        stemp(i,1) = shape(si,1);
+//    }
+//    for ( int i=0; i<17; i++){
+//        shape(i,0) = stemp(i,0);
+//        shape(i,1) = stemp(i,1);
+//    }
     
 	return shape;
 }
 
-cv::Mat_<float> LoadGroundTruthShapeForDetect(const char* name){
-    int landmarks = 0;
-    std::ifstream fin;
-    std::string temp;
-    fin.open(name, std::fstream::in);
-    getline(fin, temp);// read first line
-    fin >> temp >> landmarks;
-    //    landmarks = 17; //add by xujj
-    cv::Mat_<float> shape(landmarks, 2);
-    getline(fin, temp); // read '\n' of the second line
-    getline(fin, temp); // read third line
-    for (int i = 0; i<landmarks; i++){
-        fin >> shape(i, 0) >> shape(i, 1);
+cv::Mat_<float> convertShape(cv::Mat_<float> shape){
+    cv::Mat_<float> result(68,2);
+    for ( int i=0; i<68; i++){
+        result(i,0) = shape((i+17)%68,0);
+        result(i,1) = shape((i+17)%68,1);
     }
-    fin.close();
-    cv::Mat_<float> shapeDetect(2,2);
-    shapeDetect(0,0) = shape(39,0);
-    shapeDetect(0,1) = shape(39,1);
-    shapeDetect(1,0) = shape(42,0);
-    shapeDetect(1,1) = shape(42,1);
-    return shapeDetect;
+    return result;
+}
+
+cv::Mat_<float> reConvertShape(cv::Mat_<float> shape){
+    cv::Mat_<float> result(68,2);
+    for ( int i=0; i<68; i++){
+        result(i,0) = shape((i+51)%68,0);
+        result(i,1) = shape((i+51)%68,1);
+    }
+    return result;
 }
 
 bool ShapeInRect(cv::Mat_<float>& shape, cv::Rect& ret){
@@ -343,7 +332,7 @@ int LoadImages(std::vector<cv::Mat_<cv::Vec3b> >& images,
             //if (ShapeInRect(ground_truth_shape, faceRec)){
             	// check if the detected face rectangle is in the ground_truth_shape
                 images.push_back(image);
-                ground_truth_shapes.push_back(ground_truth_shape);
+                ground_truth_shapes.push_back(convertShape(ground_truth_shape));
                 ground_truth_faces.push_back(1);
                 BoundingBox bbox = CalculateBoundingBox(ground_truth_shape);
 //                bbox.start_x = faceRec.x;
@@ -375,19 +364,9 @@ int LoadImages(std::vector<cv::Mat_<cv::Vec3b> >& images,
                 
                 cv::Mat_<float> flipped_ground_truth_shape(ground_truth_shape.rows, 2);
                 for ( int p = 0; p < ground_truth_shape.rows; p++ ){
-                    if ( p == 0 ){
-                        flipped_ground_truth_shape(p,0) = image.cols - ground_truth_shape(p, 0);
-                        flipped_ground_truth_shape(p,1) = ground_truth_shape(p,1);
-                    }
-                    if ( p >0 && p <= 16){
-                        if ( p % 2 != 0 ){
-                            flipped_ground_truth_shape(p,0) = image.cols - ground_truth_shape(p+1, 0);
-                            flipped_ground_truth_shape(p,1) = ground_truth_shape(p+1,1);
-                        }
-                        else {
-                            flipped_ground_truth_shape(p,0) = image.cols - ground_truth_shape(p-1, 0);
-                            flipped_ground_truth_shape(p,1) = ground_truth_shape(p-1,1);
-                        }
+                    if ( p <= 16){
+                        flipped_ground_truth_shape(p,0) = image.cols - ground_truth_shape(16-p, 0);
+                        flipped_ground_truth_shape(p,1) = ground_truth_shape(16-p,1);
                     }
                     if ( p >=17 && p <= 26 ){
                         flipped_ground_truth_shape(p,0) = image.cols - ground_truth_shape(17+26-p, 0);
@@ -438,7 +417,7 @@ int LoadImages(std::vector<cv::Mat_<cv::Vec3b> >& images,
 //                        flipped_ground_truth_shape(p,1) = ground_truth_shape(68+69-p,1);
 //                    }
                 }
-                ground_truth_shapes.push_back(flipped_ground_truth_shape);
+                ground_truth_shapes.push_back(convertShape(flipped_ground_truth_shape));
                 ground_truth_faces.push_back(1);
                 BoundingBox flipped_bbox;
                 flipped_bbox.start_x = image.cols - (bbox.start_x + bbox.width);
@@ -544,7 +523,7 @@ int LoadImages(std::vector<cv::Mat_<cv::Vec3b> >& images,
 float CalculateError(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predicted_shape){
     cv::Mat_<float> temp;
     if ( ground_truth_shape.rows >= 68 ){
-        temp = ground_truth_shape.rowRange(36, 41)-ground_truth_shape.rowRange(42, 47);
+        temp = ground_truth_shape.rowRange(19, 24)-ground_truth_shape.rowRange(25, 30);
     }
     else{
         temp = ground_truth_shape.rowRange(0, 1)-ground_truth_shape.rowRange(1, 2);
@@ -563,7 +542,7 @@ float CalculateError(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predi
 float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predicted_shape){
     cv::Mat_<float> temp;
     if ( ground_truth_shape.rows >= 68 ){
-        temp = ground_truth_shape.rowRange(36, 41)-ground_truth_shape.rowRange(42, 47);
+        temp = ground_truth_shape.rowRange(19, 24)-ground_truth_shape.rowRange(25, 30);
     }
     else{
         temp = ground_truth_shape.rowRange(0, 1)-ground_truth_shape.rowRange(1, 2);
@@ -573,7 +552,7 @@ float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& pred
     float y = mean(temp.col(1))[1];
     float interocular_distance = sqrt(x*x+y*y);
     float sum = 0;
-    for (int i=0;i<17;i++){
+    for (int i=50;i<67;i++){
         sum += norm(ground_truth_shape.row(i)-predicted_shape.row(i));
     }
     return sum/(17*interocular_distance);

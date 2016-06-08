@@ -207,16 +207,16 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         for(int k=0;k<current_weight.size();++k)
         {
             current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
-            if ( current_weight[k] > 10000000000000000.0 && find_times[k] < MAXFINDTIMES){
-                find_times[k] = MAXFINDTIMES+8;
-                if ( augmented_ground_truth_faces[k] == 1 ){
-                    drop_pos_count++;
-                }
-                else{
-                    drop_neg_count++;
-                }
-                augmented_ground_truth_faces[k] = -1;
-            }
+//            if ( current_weight[k] > 10000000000000000.0 && find_times[k] < MAXFINDTIMES){ //试验一下去掉这个的效果
+//                find_times[k] = MAXFINDTIMES+8;
+//                if ( augmented_ground_truth_faces[k] == 1 ){
+//                    drop_pos_count++;
+//                }
+//                else{
+//                    drop_neg_count++;
+//                }
+//                augmented_ground_truth_faces[k] = -1;
+//            }
         }
         if ( drop_pos_count > 0 || drop_neg_count > 0 )
             std::cout << "drop too high weight, pos:" << drop_pos_count << " neg:" << drop_neg_count << std::endl;
@@ -753,7 +753,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
     std::vector<std::pair<int,int>> thresholds;
 
 	//int j = 0, tmp_index;
-#pragma omp parallel for
+//#pragma omp parallel for
 	for (int j = 0; j < local_features_num_; j++){
 		if (selected_feature_indexes.find(j) == selected_feature_indexes.end()){
             std::vector<int> data;
@@ -874,6 +874,9 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
                 }
                 
                 entropy = entropy_lc + entropy_rc;
+                if ( entropy != entropy ){ //判断是不是Nan
+                    std::cout<<"entropy:"<<entropy<<" lc:"<<entropy_lc<<" rc:"<<entropy_rc<<" lw:"<<total_l_weight<<" rw:"<<total_r_weight<<std::endl;
+                }
                 entropys.push_back(entropy);
             }
 //			if (var_red > var){
@@ -901,7 +904,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
     float summin = FLT_MAX;
     float indexmin = 0;
     float df = detect_factor_;
-    if ( landmark_index_ < 17 && stage_ < 2 ) df = 0.2;
+    if ( landmark_index_ > 50 && stage_ < 2 ) df = 0.2; //脸的外轮廓多alignement，少detect
     for ( int i=0; i<vars.size(); i++){
         float tmpvar = ( vars[i] - minvar ) / (maxvar - minvar + FLT_EPSILON);
         float tmpent = ( entropys[i] - minent ) / (maxent - minent + FLT_EPSILON);
