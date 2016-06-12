@@ -588,6 +588,7 @@ void Hello(){
     }
     else{
         entropy_rc = - ((entropy_tmp + FLT_MIN) * log(entropy_tmp + FLT_MIN)/log(2.0) + ( 1 - entropy_tmp + FLT_MIN) * log(1-entropy_tmp + FLT_MIN)/log(2.0));
+        entropy_rc = log(1.0-(123456789.123456789/(123456789.123456789+FLT_MIN)));
     }
     
     

@@ -38,8 +38,6 @@ public:
 
     annotate(){
         wname = "Annotate"; idx = 0; pidx = -1;
-        const char *ModelName = "model_neg_color_n6";
-        face_detector.LoadCascadeRegressor(ModelName);
     }
 
     int set_current_image(const int cidx = 0){ //读取图片，读取pts，如果没有pts，调用shape程序自动计算一个
@@ -409,6 +407,9 @@ int annotate_main(const char *path)
 //如果path为目录名，则参照data进行
 //如果path为jpg或png文件，则单个进行
 //根据path后缀来区分
+    const char *ModelName = "model_neg_color_n6";
+    annotation.face_detector.LoadCascadeRegressor(ModelName);
+
     std::string current_dir = "";
     std::vector<std::string> lists;
 //    cv::Mat_<float> shape;

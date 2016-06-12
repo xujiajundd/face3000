@@ -579,6 +579,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<cv::Vec3b>& im
     }
 
     //TODO:可以根据返回的score或者stage，改变shuffle及scale的尺度？不同尺度下，也可以利用改信息？
+    int scan_count=0;
     while ( currentSize >= minSize && currentSize <= std::min(image.cols, image.rows)){
         box.width = currentSize;
         box.height = currentSize;
@@ -586,6 +587,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<cv::Vec3b>& im
             box.start_x = i;
             box.center_x = box.start_x + box.width/2.0;
             for ( int j=0; j<image.rows-currentSize; j+=currentSize*shuffle){
+                scan_count++;
                 box.start_y = j;
                 box.center_y = box.start_y + box.width/2.0;
                 int is_face = 1;
@@ -628,7 +630,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<cv::Vec3b>& im
                 }
             }
         }
-        
+        //std::cout<<"count:"<<scan_count<<std::endl;
         if ( order == CASCADE_FLAG_SEARCH_MAX_TO_MIN ){
             currentSize /= scaleFactor;
         }
@@ -648,7 +650,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<cv::Vec3b>& im
             shapes.push_back(candidates[c].shape);
         }
     }
-    
+//    std::cout<<"count:"<<scan_count<<std::endl;
     return faces;
 }
 
