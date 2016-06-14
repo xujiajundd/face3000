@@ -15,6 +15,10 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
 #include <fstream>
+#include <dirent.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
 #include "headers.h"
 //==============================================================================
 using namespace cv;
@@ -34,6 +38,7 @@ public:
     std::string file_name;
     std::string shape_file_name;
     CascadeRegressor face_detector;
+    bool imageScaled;
 
 
     annotate(){
@@ -45,18 +50,34 @@ public:
         idx = cidx;
         file_name = lists[idx];
         image = cv::imread(file_name, 1);
-
+        float scale = max(image.cols,image.rows) / 1024.0;
+        imageScaled = false;
+        if ( scale > 1.0 ){
+            cv::resize(image, image, cv::Size(image.cols / scale, image.rows / scale), 0, 0, cv::INTER_LINEAR);
+            imageScaled = true;
+        }
         shape_file_name  = file_name.substr(0, file_name.length() - 3) + "pts";
         int landmarks = 0;
         std::ifstream fin;
         std::string temp;
         fin.open(shape_file_name, std::fstream::in);
         if ( !fin ){
-            cout << "pts文件不存在";
+            cout << "pts文件不存在" << std::endl;
             std::vector<cv::Mat_<float>> shapes;
-            std::vector<cv::Rect> rects = face_detector.detectMultiScale(image, shapes, 1.1, 2, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, 150);
+            std::vector<cv::Rect> rects = face_detector.detectMultiScale(image, shapes, 1.1, 2, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, min(image.rows,image.cols) / 3);
             if ( rects.size() > 0 ){
-                shape = shapes[0];
+                shape = reConvertShape(shapes[0]);
+            }
+            else{
+                //用平均脸在中间
+                BoundingBox bbox;
+                bbox.width = min(image.cols, image.rows) / 2;
+                bbox.height = bbox.width;
+                bbox.start_x = image.cols/2 - bbox.width/2;
+                bbox.start_y = image.rows/2 - bbox.height/2;
+                bbox.center_x = bbox.start_x + bbox.width/2;
+                bbox.center_y = bbox.start_y + bbox.height/2;
+                shape = reConvertShape(ReProjection(face_detector.params_.mean_shape_, bbox));
             }
         }
         else{
@@ -70,6 +91,9 @@ public:
             }
             shape = s;
             fin.close();
+            if ( imageScaled ){
+                s /= scale;
+            }
         }
         set_clean_image();
       return 1;
@@ -83,9 +107,16 @@ public:
             else{
                 cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 4, Scalar(255,255,255));
             }
-            if ( i != 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
+            if ( i != 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!= 60 && i!=68 && i!=69)
                 cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), Scalar(0,255,0));
         }
+        cv::line(image, cv::Point2f(shape(36, 0), shape(36, 1)), cv::Point2f(shape(41, 0), shape(41, 1)), Scalar(0,255,0));
+        cv::line(image, cv::Point2f(shape(42, 0), shape(42, 1)), cv::Point2f(shape(47, 0), shape(47, 1)), Scalar(0,255,0));
+        cv::line(image, cv::Point2f(shape(30, 0), shape(30, 1)), cv::Point2f(shape(35, 0), shape(35, 1)), Scalar(0,255,0));
+        cv::line(image, cv::Point2f(shape(48, 0), shape(48, 1)), cv::Point2f(shape(59, 0), shape(59, 1)), Scalar(0,255,0));
+        cv::line(image, cv::Point2f(shape(60, 0), shape(60, 1)), cv::Point2f(shape(67, 0), shape(67, 1)), Scalar(0,255,0));
+        set_capture_instructions();
+        draw_instructions();
         cv::imshow(wname, image);
     }
 
@@ -109,9 +140,21 @@ public:
             fout << "}" << std::endl;
         }
         fout.close();
+        if ( imageScaled ){
+            imwrite(file_name, image);
+        }
     }
 
     int delete_image(){
+        //lists[idx]文件删除，然后挪到下一个或前一个
+        std::cout << "delete " << file_name << std::endl;
+        remove(file_name.c_str());
+        remove(shape_file_name.c_str());
+        std::vector<std::string>::iterator it = lists.begin()+idx;
+        lists.erase(it);
+        if ( lists.size() == 0 ) return -1;
+        if ( idx >= lists.size() ) idx = lists.size() - 1;
+        set_current_image(idx);
         return idx;
     }
 
@@ -158,10 +201,13 @@ public:
     //    if(pidx >= 0)circle(image,data.points[idx][pidx],1,CV_RGB(0,255,0),2,CV_AA);
     }
     void set_capture_instructions(){
-    instructions.clear();
-    instructions.push_back(string("Select expressive frames."));
-    instructions.push_back(string("s - use this frame"));
-    instructions.push_back(string("q - done"));
+        instructions.clear();
+        instructions.push_back(string("Select Key: (") + file_name + string(")"));
+        instructions.push_back(string(" p - Previous image"));
+        instructions.push_back(string(" n - Next image"));
+        instructions.push_back(string(" s - Save annotations"));
+        instructions.push_back(string(" d - Delete image and annotations"));
+        instructions.push_back(string(" q - Quit"));
     }
     void set_pick_points_instructions(){
     instructions.clear();
@@ -228,6 +274,7 @@ public:
           const int level)
     {
         cv::Size size = getTextSize(text,FONT_HERSHEY_COMPLEX,0.6f,1,NULL);
+        size.height += 6;
         putText(img,text,cv::Point(0,level*size.height),FONT_HERSHEY_COMPLEX,0.6f,
             Scalar::all(0),1,CV_AA);
         putText(img,text,cv::Point(1,level*size.height+1),FONT_HERSHEY_COMPLEX,0.6f,
@@ -385,17 +432,90 @@ int parse_path(string path){
     if ( path.length() == 0 ){
         return 0;
     }
+    string::size_type pos = path.rfind('.');
+    std::string ext = path.substr(pos == std::string::npos?path.length():pos);
+    if ( ext == ".mp4" || ext == ".MP4" || ext == ".mov"){
+        return 1;
+    }
+    else if ( ext == ".jpg" || ext == ".png" || ext == ".JPG" || ext == ".PNG"){
+        return 2;
+    }
+    else if ( ext.length() == 0 ){
+        return 3;
+    }
+
     return -1;
 }
 
 std::vector<std::string> get_file_lists(string path){
     std::vector<std::string> lists;
-    lists.push_back("data/test.jpg");
+    //lists.push_back("data/test.jpg");
+    struct dirent* ent = NULL;
+    DIR *pDir;
+    pDir = opendir(path.c_str());
+    if (pDir == NULL) {
+        //被当作目录，但是执行opendir后发现又不是目录，比如软链接就会发生这样的情况。
+        return lists;
+    }
+    while (NULL != (ent = readdir(pDir))) {
+        if (ent->d_type == 8) {
+            //file
+            //            for (int i = 0; i < level; i++) {
+            //                printf("-");
+            //            }
+            if ( ent->d_name[0] == '.' ) continue;
+            //           printf("%s/%s\n", path, ent->d_name);
+            std::string _path(path);
+            std::string _fileName(ent->d_name);
+            std::string fullFilePath = _path + "/" + _fileName;
+            //            std::cout << fullFilePath << std::endl;
+            string::size_type pos = _fileName.rfind('.');
+            std::string ext = _fileName.substr(pos);
+            if (ext == ".jpg" || ext == ".png" || ext == ".JPG" || ext == ".PNG"){
+                lists.push_back(fullFilePath);
+            }
+        } else {
+            if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0 ) {
+                continue;
+            }
+            //directory
+            std::string _path(path);
+            std::string _dirName(ent->d_name);
+            std::string fullDirPath = _path + "/" + _dirName;
+            //            for (int i = 0; i < level; i++) {
+            //                printf(" ");
+            //            }
+            //            printf("%s\n", ent->d_name);
+            //不处理嵌套目录
+//            vector<std::string> l = List(fullDirPath.c_str());
+//            for ( int i=0; i<l.size(); i++){
+//                lists.push_back(l[i]);
+//            }
+        }
+    }
     return lists;
 }
 
 std::string video_process(std::string path){
     std::string vpath;
+    vpath = path.substr(0, path.length()-4);
+    mkdir(vpath.c_str(), 0755);
+    VideoCapture cam;
+    cam.open(path);
+    if(!cam.isOpened()){
+        cout << "Failed opening video file." << endl;
+        return 0;
+    }
+    int serial = 0;
+    int interval = 0;
+    Mat im;
+    while(cam.read(im)){
+        interval++;
+        if ( interval % 5 != 0 ) continue;
+        char str[1024];
+        sprintf(str, "%s/%s-%s%04d.jpg",vpath.c_str(),vpath.c_str(), "img-", serial++);
+        imwrite(str, im);
+    }
     return vpath;
 }
 
@@ -407,7 +527,7 @@ int annotate_main(const char *path)
 //如果path为目录名，则参照data进行
 //如果path为jpg或png文件，则单个进行
 //根据path后缀来区分
-    const char *ModelName = "model_neg_color_n6";
+    const char *ModelName = "model_t5d4n8i2-17";
     annotation.face_detector.LoadCascadeRegressor(ModelName);
 
     std::string current_dir = "";
@@ -437,12 +557,15 @@ int annotate_main(const char *path)
     }
     
     annotation.lists = lists;
+//    annotation.set_capture_instructions();
     namedWindow(annotation.wname);
     
     setMouseCallback(annotation.wname, p_MouseCallback, 0);
     
     while (true) {
+
         annotation.set_current_image(current_index); //读取图片，读取pts，如果没有pts，调用shape程序自动计算一个
+        std::cout<<"current:" << current_index << " file:" << annotation.file_name << std::endl;
         annotation.draw_image(); //画图片，画各点，选中点高亮
         //imshow(annotation.wname, annotation.image);
         
