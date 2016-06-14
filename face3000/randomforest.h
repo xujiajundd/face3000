@@ -55,8 +55,8 @@ public:
         std::vector<float> & current_fi,
         std::vector<float> & current_weight,
         std::vector<int> & find_times,
-		const std::vector<cv::Mat_<float> >& rotations,
-		const std::vector<float>& scales);
+		std::vector<cv::Mat_<float> >& rotations,
+		std::vector<float>& scales);
     Node* BuildTree(std::set<int>& selected_indexes, cv::Mat_<int>& pixel_differences, std::vector<int>& images_indexes, std::vector<int> & augmented_ground_truth_faces,
                     std::vector<float> & current_weight, int current_depth);
 	int FindSplitFeature(Node* node, std::set<int>& selected_indexes,

@@ -43,8 +43,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
     std::vector<float> & current_fi,
     std::vector<float> & current_weight,
     std::vector<int> & find_times,
-	const std::vector<cv::Mat_<float> >& rotations,
-	const std::vector<float>& scales){
+	std::vector<cv::Mat_<float> >& rotations,
+	std::vector<float>& scales){
     
 //    augmented_ground_truth_shapes_ = augmented_ground_truth_shapes;
 //    augmented_current_shapes_ = augmented_current_shapes;
@@ -388,6 +388,13 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                             //augmented_current_shapes[idx] = shape;
                                             //augmented_bboxes[idx]=new_box;
                                             find_times[idx] = 256*256*256*orient + 256*256*ss + 256*sx + sy;
+                                            
+                                            cv::Mat_<float> rotation;
+                                            float scale;
+                                            getSimilarityTransform(ProjectShape(augmented_current_shapes[idx], augmented_bboxes[idx]), mean_shape_, rotation, scale);
+                                            rotations[idx] = rotation;
+                                            scales[idx] = scale;
+                                            
                                             //std::cout << tmp_fi << " so:" << so << " ss:" << ss << " sx:" << sx << " sy:" << sy << " idx:" << idx << std::endl;;
     //                                        cv::Rect rect;
     //                                        rect.x = new_box.start_x;
@@ -452,82 +459,6 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                         if ( p < true_pos_num_ ){
 //                            augmented_images_index[idx] = p;
                             images[augmented_images_index[idx]] = images[p];
-/*
-                            std::vector<BoundingBox> boxes;
-                            //加二分之一到四分之一大小的框
-                            for ( float is = 1.4; is <= 5.0; is+=0.2 ){
-                                for ( int ix = -4; ix <= 12; ix++){
-                                    for ( int iy = -4; iy <= 12; iy++ ){
-                                        BoundingBox box = augmented_bboxes[p];
-                                        box.start_x = box.start_x + ix * (box.width - box.width/is)/8.0;
-                                        box.start_y = box.start_y + iy * (box.height - box.width/is)/8.0;
-                                        box.width = box.width / is;
-                                        box.height = box.height / is;
-                                        box.center_x = box.start_x + box.width / 2.0;
-                                        box.center_y = box.start_y + box.height / 2.0;
-                                        if ( box.start_x >=0 && box.start_y >=0 && (box.start_x + box.width) < images[p].cols && (box.start_y + box.height) < images[p].rows){
-                                            boxes.push_back(box);
-                                        }
-                                    }
-                                }
-                            }
-                            //加同等大小上下位移的框
-                            for ( int iy = -3; iy <=3; iy++){
-                                BoundingBox box = augmented_bboxes[p];
-                                box.start_y = box.start_y - box.height / 2.0 + iy * box.height/18.0;
-                                if ( box.start_y >= 0 ){
-                                    box.center_y = box.start_y + box.height / 2.0;
-                                    boxes.push_back(box);
-                                }
-                                box = augmented_bboxes[p];
-                                box.start_y = box.start_y + box.height / 2.0 + iy * box.height/18.0;
-                                if ( ( box.start_y + box.height ) < images[p].rows ){
-                                    box.center_y = box.start_y + box.height / 2.0;
-                                    boxes.push_back(box);
-                                }
-                            }
-                            //加1.5-2倍大的框
-                            for ( float is = 0.5; is<=1.0; is+=0.1){
-                                for ( float ix=0; ix<=is; ix+=0.1){
-                                    for ( float iy=0; iy<=is; iy+=0.1 ){
-                                        BoundingBox box = augmented_bboxes[p];
-                                        box.start_x = box.start_x - ix * box.width;
-                                        box.start_y = box.start_y - iy * box.height;
-                                        box.width = (1.0 + is) * box.width;
-                                        box.height = (1.0 + is) * box.height;
-                                        if (box.start_x > 0 && box.start_y > 0 && (( box.start_x + box.width ) < images[p].cols ) && ((box.start_y + box.height ) < images[p].rows )){
-                                            box.center_x = box.start_x + box.width / 2.0;
-                                            box.center_y = box.start_y + box.height / 2.0;
-                                            boxes.push_back(box);
-                                        }
-                                    }
-                                }
-                            }
-
-                            for (int ib = 0; ib < boxes.size(); ib++ ){
-                                BoundingBox box = boxes[ib];
-                                
-                                cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[p], augmented_bboxes[p]);
-                                augmented_ground_truth_shapes[idx] = ReProjection(temp1, box);
-                                cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[p], augmented_bboxes[p]);
-                                augmented_current_shapes[idx]=ReProjection(temp2, box);
-                                augmented_bboxes[idx]=box;
-                                
-                                bool tmp_isface=true;
-                                float tmp_fi=0;
-                                
-                                cv::Mat_<float> shape = augmented_current_shapes[idx].clone();
-                                casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
-                                                              shape, box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
-                                if ( tmp_isface){
-                                    faceFound = true;
-                                    current_fi[idx] = tmp_fi;
-                                    current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
-                                    augmented_current_shapes[idx] = shape;
-                                    break;
-                                }
-                            }
-*/
                             float cols = images[augmented_images_index[idx]].cols;
                             float rows = images[augmented_images_index[idx]].rows;
                             
@@ -564,7 +495,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         
 //                                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[p], augmented_bboxes[p]);
 //                                        augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
-                                        cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[p], augmented_bboxes[p]);
+                                        //cv::Mat_<float> temp2 = ProjectShape(augmented_current_shapes[p], augmented_bboxes[p]);
+                                        cv::Mat_<float> temp2 = mean_shape_;
                                         augmented_current_shapes[idx]=ReProjection(temp2, new_box);
                                         augmented_bboxes[idx]=new_box;
                                         
@@ -576,7 +508,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                                                       augmented_current_shapes[idx], new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
                                         if ( tmp_isface){
                                             float error = CalculateError2(augmented_ground_truth_shapes[p], augmented_current_shapes[idx]);
-                                            if ( (error > 0.1 && stage_ > 0) || delta_start > 0.15 * pos_box.width || delta_end > 0.15 * pos_box.width){
+                                            if ( (error > 0.2 && stage_ > 0) || delta_start > 0.15 * pos_box.width || delta_end > 0.15 * pos_box.width){
                                                 faceFound = true;
                                                 current_fi[idx] = tmp_fi;
                                                 current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
@@ -584,6 +516,12 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 //                                                augmented_bboxes[idx]=new_box;
                                                 find_times[idx] = 256*256*256*4 + 256*256*ss + 256*sx + sy;
                                                 //std::cout << "hard:" << tmp_fi << " so:" << so << " ss:" << ss << " sx:" << sx << " sy:" << sy << " idx:" << idx << std::endl;
+                                                cv::Mat_<float> rotation;
+                                                float scale;
+                                                getSimilarityTransform(ProjectShape(augmented_current_shapes[idx], augmented_bboxes[idx]), mean_shape_, rotation, scale);
+                                                rotations[idx] = rotation;
+                                                scales[idx] = scale;
+                                                
                                                 break;
                                             }
                                         }
@@ -857,12 +795,12 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
                     entropy_lc = 0.0;
                 }
                 else{
-                    entropy_tmp = total_l_pos_weight / ( total_l_weight + 0.00000000000001);
+                    entropy_tmp = total_l_pos_weight / ( total_l_weight + FLT_MIN);
                     if ( (entropy_tmp-0.0) < FLT_EPSILON || (1.0-entropy_tmp) < FLT_EPSILON){
                         entropy_lc = 0.0;
                     }
                     else{
-                        entropy_lc = - ( total_l_weight / ( total_weight + 0.00000000000001)) * ((entropy_tmp) * log(entropy_tmp)/log(2.0) + ( 1.0 - entropy_tmp) * log(1.0-entropy_tmp)/log(2.0));
+                        entropy_lc = - ( total_l_weight / ( total_weight + FLT_MIN)) * ((entropy_tmp) * log(entropy_tmp)/log(2.0) + ( 1.0 - entropy_tmp) * log(1.0-entropy_tmp)/log(2.0));
                     }
                 }
                 if ( entropy_lc != entropy_lc ){ //判断是不是Nan
@@ -874,12 +812,12 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
                     entropy_rc = 0.0;
                 }
                 else{
-                    entropy_tmp = total_r_pos_weight / ( total_r_weight + 0.00000000000001);
+                    entropy_tmp = total_r_pos_weight / ( total_r_weight + FLT_MIN);
                     if ( (entropy_tmp-0.0) < FLT_EPSILON || (1.0-entropy_tmp) < FLT_EPSILON){
                         entropy_rc = 0.0;
                     }
                     else{
-                        entropy_rc = - ( total_r_weight / ( total_weight + 0.00000000000001)) * ((entropy_tmp ) * log(entropy_tmp)/log(2.0) + ( 1.0 - entropy_tmp) * log(1.0-entropy_tmp)/log(2.0));
+                        entropy_rc = - ( total_r_weight / ( total_weight + FLT_MIN)) * ((entropy_tmp ) * log(entropy_tmp)/log(2.0) + ( 1.0 - entropy_tmp) * log(1.0-entropy_tmp)/log(2.0));
                     }
                 }
 
@@ -917,7 +855,14 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
     float summin = FLT_MAX;
     float indexmin = 0;
     float df = detect_factor_;
-    if ( landmark_index_ > 50 && stage_ < 2 ) df = 0.3; //脸的外轮廓多alignement，少detect
+    if ( landmark_index_ > 50 ){
+        if ( stage_ == 0 ){
+            df = 0.3; //脸的外轮廓多alignement，少detect
+        }
+        else if ( stage_ == 1 ){
+            df = 0.4;
+        }
+    }
     for ( int i=0; i<vars.size(); i++){
         float tmpvar = ( vars[i] - minvar ) / (maxvar - minvar + FLT_EPSILON);
         float tmpent = ( entropys[i] - minent ) / (maxent - minent + FLT_EPSILON);
@@ -946,6 +891,11 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 		if (left_indexes.size() == 0 || right_indexes.size() == 0){
 			node->is_leaf_ = true; // the node can contain all the samples
             std::cout << "minvar:" << minvar << " maxvar:" << maxvar << " minent:" << minent << " maxent:" << maxent << " threshhold:" << threshold <<" index:" << indexmin << " size:" << images_indexes.size() << std::endl;
+            if (threshold == 0 ){
+                for ( int i=0; i<vars.size(); i++){
+                    std::cout << i << ": var:" << vars[i] << " entropy:" << entropys[i] << " threshold:" << thresholds[i].first << " index:" << thresholds[i].second << std::endl;
+                }
+            }
 			return 1;
 		}
 		node->threshold_ = threshold;

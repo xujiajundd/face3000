@@ -555,7 +555,9 @@ float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& pred
     for (int i=50;i<67;i++){
         sum += norm(ground_truth_shape.row(i)-predicted_shape.row(i));
     }
-    return sum/(17*interocular_distance);
+    float result = sum/(17*interocular_distance);
+    //std::cout << "error2:" << result << std::endl;
+    return result;
 }
 
 

@@ -84,7 +84,7 @@ void Test(const char* ModelName){
         //cout << res << std::endl;
         //cout << res - ground_truth_shapes[i] << std::endl;
         //float err = CalculateError(grodund_truth_shapes[i], res);
-        cout << "first score: " << score << std::endl;
+        cout << "first score: " << score << " variance:" << variance << std::endl;
         cv::Rect faceRec;
         faceRec.x = bboxes[i].start_x;
         faceRec.y = bboxes[i].start_y;
@@ -133,7 +133,7 @@ void Test(const char* ModelName){
                         rect.width = box.width;
                         rect.height = box.height;
                         cv::rectangle(img, rect, (255), 1);
-                        DrawPredictedImageContinue(img, res);
+                        DrawPredictedImage(img, res);
                     }
                 }
             }
