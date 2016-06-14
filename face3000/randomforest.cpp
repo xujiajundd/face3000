@@ -151,11 +151,11 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
             //TODO，这个地方可以试多个策略：1）自己，2）自己和随机一个，3）随机两个
             //TODO，在前2个stage，用3，第三stage用2，后续stage，用1？如何？
             int landmark1, landmark2;
-            if ( stage_ == 0 ){
+            if ( stage_ == 0 && landmark_index_ < 50 ){
                 landmark1 = (int)rd.uniform(0, landmark_num_);
                 landmark2 = (int)rd.uniform(0, landmark_num_);
             }
-            else if ( stage_ == 1){
+            else if ( stage_ == 1 && landmark_index_ < 50 ){
                 landmark1 = landmark_index_;
                 landmark2 = (int)rd.uniform(0, landmark_num_);
             }
@@ -351,7 +351,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                         //int ss = find_times[idx] / ( MAXFINDTIMES / 32 );
     //                    for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.1, ss++)){
     //                    int sw_size = 50 + 10 * ss;
-                        for ( int orient = so; orient < 1; orient++ ){
+                        for ( int orient = so; orient < 2; orient++ ){
                             float cols = images[augmented_images_index[idx]].cols;
                             float rows = images[augmented_images_index[idx]].rows;
                             for ( int sw_size = 32 * std::pow(1.08, ss); sw_size < std::min(cols, rows); sw_size = 32 * std::pow(1.08, ss)){
@@ -506,6 +506,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         //cv::Mat_<float> shape = augmented_current_shapes[idx].clone();
                                         casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
                                                                       augmented_current_shapes[idx], new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
+//                                        cv::imshow("negmine", images[augmented_images_index[idx]]);
+//                                        cv::waitKey(0);
                                         if ( tmp_isface){
                                             float error = CalculateError2(augmented_ground_truth_shapes[p], augmented_current_shapes[idx]);
                                             if ( (error > 0.2 && stage_ > 0) || delta_start > 0.15 * pos_box.width || delta_end > 0.15 * pos_box.width){

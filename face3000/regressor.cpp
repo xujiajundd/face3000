@@ -630,7 +630,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<cv::Vec3b>& im
                 }
             }
         }
-        //std::cout<<"count:"<<scan_count<<std::endl;
+        //std::cout<<"count:"<<scan_count<<" face found:"<<faceFound<< std::endl;
         if ( order == CASCADE_FLAG_SEARCH_MAX_TO_MIN ){
             currentSize /= scaleFactor;
         }
@@ -651,6 +651,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<cv::Vec3b>& im
         }
     }
 //    std::cout<<"count:"<<scan_count<<std::endl;
+    std::cout<<"count:"<<scan_count<<" face found:"<<faceFound<< std::endl;
     return faces;
 }
 
