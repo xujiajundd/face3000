@@ -12,6 +12,8 @@
 
 //dlib::frontal_face_detector fdetector = dlib::get_frontal_face_detector();;
 
+int debug_on_ = 0;
+
 cv::Mat_<float> ProjectShape(const cv::Mat_<float>& shape, const BoundingBox& bbox){
 	cv::Mat_<float> results(shape.rows, 2);
 	for (int i = 0; i < shape.rows; i++){
@@ -151,18 +153,20 @@ cv::Mat_<float> LoadGroundTruthShape(const char* name){
 
 cv::Mat_<float> convertShape(cv::Mat_<float> shape){
     cv::Mat_<float> result(68,2);
+    int table[] = {17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,0,16,1,15,2,14,3,13,4,12,5,11,6,10,7,9,8};
     for ( int i=0; i<68; i++){
-        result(i,0) = shape((i+17)%68,0);
-        result(i,1) = shape((i+17)%68,1);
+        result(i,0) = shape(table[i],0);
+        result(i,1) = shape(table[i],1);
     }
     return result;
 }
 
 cv::Mat_<float> reConvertShape(cv::Mat_<float> shape){
     cv::Mat_<float> result(68,2);
+    int table[] = {17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,0,16,1,15,2,14,3,13,4,12,5,11,6,10,7,9,8};
     for ( int i=0; i<68; i++){
-        result(i,0) = shape((i+51)%68,0);
-        result(i,1) = shape((i+51)%68,1);
+        result(table[i],0) = shape(i,0);
+        result(table[i],1) = shape(i,1);
     }
     return result;
 }
@@ -539,7 +543,7 @@ float CalculateError(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predi
     return sum/(ground_truth_shape.rows*interocular_distance);
 }
 
-float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predicted_shape){
+float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predicted_shape, int stage, int landmark){
     cv::Mat_<float> temp;
     if ( ground_truth_shape.rows >= 68 ){
         temp = ground_truth_shape.rowRange(19, 24)-ground_truth_shape.rowRange(25, 30);
@@ -552,10 +556,17 @@ float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& pred
     float y = mean(temp.col(1))[1];
     float interocular_distance = sqrt(x*x+y*y);
     float sum = 0;
-    for (int i=50;i<67;i++){
-        sum += norm(ground_truth_shape.row(i)-predicted_shape.row(i));
+    float result;
+    if ( stage <= 1 ){
+        for (int i=50;i<67;i++){
+            sum += norm(ground_truth_shape.row(i)-predicted_shape.row(i));
+        }
+        result = sum/(17*interocular_distance);
     }
-    float result = sum/(17*interocular_distance);
+    else{
+        sum = norm(ground_truth_shape.row(landmark)-predicted_shape.row(landmark));
+        result = sum/interocular_distance;
+    }
     //std::cout << "error2:" << result << std::endl;
     return result;
 }

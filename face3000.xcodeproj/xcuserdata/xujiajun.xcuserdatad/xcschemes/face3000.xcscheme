@@ -75,12 +75,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "test model_t5d4n8i2"
-            isEnabled = "NO">
+            argument = "train model_t5d4n8i2-mine"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "train model_t5d4n8i2-17"
-            isEnabled = "YES">
+            argument = "test2 model_t5d4n8i2-17"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "hello"

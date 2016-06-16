@@ -25,6 +25,7 @@ public:
 
 class RandomForest {
 public:
+    Parameters param_;
 	int stage_;
 	int local_features_num_;
     int landmark_num_;

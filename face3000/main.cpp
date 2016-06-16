@@ -156,6 +156,103 @@ void Test(const char* ModelName){
 	return;
 }
 
+void Test2(const char* ModelName){
+    CascadeRegressor cas_load;
+    cas_load.LoadCascadeRegressor(ModelName);
+    std::vector<cv::Mat_<cv::Vec3b> > images;
+    std::vector<cv::Mat_<float> > ground_truth_shapes;
+    std::vector<int> ground_truth_faces;
+    std::vector<BoundingBox> bboxes;
+    std::string file_names = "/Users/xujiajun/developer/dataset/helen/test2_jpgs.txt"; //"./../dataset/helen/train_jpgs.txt";
+    std::string neg_file_names = "/Users/xujiajun/developer/dataset/helen/test_jpgs.txt.no";
+    LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names, neg_file_names);
+    
+    struct timeval t1, t2;
+    gettimeofday(&t1, NULL);
+    for (int i = 0; i < images.size(); i++){
+        cv::Mat_<float> current_shape = ReProjection(cas_load.params_.mean_shape_, bboxes[i]);
+        //struct timeval t1, t2;
+        //gettimeofday(&t1, NULL);
+        int is_face = 1;
+        float score = 0;
+        float variance = 0;
+        cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, bboxes[i], is_face, score, variance);//, ground_truth_shapes[i]);
+        
+        //cout << res << std::endl;
+        //cout << res - ground_truth_shapes[i] << std::endl;
+        //float err = CalculateError(grodund_truth_shapes[i], res);
+        cout << "first score: " << score << " variance:" << variance << std::endl;
+        cv::Rect faceRec;
+        faceRec.x = bboxes[i].start_x;
+        faceRec.y = bboxes[i].start_y;
+        faceRec.width = bboxes[i].width;
+        faceRec.height = bboxes[i].height;
+        cv::rectangle(images[i], faceRec, (255), 1);
+        
+        DrawPredictedImage(images[i], res);
+        
+        
+        float scale = 1.1;
+        float shuffle = 0.1;
+        int minSize = 100;
+        int order = -1;
+        int currentSize;
+        bool biggest_only;
+        
+        if ( order == 1 ){
+            currentSize = minSize;
+        }
+        else{
+            currentSize = std::min(images[i].cols, images[i].rows);
+        }
+        
+        while ( currentSize >= minSize && currentSize <= std::min(images[i].cols, images[i].rows)){
+            for ( int ix=0; ix<images[i].cols-currentSize; ix+= currentSize*shuffle){
+                for ( int jy=0; jy<images[i].rows-currentSize; jy+=currentSize*shuffle){
+                    BoundingBox box;
+                    box.start_x = ix;
+                    box.start_y = jy;
+                    box.width = currentSize;
+                    box.height = currentSize;
+                    box.center_x = box.start_x + box.width/2.0;
+                    box.center_y = box.start_y + box.width/2.0;
+                    int is_face = 1;
+                    cv::Mat_<float> current_shape = ReProjection(cas_load.params_.mean_shape_, box);
+                    float score = 0;
+                    float variance = 0;
+                    cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, box, is_face, score, variance);
+                    if ( is_face == 1){
+                        std::cout << "score:" << score << " variance:" << variance << std::endl;
+                        cv::Mat_<cv::Vec3b> img = images[i].clone();
+                        cv::Rect rect;
+                        rect.x = box.start_x;
+                        rect.y = box.start_y;
+                        rect.width = box.width;
+                        rect.height = box.height;
+                        cv::rectangle(img, rect, (255), 1);
+                        DrawPredictedImage(img, res);
+                    }
+                }
+            }
+            
+            if ( order == 1 ){
+                currentSize *= scale;
+            }
+            else{
+                currentSize /= scale;
+            }
+        }
+        
+        
+        
+        //if (i == 10) break;
+    }
+    gettimeofday(&t2, NULL);
+    float time_full = t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0;
+    cout << "time full: " << time_full << " : " << time_full/images.size() << endl;
+    return;
+}
+
 void TestVideo(const char* ModelName){
     CascadeRegressor rg;
     rg.LoadCascadeRegressor(ModelName);
@@ -519,7 +616,7 @@ void Train(const char* ModelName){
     params.tree_depth_ = 4;
     params.trees_num_per_forest_ = 8;
     params.initial_guess_ = 2;
-    
+
 //    params.group_num_ = 6;
 //    std::vector<int> group1, group2, group3, group4, group5, group6, group7;
 //    
@@ -780,6 +877,14 @@ int main(int argc, char* argv[])
             }
             return 0;
 		}
+        if (strcmp(argv[1], "test2") == 0)
+        {
+            std::cout << "enter test\n";
+            if (argc == 3){
+                Test2(argv[2]);
+            }
+            return 0;
+        }
         if (strcmp(argv[1], "video") == 0)
         {
             std::cout << "enter video\n";
