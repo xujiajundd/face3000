@@ -342,7 +342,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 //                    BoundingBox max_fi_box;
 //                    cv::Mat_<float> max_fi_shape;
 //                    float max_fi = -100000000.0;
-                    int p = idx % true_pos_num_;
+                    //int p = idx % true_pos_num_;
                     int so = (find_times[idx] & 0x7f000000) >> 24;
                     int ss = (find_times[idx] & 0x00ff0000) >> 16;
                     int sx = (find_times[idx] & 0x0000ff00) >> 8;
@@ -356,6 +356,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             float rows = images[augmented_images_index[idx]].rows;
                             for ( int sw_size = 32 * std::pow(1.08, ss); sw_size < std::min(cols, rows); sw_size = 32 * std::pow(1.08, ss)){
                                 ss++;
+                                int p = (idx+ss) % true_pos_num_;
                                 float shuffle_size = sw_size * 0.08;
                                 for ( int sw_x = shuffle_size * sx; sw_x<cols - sw_size && sx < 256; sw_x+=shuffle_size){
                                     sx++;
@@ -464,19 +465,19 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             
                             BoundingBox pos_box = augmented_bboxes[p*(param_.initial_guess_+1)]; //这个地方坑死了。。。
                             BoundingBox search_box;
-                            search_box.start_x = pos_box.start_x - 0.8 * pos_box.width;
-                            search_box.start_y = pos_box.start_y - 0.8 * pos_box.height;
-                            search_box.width = 2.6 * pos_box.width;
-                            search_box.height = 2.6 * pos_box.height;
+                            search_box.start_x = pos_box.start_x - 0.7 * pos_box.width;
+                            search_box.start_y = pos_box.start_y - 0.7 * pos_box.height;
+                            search_box.width = 2.4 * pos_box.width;
+                            search_box.height = 2.4 * pos_box.height;
                             if ( search_box.start_x < 0 ) search_box.start_x = 0;
                             if ( search_box.start_y < 0 ) search_box.start_y = 0;
                             if (( search_box.start_x + search_box.width ) > cols ) search_box.width = cols - search_box.start_x;
                             if (( search_box.start_y + search_box.height) > rows ) search_box.height = rows - search_box.start_y;
                             
                             
-                            for ( int sw_size = 32 * std::pow(1.08, ss); sw_size < std::min(search_box.width, search_box.height); sw_size = 32 * std::pow(1.08, ss)){
+                            for ( int sw_size = 32 * std::pow(1.05, ss); sw_size < std::min(search_box.width, search_box.height); sw_size = 32 * std::pow(1.05, ss)){
                                 ss++;
-                                float shuffle_size = sw_size * 0.06;
+                                float shuffle_size = sw_size * 0.05;
                                 for ( int sw_x = shuffle_size * sx; sw_x<search_box.width - sw_size && sx < 256; sw_x+=shuffle_size){
                                     sx++;
                                     for ( int sw_y = shuffle_size * sy; sw_y<search_box.height - sw_size && sy < 256; sw_y+=shuffle_size){
@@ -523,7 +524,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                                 }
                                                 cv::line(tempImage, cv::Point2f(tempShape(36, 0), tempShape(36, 1)), cv::Point2f(tempShape(41, 0), tempShape(41, 1)), cv::Scalar(0,255,0));
                                                 cv::line(tempImage, cv::Point2f(tempShape(42, 0), tempShape(42, 1)), cv::Point2f(tempShape(47, 0), tempShape(47, 1)), cv::Scalar(0,255,0));
-                                                cv::line(tempImage, cv::Point2f(tempShape(30, 0), tempShape(30, 1)), cv::Point2f(tempShape(35, 0), tempShape(35, 1)), cv::Scalar(0,255,0));
+                                                cv::line(tempImage, cv::Point2f(tempShape(30, 0), tempShape(30, 1)), cv::Point2f(tempShape(35, 0),  tempShape(35, 1)), cv::Scalar(0,255,0));
                                                 cv::line(tempImage, cv::Point2f(tempShape(48, 0), tempShape(48, 1)), cv::Point2f(tempShape(59, 0), tempShape(59, 1)), cv::Scalar(0,255,0));
                                                 cv::line(tempImage, cv::Point2f(tempShape(60, 0), tempShape(60, 1)), cv::Point2f(tempShape(67, 0), tempShape(67, 1)), cv::Scalar(0,255,0));
                                                 
