@@ -28,8 +28,8 @@ public:
     int idx;                       //index of image to annotate
     int pidx;                      //index of point to manipulate
     cv::Mat_<float> shape;
-    cv::Mat_<cv::Vec3b> image;
-    cv::Mat_<cv::Vec3b> image_clean;
+    cv::Mat image;
+    cv::Mat image_clean;
     //  Mat image;                     //current image to display
     //  Mat image_clean;               //clean image to display
     const char* wname;             //display window name
@@ -64,7 +64,9 @@ public:
         if ( !fin ){
             cout << "pts文件不存在" << std::endl;
             std::vector<cv::Mat_<float>> shapes;
-            std::vector<cv::Rect> rects = face_detector.detectMultiScale(image, shapes, 1.1, 2, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, min(image.rows,image.cols) / 3);
+            cv::Mat_<uchar> grayImage;
+            cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
+            std::vector<cv::Rect> rects = face_detector.detectMultiScale(grayImage, shapes, 1.1, 2, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, min(image.rows,image.cols) / 3);
             if ( rects.size() > 0 ){
                 shape = reConvertShape(shapes[0]);
             }
@@ -533,7 +535,7 @@ int annotate_main(const char *path)
     std::string current_dir = "";
     std::vector<std::string> lists;
 //    cv::Mat_<float> shape;
-//    cv::Mat_<cv::Vec3b> image;
+//    cv::Mat_<uchar> image;
     int current_index=0;
     
     std::string spath = std::string(path);
