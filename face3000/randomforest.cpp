@@ -510,7 +510,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                                                       augmented_current_shapes[idx], new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
                                         
                                         if ( tmp_isface){
-                                            float error = CalculateError2(augmented_ground_truth_shapes[p], augmented_current_shapes[idx], stage_, landmark_index_);
+                                            float error = CalculateError2(augmented_ground_truth_shapes[p*(param_.initial_guess_+1)], augmented_current_shapes[idx], stage_, landmark_index_);
                                             
                                             //FOR DEBUG
                                             if ( debug_on_ ){
