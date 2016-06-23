@@ -34,6 +34,7 @@ public:
     //  Mat image_clean;               //clean image to display
     const char* wname;             //display window name
     vector<string> instructions;   //annotation instructions
+    string message;
     std::vector<std::string> lists;
     std::string file_name;
     std::string shape_file_name;
@@ -43,6 +44,7 @@ public:
 
     annotate(){
         wname = "Annotate"; idx = 0; pidx = -1;
+        message = "";
     }
 
     int set_current_image(const int cidx = 0){ //读取图片，读取pts，如果没有pts，调用shape程序自动计算一个
@@ -116,7 +118,20 @@ public:
         cv::line(image, cv::Point2f(shape(48, 0), shape(48, 1)), cv::Point2f(shape(59, 0), shape(59, 1)), Scalar(0,255,0));
         cv::line(image, cv::Point2f(shape(60, 0), shape(60, 1)), cv::Point2f(shape(67, 0), shape(67, 1)), Scalar(0,255,0));
         set_capture_instructions();
+        if ( shape(37,1) > shape(41,1) || shape(38,1)>shape(40,1)){
+            draw_alert("Error: left eye!!!!!");
+        }
+        if ( shape(43,1) > shape(47,1) || shape(44,1) > shape(46,1)){
+            draw_alert("Error: right eye!!!!!");
+        }
+        if ( shape(51,1) > shape(62,1) || shape(62,1)>shape(66,1) || shape(66,1)>shape(57,1) || shape(50,1) > shape(61,1) || shape(61,1)>shape(67,1) || shape(67,1)>shape(58,1) || shape(52,1)>shape(63,1) || shape(63,1)>shape(65,1) || shape(65,1) > shape(56,1)){
+            draw_alert("Error: mouth!!!!!");
+        }
+        if ( shape(21,0) > shape(22,0)){
+            draw_alert("Error: eyebow!!!!!");
+        }
         draw_instructions();
+        draw_message();
         cv::imshow(wname, image);
     }
 
@@ -141,8 +156,9 @@ public:
         }
         fout.close();
         if ( imageScaled ){
-            imwrite(file_name, image);
+            imwrite(file_name, image_clean);
         }
+        message = "Save Success!";
     }
 
     int delete_image(){
@@ -168,6 +184,23 @@ public:
     void draw_instructions(){
     if(image.empty())return;
     this->draw_strings(image,instructions);
+    }
+
+    void draw_alert(std::string alert){
+        cv::Size size = getTextSize(alert,FONT_HERSHEY_COMPLEX,1.0f,1,NULL);
+        putText(image,alert,cv::Point(image.cols/2 - size.width/2,image.rows - 50),FONT_HERSHEY_COMPLEX,1.0f,
+                Scalar(20,20,255),1,CV_AA);
+        putText(image,alert,cv::Point(image.cols/2 - size.width/2 + 1,image.rows - 49),FONT_HERSHEY_COMPLEX,1.0f,
+                Scalar(20,20,150),1,CV_AA);
+    }
+
+    void draw_message(){
+        cv::Size size = getTextSize(message,FONT_HERSHEY_COMPLEX,1.0f,1,NULL);
+        putText(image,message,cv::Point(image.cols/2 - size.width/2, 100),FONT_HERSHEY_COMPLEX,1.0f,
+                Scalar(255,0,0),1,CV_AA);
+        putText(image,message,cv::Point(image.cols/2 - size.width/2 + 1,101),FONT_HERSHEY_COMPLEX,1.0f,
+                Scalar(255,0,0),1,CV_AA);
+        message = "";
     }
 
     void draw_points(){
@@ -297,6 +330,7 @@ void p_MouseCallback(int event, int x, int y, int flags, void* param)
         else{
             int imin = annotation.find_closest_point(Point2f(x,y));
             annotation.pidx = imin;
+            annotation.copy_clean_image();
             annotation.draw_image();
             //    if(imin >= 0){ //add connection
             //      int m = annotation.data.connections.size();
@@ -311,6 +345,39 @@ void p_MouseCallback(int event, int x, int y, int flags, void* param)
             //    }
             std::cout<<"mouse clicked:" << x << " " << y << " point:" << imin << std::endl;
         }
+    }
+}
+
+void keyPressed(int key){
+    if ( annotation.pidx >=0 ){
+        int dx = 0, dy = 0;
+        if ( key == 32 ){
+            annotation.pidx = -1;
+            annotation.copy_clean_image();
+            annotation.draw_image();
+            return;
+        }
+        else if ( key == 63232 ){
+            dx = 0; dy = -1;
+        }
+        else if ( key == 63233 ){
+            dx = 0; dy = 1;
+        }
+        else if ( key == 63234 ){
+            dx = -1; dy = 0;
+        }
+        else if ( key == 63235 ){
+            dx = 1; dy = 0;
+        }
+        if ( dx !=0 || dy !=0 ){
+            annotation.shape(annotation.pidx, 0) += dx;
+            annotation.shape(annotation.pidx, 1) += dy;
+            annotation.copy_clean_image();
+            annotation.draw_image();
+        }
+    }
+    else{
+
     }
 }
 
@@ -498,7 +565,12 @@ std::vector<std::string> get_file_lists(string path){
 
 std::string video_process(std::string path){
     std::string vpath;
+    std::string fname;
     vpath = path.substr(0, path.length()-4);
+
+    string::size_type pos = vpath.rfind('/');
+    fname = vpath.substr(pos == std::string::npos?0:pos);
+
     mkdir(vpath.c_str(), 0755);
     VideoCapture cam;
     cam.open(path);
@@ -513,7 +585,7 @@ std::string video_process(std::string path){
         interval++;
         if ( interval % 5 != 0 ) continue;
         char str[1024];
-        sprintf(str, "%s/%s-%s%04d.jpg",vpath.c_str(),vpath.c_str(), "img-", serial++);
+        sprintf(str, "%s/%s-%s%04d.jpg",vpath.c_str(),fname.c_str(), "img-", serial++);
         imwrite(str, im);
     }
     return vpath;
@@ -527,7 +599,7 @@ int annotate_main(const char *path)
 //如果path为目录名，则参照data进行
 //如果path为jpg或png文件，则单个进行
 //根据path后缀来区分
-    const char *ModelName = "model_t5d4n8i2-17";
+    const char *ModelName = "model_t5d4n8i2_p";
     annotation.face_detector.LoadCascadeRegressor(ModelName);
 
     std::string current_dir = "";
@@ -555,18 +627,21 @@ int annotate_main(const char *path)
         //目录
         lists = get_file_lists(spath);
     }
-    
+
+    if ( lists.size() == 0 ) return 0;
+
     annotation.lists = lists;
 //    annotation.set_capture_instructions();
     namedWindow(annotation.wname);
     
     setMouseCallback(annotation.wname, p_MouseCallback, 0);
-    
+    annotation.set_current_image(current_index); //读取图片，读取pts，如果没有pts，调用shape程序自动计算一个
+    std::cout<<"current:" << current_index << " file:" << annotation.file_name << std::endl;
+    annotation.draw_image(); //画图片，画各点，选中点高亮
+
     while (true) {
 
-        annotation.set_current_image(current_index); //读取图片，读取pts，如果没有pts，调用shape程序自动计算一个
-        std::cout<<"current:" << current_index << " file:" << annotation.file_name << std::endl;
-        annotation.draw_image(); //画图片，画各点，选中点高亮
+
         //imshow(annotation.wname, annotation.image);
         
         int c = waitKey(0);
@@ -574,16 +649,46 @@ int annotate_main(const char *path)
         else if (c == 'p'){ //前一张
             current_index--;
             if ( current_index < 0 ) current_index = 0;
+            annotation.set_current_image(current_index); //读取图片，读取pts，如果没有pts，调用shape程序自动计算一个
+            std::cout<<"current:" << current_index << " file:" << annotation.file_name << std::endl;
+            annotation.draw_image(); //画图片，画各点，选中点高亮
         }
         else if (c == 'n'){ //后一张
             if ( current_index < annotation.lists.size() - 1) current_index++;
+            annotation.set_current_image(current_index); //读取图片，读取pts，如果没有pts，调用shape程序自动计算一个
+            std::cout<<"current:" << current_index << " file:" << annotation.file_name << std::endl;
+            annotation.draw_image(); //画图片，画各点，选中点高亮
         }
         else if (c == 's'){ //保存
             annotation.save_pts();
+            annotation.set_current_image(current_index); //读取图片，读取pts，如果没有pts，调用shape程序自动计算一个
+            std::cout<<"current:" << current_index << " file:" << annotation.file_name << std::endl;
+            annotation.draw_image(); //画图片，画各点，选中点高亮
         }
         else if (c == 'd'){ //删除
             current_index = annotation.delete_image();
             if ( current_index == -1 ) break;
+            annotation.set_current_image(current_index); //读取图片，读取pts，如果没有pts，调用shape程序自动计算一个
+            std::cout<<"current:" << current_index << " file:" << annotation.file_name << std::endl;
+            annotation.draw_image(); //画图片，画各点，选中点高亮
+        }
+        else if (c==63232){//up
+            keyPressed(c);
+        }
+        else if (c == 63233 ){//down
+            keyPressed(c);
+        }
+        else if (c == 63234){//left
+            keyPressed(c);
+        }
+        else if (c == 63235){//right
+            keyPressed(c);
+        }
+        else if (c == 32){//space
+            keyPressed(c);
+        }
+        else{
+            std::cout<<"key:"<< c << std::endl;
         }
     }
     

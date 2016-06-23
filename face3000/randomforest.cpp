@@ -441,8 +441,10 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 //                            cv::imshow("transpose", temp);
 //                            cv::waitKey(0);
                             cv::flip(temp, temp, 1);
-//                            cv::imshow("flip", temp);
-//                            cv::waitKey(0);
+                            if ( debug_on_){
+                                cv::imshow("flip", temp);
+                                cv::waitKey(0);
+                            }
                             images[augmented_images_index[idx]] = temp;
                         }
                         if ( !faceFound ){
@@ -459,11 +461,11 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                         int p = augmented_images_index[idx] - true_pos_num_;
                         if ( p < true_pos_num_ ){
 //                            augmented_images_index[idx] = p;
-                            images[augmented_images_index[idx]] = images[p];
+                            images[augmented_images_index[idx]] = images[p]; //TODO:这个地方隐藏一个很深的bug，有时候指向同一个图，会被另一个idx旋转
                             float cols = images[augmented_images_index[idx]].cols;
                             float rows = images[augmented_images_index[idx]].rows;
                             
-                            BoundingBox pos_box = augmented_bboxes[p*(param_.initial_guess_+1)]; //这个地方坑死了。。。
+                            BoundingBox pos_box = augmented_bboxes[p*(param_.initial_guess_+1)]; //这个地方坑死了。。。groudtruth也要改
                             BoundingBox search_box;
                             search_box.start_x = pos_box.start_x - 0.7 * pos_box.width;
                             search_box.start_y = pos_box.start_y - 0.7 * pos_box.height;
@@ -510,7 +512,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                                                       augmented_current_shapes[idx], new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
                                         
                                         if ( tmp_isface){
-                                            float error = CalculateError2(augmented_ground_truth_shapes[p], augmented_current_shapes[idx], stage_, landmark_index_);
+                                            float error = CalculateError2(augmented_ground_truth_shapes[p*(param_.initial_guess_+1)], augmented_current_shapes[idx], stage_, landmark_index_);
                                             
                                             //FOR DEBUG
                                             if ( debug_on_ ){
@@ -525,7 +527,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                                 cv::line(tempImage, cv::Point2f(tempShape(36, 0), tempShape(36, 1)), cv::Point2f(tempShape(41, 0), tempShape(41, 1)), cv::Scalar(0,255,0));
                                                 cv::line(tempImage, cv::Point2f(tempShape(42, 0), tempShape(42, 1)), cv::Point2f(tempShape(47, 0), tempShape(47, 1)), cv::Scalar(0,255,0));
                                                 cv::line(tempImage, cv::Point2f(tempShape(30, 0), tempShape(30, 1)), cv::Point2f(tempShape(35, 0),  tempShape(35, 1)), cv::Scalar(0,255,0));
-                                                cv::line(tempImage, cv::Point2f(tempShape(48, 0), tempShape(48, 1)), cv::Point2f(tempShape(59, 0), tempShape(59, 1)), cv::Scalar(0,255,0));
+                                                cv::line(tempImage, cv::Point2f(tempShape(48, 0), tempShape(48, 1)), cv::Point2f(tempShape(59, 0),  tempShape(59, 1)), cv::Scalar(0,255,0));
                                                 cv::line(tempImage, cv::Point2f(tempShape(60, 0), tempShape(60, 1)), cv::Point2f(tempShape(67, 0), tempShape(67, 1)), cv::Scalar(0,255,0));
                                                 
                                                 cv::Rect rect;

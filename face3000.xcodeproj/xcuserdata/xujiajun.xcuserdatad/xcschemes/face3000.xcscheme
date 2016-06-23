@@ -75,16 +75,16 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "train model_t5d4n8i2_p"
+            argument = "video model_t5d4n8i2_p"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "train test_orientation"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "annotate /Users/xujiajun/developer/dataset/xujj/annotate/face-xujj2"
             isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "test2 model_t5d4n8i2-17"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "hello"
-            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "test model_jda500 /Users/xujiajun/developer/face3000/face3000/test.jpg"

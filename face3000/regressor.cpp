@@ -1053,7 +1053,7 @@ cv::Mat_<float> Regressor::NegMinePredict(cv::Mat_<cv::Vec3b>& image,
         }
         if ( stage == currentStage ) return predict_result; //如果已经测试到当前的stage，不用做shape回归了。
 
-        predict_result = cv::Mat_<float>(current_shape.rows, current_shape.cols);
+        predict_result = cv::Mat_<float>(current_shape.rows, current_shape.cols, 0.0);
 
         for (int i = 0; i < params_.landmarks_num_per_face_; i++){
             //		predict_result(i, 0) = predict(linear_model_x_[i], binary_features);
