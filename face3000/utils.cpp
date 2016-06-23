@@ -1,18 +1,35 @@
 #include "utils.h"
-//#include <dlib/config.h>
-//#include <dlib/opencv.h>
-//#include <dlib/image_processing/frontal_face_detector.h>
-////#include <dlib/image_processing/render_face_detections.h>
-//#include <dlib/image_processing.h>
+#include <dlib/config.h>
+#include <dlib/opencv.h>
+#include <dlib/image_processing/frontal_face_detector.h>
+//#include <dlib/image_processing/render_face_detections.h>
+#include <dlib/image_processing.h>
+#ifndef DLIB_NO_GUI_SUPPORT
+#define DLIB_NO_GUI_SUPPORT
+#endif
+#include <dlib/all/source.cpp>
 
 //#include "facedetect-dll.h"
 //#pragma comment(lib,"libfacedetect.lib")
 
 // project the global shape coordinates to [-1, 1]x[-1, 1]
 
-//dlib::frontal_face_detector fdetector = dlib::get_frontal_face_detector();;
+dlib::frontal_face_detector fdetector = dlib::get_frontal_face_detector();;
 
 int debug_on_ = 0;
+
+
+void DrawImage(cv::Mat_<uchar> image, cv::Mat_<float>& ishape){
+    cv::Mat_<float> shape = reConvertShape(ishape);
+    for (int i = 0; i < shape.rows; i++){
+        cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, cv::Scalar(255,255,255));
+        if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
+            cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), cv::Scalar(0,255,0));
+    }
+    cv::imshow("show image", image);
+    cv::waitKey(0);
+}
+
 
 cv::Mat_<float> ProjectShape(const cv::Mat_<float>& shape, const BoundingBox& bbox){
 	cv::Mat_<float> results(shape.rows, 2);
@@ -319,21 +336,26 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
 //                                      //                                      |cv::CASCADE_DO_ROUGH_SEARCH
 //                                      , cv::Size(60, 60));
 //        
-//        dlib::cv_image<uchar>cimg(image);
-//        std::vector<dlib::rectangle> faces;
-//        faces = fdetector(cimg);
+        dlib::cv_image<uchar>cimg(image);
+        std::vector<dlib::rectangle> faces;
+        faces = fdetector(cimg);
         
+        if ( debug_on_ ){
+            if ( faces.size() == 0 ){
+                cv::imshow("no detect", image);
+                cv::waitKey(0);
+            }
+        }
         
-//        for (int i = 0; i < faces.size(); i++){
-          //  cv::Rect faceRec = faces[i];
-//            cv::Rect faceRec;
-//            faceRec.x = faces[i].left();
-//            faceRec.y = faces[i].top();
-//            faceRec.width = faces[i].right() - faces[i].left();
-//            faceRec.height = faces[i].bottom() - faces[i].top();
+        for (int i = 0; i < faces.size(); i++){
+            cv::Rect faceRec;
+            faceRec.x = faces[i].left();
+            faceRec.y = faces[i].top();
+            faceRec.width = faces[i].right() - faces[i].left();
+            faceRec.height = faces[i].bottom() - faces[i].top();
             
             
-            //if (ShapeInRect(ground_truth_shape, faceRec)){
+            if (ShapeInRect(ground_truth_shape, faceRec)){
             	// check if the detected face rectangle is in the ground_truth_shape
                 images.push_back(image);
                 ground_truth_shapes.push_back(convertShape(ground_truth_shape));
@@ -438,9 +460,8 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
                     std::cout << count << " images loaded\n";
                 }
              //   break;
-            //}
-        // }
-
+            }
+        }
 	}
 	std::cout << "get " << bboxes.size() << " faces\n";
 	fin.close();
@@ -572,12 +593,23 @@ float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& pred
 }
 
 
-void DrawPredictImage(cv::Mat_<uchar> image, cv::Mat_<float>& shape){
-	for (int i = 0; i < shape.rows; i++){
-		cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, (255));
-	}
-	cv::imshow("show image", image);
-	cv::waitKey(0);
+//void DrawPredictImage(cv::Mat_<uchar> image, cv::Mat_<float>& shape){
+//	for (int i = 0; i < shape.rows; i++){
+//		cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, (255));
+//	}
+//	cv::imshow("show image", image);
+//	cv::waitKey(0);
+//}
+
+void DrawPredictImage(cv::Mat_<uchar> &image, cv::Mat_<float>& ishape){
+    cv::Mat_<float> shape = reConvertShape(ishape);
+    for (int i = 0; i < shape.rows; i++){
+        cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, cv::Scalar(255,255,255));
+        if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
+            cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), cv::Scalar(0,255,0));
+    }
+    cv::imshow("show image", image);
+    cv::waitKey(0);
 }
 
 BoundingBox GetBoundingBox(cv::Mat_<float>& shape, int width, int height){

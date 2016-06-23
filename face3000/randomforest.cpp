@@ -216,6 +216,9 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                     drop_neg_count++;
                 }
                 augmented_ground_truth_faces[k] = -1;
+                if ( debug_on_ ){
+                    DrawPredictImage(images[augmented_images_index[k]], augmented_current_shapes[k]);
+                }
             }
         }
         if ( drop_pos_count > 0 || drop_neg_count > 0 )
@@ -230,11 +233,16 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 		std::set<int> selected_feature_indexes; //这个是用来表示那个feature已经被用过了
         selected_feature_indexes.clear();
 
+        current_time = time(0);
+        cv::RNG rd(current_time);
 		std::vector<int> images_indexes;
 		for (int j = start_index; j < end_index; j++){
             if ( find_times[j] < MAXFINDTIMES){
-                //if ( j % ( 2 * trees_num_per_forest_ ) != i ) //让每棵树的样本有点不一样
-			        images_indexes.push_back(j);
+                //让每棵树的样本有点不一样
+                int r = rd.uniform(0, 2*trees_num_per_forest_);
+                if ( r != 0 ){
+                    images_indexes.push_back(j);
+                }
             }
 		}
         
@@ -433,17 +441,18 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                 break;
                             }
                             ss = 0; sx = 0; sy = 0;
-                            //把图片旋转90度
-                            cv::Mat_<uchar> temp = images[augmented_images_index[idx]];
-//                            cv::imshow("origin", temp);
-//                            cv::waitKey(0);
-                            cv::transpose(temp, temp);
-//                            cv::imshow("transpose", temp);
-//                            cv::waitKey(0);
-                            cv::flip(temp, temp, 1);
-//                            cv::imshow("flip", temp);
-//                            cv::waitKey(0);
-                            images[augmented_images_index[idx]] = temp;
+//                            //把图片旋转90度
+                              //这个地方如果索引了同一张图片，一个挖掘完了改索引为正例图片，另一个还没挖掘玩给旋转了，然后就悲剧了，正例被旋转。。。
+//                            cv::Mat_<uchar> temp = images[augmented_images_index[idx]];
+////                            cv::imshow("origin", temp);
+////                            cv::waitKey(0);
+//                            cv::transpose(temp, temp);
+////                            cv::imshow("transpose", temp);
+////                            cv::waitKey(0);
+//                            cv::flip(temp, temp, 1);
+////                            cv::imshow("flip", temp);
+////                            cv::waitKey(0);
+//                            images[augmented_images_index[idx]] = temp;
                         }
                         if ( !faceFound ){
                             find_times[idx] = 256*256*256*4;
@@ -475,9 +484,9 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             if (( search_box.start_y + search_box.height) > rows ) search_box.height = rows - search_box.start_y;
                             
                             
-                            for ( int sw_size = 32 * std::pow(1.05, ss); sw_size < std::min(search_box.width, search_box.height); sw_size = 32 * std::pow(1.05, ss)){
+                            for ( int sw_size = 32 * std::pow(1.08, ss); sw_size < std::min(search_box.width, search_box.height); sw_size = 32 * std::pow(1.08, ss)){
                                 ss++;
-                                float shuffle_size = sw_size * 0.05;
+                                float shuffle_size = sw_size * 0.08;
                                 for ( int sw_x = shuffle_size * sx; sw_x<search_box.width - sw_size && sx < 256; sw_x+=shuffle_size){
                                     sx++;
                                     for ( int sw_y = shuffle_size * sy; sw_y<search_box.height - sw_size && sy < 256; sw_y+=shuffle_size){
@@ -553,7 +562,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                             }
                                             
                                             
-                                            if ( error > 0.15 ){
+                                            if ( error > 0.2 ){
                                                 faceFound = true;
                                                 current_fi[idx] = tmp_fi;
                                                 current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
@@ -904,7 +913,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
             df = 0.2; //脸的外轮廓多alignement，少detect
         }
         else if ( stage_ == 1 ){
-            df = 0.3;
+            df = 0.4;
         }
         else if ( stage_ == 2 ){
             df = 0.7;

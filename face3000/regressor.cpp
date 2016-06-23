@@ -9,6 +9,8 @@
 #include <sys/stat.h>
 
 //#endif
+
+
 CascadeRegressor::CascadeRegressor(){
     lastRes = cv::Mat_<float>(68,2,0.0);
 }
@@ -51,6 +53,10 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
         current_fi.push_back(0);
         current_weight.push_back(1);
         find_times.push_back(0);
+        
+        if ( debug_on_){
+            DrawPredictImage(images[i], ground_truth_shapes[i]);
+        }
         
 		for (int j = 0; j < params_.initial_guess_; j++)
 		{

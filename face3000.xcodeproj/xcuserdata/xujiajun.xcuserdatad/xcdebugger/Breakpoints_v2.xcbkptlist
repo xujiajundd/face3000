@@ -2,4 +2,38 @@
 <Bucket
    type = "1"
    version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "face3000/randomforest.cpp"
+            timestampString = "488345211.443975"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "524"
+            endingLineNumber = "524"
+            landmarkName = "RandomForest::TrainForest(//std::vector&lt;cv::Mat_&lt;float&gt;&gt;&amp; regression_targets, std::vector&lt;cv::Mat_&lt;uchar&gt; &gt;&amp; images, std::vector&lt;int&gt;&amp; augmented_images_index, std::vector&lt;cv::Mat_&lt;float&gt;&gt;&amp; augmented_ground_truth_shapes, std::vector&lt;BoundingBox&gt;&amp; augmented_bboxes, std::vector&lt;cv::Mat_&lt;float&gt; &gt;&amp; augmented_current_shapes, std::vector&lt;int&gt; &amp; augmented_ground_truth_faces, std::vector&lt;float&gt; &amp; current_fi, std::vector&lt;float&gt; &amp; current_weight, std::vector&lt;int&gt; &amp; find_times, std::vector&lt;cv::Mat_&lt;float&gt; &gt;&amp; rotations, std::vector&lt;float&gt;&amp; scales)"
+            landmarkType = "5">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "face3000/regressor.cpp"
+            timestampString = "488344715.928843"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "57"
+            endingLineNumber = "57"
+            landmarkName = "CascadeRegressor::Train(std::vector&lt;cv::Mat_&lt;uchar&gt; &gt;&amp; images, std::vector&lt;cv::Mat_&lt;float&gt; &gt;&amp; ground_truth_shapes, std::vector&lt;int&gt; ground_truth_faces, std::vector&lt;BoundingBox&gt;&amp; bboxes, Parameters&amp; params, int pos_num )"
+            landmarkType = "5">
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
 </Bucket>

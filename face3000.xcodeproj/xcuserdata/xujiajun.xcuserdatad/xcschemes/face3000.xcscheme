@@ -63,11 +63,11 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "train model_grayn8i2"
+            argument = "train model_t5d4n8i2"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "video model_neg_t5d4n8i2"
+            argument = "video model_t6d4n8i2"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
