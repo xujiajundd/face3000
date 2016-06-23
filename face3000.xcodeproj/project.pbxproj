@@ -43,9 +43,9 @@
 		CA49B0F51C817D0600A0951B /* haarcascade_frontalface_alt2.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = haarcascade_frontalface_alt2.xml; sourceTree = "<group>"; };
 		CA49B0F61C817D0600A0951B /* headers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = headers.h; sourceTree = "<group>"; };
 		CA49B0F71C817D0600A0951B /* initial.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = initial.png; sourceTree = "<group>"; };
-		CA49B0F81C817D0600A0951B /* randomforest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = randomforest.cpp; sourceTree = "<group>"; };
+		CA49B0F81C817D0600A0951B /* randomforest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 2; path = randomforest.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		CA49B0F91C817D0600A0951B /* randomforest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = randomforest.h; sourceTree = "<group>"; };
-		CA49B0FA1C817D0600A0951B /* regressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = regressor.cpp; sourceTree = "<group>"; };
+		CA49B0FA1C817D0600A0951B /* regressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 2; path = regressor.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		CA49B0FB1C817D0600A0951B /* regressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = regressor.h; sourceTree = "<group>"; };
 		CA49B0FC1C817D0600A0951B /* tang.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = tang.jpg; sourceTree = "<group>"; };
 		CA49B0FD1C817D0600A0951B /* utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = utils.cpp; sourceTree = "<group>"; };
@@ -299,7 +299,7 @@
 				ALWAYS_SEARCH_USER_PATHS = YES;
 				CLANG_X86_VECTOR_INSTRUCTIONS = default;
 				GCC_FAST_MATH = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_OPTIMIZATION_LEVEL = 3;
 				HEADER_SEARCH_PATHS = (
 					/usr/local/include,
 					/Users/xujiajun/developer/external/eigen,

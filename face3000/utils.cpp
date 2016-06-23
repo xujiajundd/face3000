@@ -1,18 +1,35 @@
 #include "utils.h"
-//#include <dlib/config.h>
-//#include <dlib/opencv.h>
-//#include <dlib/image_processing/frontal_face_detector.h>
-////#include <dlib/image_processing/render_face_detections.h>
-//#include <dlib/image_processing.h>
+#include <dlib/config.h>
+#include <dlib/opencv.h>
+#include <dlib/image_processing/frontal_face_detector.h>
+//#include <dlib/image_processing/render_face_detections.h>
+#include <dlib/image_processing.h>
+#ifndef DLIB_NO_GUI_SUPPORT
+#define DLIB_NO_GUI_SUPPORT
+#endif
+#include <dlib/all/source.cpp>
 
 //#include "facedetect-dll.h"
 //#pragma comment(lib,"libfacedetect.lib")
 
 // project the global shape coordinates to [-1, 1]x[-1, 1]
 
-//dlib::frontal_face_detector fdetector = dlib::get_frontal_face_detector();;
+dlib::frontal_face_detector fdetector = dlib::get_frontal_face_detector();;
 
 int debug_on_ = 0;
+
+
+void DrawImage(cv::Mat_<uchar> image, cv::Mat_<float>& ishape){
+    cv::Mat_<float> shape = reConvertShape(ishape);
+    for (int i = 0; i < shape.rows; i++){
+        cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, cv::Scalar(255,255,255));
+        if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
+            cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), cv::Scalar(0,255,0));
+    }
+    cv::imshow("show image", image);
+    cv::waitKey(0);
+}
+
 
 cv::Mat_<float> ProjectShape(const cv::Mat_<float>& shape, const BoundingBox& bbox){
 	cv::Mat_<float> results(shape.rows, 2);
@@ -193,7 +210,7 @@ bool ShapeInRect(cv::Mat_<float>& shape, cv::Rect& ret){
 	return true;
 }
 
-std::vector<cv::Rect> DetectFaces(cv::Mat_<cv::Vec3b>& image, cv::CascadeClassifier& classifier){
+std::vector<cv::Rect> DetectFaces(cv::Mat_<uchar>& image, cv::CascadeClassifier& classifier){
 	std::vector<cv::Rect_<int> > faces;
 	classifier.detectMultiScale(image, faces, 1.1, 2, 0, cv::Size(30, 30));
 	return faces;
@@ -242,7 +259,7 @@ BoundingBox CalculateBoundingBox(cv::Mat_<float>& shape){
     return bbx;
 }
 
-int LoadImages(std::vector<cv::Mat_<cv::Vec3b> >& images,
+int LoadImages(std::vector<cv::Mat_<uchar> >& images,
 	std::vector<cv::Mat_<float> >& ground_truth_shapes,
     std::vector<int>& ground_truth_faces,
 	//const std::vector<cv::Mat_<float> >& current_shapes,
@@ -285,7 +302,7 @@ int LoadImages(std::vector<cv::Mat_<cv::Vec3b> >& images,
 		std::cout << name << std::endl;
 		std::string pts = name.substr(0, name.length() - 3) + "pts";
         
-        cv::Mat_<cv::Vec3b> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 1);
+        cv::Mat_<uchar> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 0);
 //        cv::imshow("show image", image);
 //        cv::waitKey(0);
         cv::Mat_<float> ground_truth_shape = LoadGroundTruthShape(("/Users/xujiajun/developer/dataset/helen/" + pts).c_str());
@@ -319,21 +336,26 @@ int LoadImages(std::vector<cv::Mat_<cv::Vec3b> >& images,
 //                                      //                                      |cv::CASCADE_DO_ROUGH_SEARCH
 //                                      , cv::Size(60, 60));
 //        
-//        dlib::cv_image<uchar>cimg(image);
-//        std::vector<dlib::rectangle> faces;
-//        faces = fdetector(cimg);
+        dlib::cv_image<uchar>cimg(image);
+        std::vector<dlib::rectangle> faces;
+        faces = fdetector(cimg);
         
+        if ( debug_on_ ){
+            if ( faces.size() == 0 ){
+                cv::imshow("no detect", image);
+                cv::waitKey(0);
+            }
+        }
         
-//        for (int i = 0; i < faces.size(); i++){
-          //  cv::Rect faceRec = faces[i];
-//            cv::Rect faceRec;
-//            faceRec.x = faces[i].left();
-//            faceRec.y = faces[i].top();
-//            faceRec.width = faces[i].right() - faces[i].left();
-//            faceRec.height = faces[i].bottom() - faces[i].top();
+        for (int i = 0; i < faces.size(); i++){
+            cv::Rect faceRec;
+            faceRec.x = faces[i].left();
+            faceRec.y = faces[i].top();
+            faceRec.width = faces[i].right() - faces[i].left();
+            faceRec.height = faces[i].bottom() - faces[i].top();
             
             
-            //if (ShapeInRect(ground_truth_shape, faceRec)){
+            if (ShapeInRect(ground_truth_shape, faceRec)){
             	// check if the detected face rectangle is in the ground_truth_shape
                 images.push_back(image);
                 ground_truth_shapes.push_back(convertShape(ground_truth_shape));
@@ -362,7 +384,7 @@ int LoadImages(std::vector<cv::Mat_<cv::Vec3b> >& images,
 //                bboxes.push_back(nbbox);
 
                 //翻转图片, add by xujj
-                cv::Mat_<cv::Vec3b> flippedImage;
+                cv::Mat_<uchar> flippedImage;
                 flip(image, flippedImage, 1);
                 images.push_back(flippedImage);
                 
@@ -438,9 +460,8 @@ int LoadImages(std::vector<cv::Mat_<cv::Vec3b> >& images,
                     std::cout << count << " images loaded\n";
                 }
              //   break;
-            //}
-        // }
-
+            }
+        }
 	}
 	std::cout << "get " << bboxes.size() << " faces\n";
 	fin.close();
@@ -450,7 +471,7 @@ int LoadImages(std::vector<cv::Mat_<cv::Vec3b> >& images,
     fin.open(neg_file_names.c_str(), std::ifstream::in);
     while (fin >> name){
         std::cout << name << std::endl;
-        cv::Mat_<cv::Vec3b> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 1);
+        cv::Mat_<uchar> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 0);
         cv::Mat_<float> ground_truth_shape = ground_truth_shapes[neg_num % pos_num];
         BoundingBox bbox = bboxes[neg_num % pos_num];
         BoundingBox nbbox;
@@ -471,7 +492,7 @@ int LoadImages(std::vector<cv::Mat_<cv::Vec3b> >& images,
     
     std::cout << "add negative samples:" << neg_num << std::endl;
 //    for ( int i=0; i<pos_num; i++){
-//        cv::Mat_<cv::Vec3b> image = images[i];
+//        cv::Mat_<uchar> image = images[i];
 //        cv::Mat_<float> ground_truth_shape = ground_truth_shapes[i];
 //        BoundingBox bbox = bboxes[i];
 //        //加负例
@@ -572,12 +593,23 @@ float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& pred
 }
 
 
-void DrawPredictImage(cv::Mat_<cv::Vec3b> image, cv::Mat_<float>& shape){
-	for (int i = 0; i < shape.rows; i++){
-		cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, (255));
-	}
-	cv::imshow("show image", image);
-	cv::waitKey(0);
+//void DrawPredictImage(cv::Mat_<uchar> image, cv::Mat_<float>& shape){
+//	for (int i = 0; i < shape.rows; i++){
+//		cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, (255));
+//	}
+//	cv::imshow("show image", image);
+//	cv::waitKey(0);
+//}
+
+void DrawPredictImage(cv::Mat_<uchar> &image, cv::Mat_<float>& ishape){
+    cv::Mat_<float> shape = reConvertShape(ishape);
+    for (int i = 0; i < shape.rows; i++){
+        cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, cv::Scalar(255,255,255));
+        if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
+            cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), cv::Scalar(0,255,0));
+    }
+    cv::imshow("show image", image);
+    cv::waitKey(0);
 }
 
 BoundingBox GetBoundingBox(cv::Mat_<float>& shape, int width, int height){
@@ -614,7 +646,7 @@ BoundingBox GetBoundingBox(cv::Mat_<float>& shape, int width, int height){
 	return bbox;
 }
 
-int colorDistance(cv::Vec3b p1, cv::Vec3b p2){
-    int p = (p1[0]-p2[0])*(p1[0]-p2[0]) + (p1[1]-p2[1])*(p1[1]-p2[1]) + (p1[2]-p2[2])*(p1[2]-p2[2]);
-    return (int)sqrt(p)/3;
-}
+//int colorDistance(uchar p1, uchar p2){
+//    int p = (p1[0]-p2[0])*(p1[0]-p2[0]) + (p1[1]-p2[1])*(p1[1]-p2[1]) + (p1[2]-p2[2])*(p1[2]-p2[2]);
+//    return (int)sqrt(p)/3;
+//}

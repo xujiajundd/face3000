@@ -34,7 +34,7 @@ int my_cmp(std::pair<float,int> p1, std::pair<float,int> p2)
 };
 
 bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_targets,
-	std::vector<cv::Mat_<cv::Vec3b> >& images,
+	std::vector<cv::Mat_<uchar> >& images,
 	std::vector<int>& augmented_images_index,
 	std::vector<cv::Mat_<float>>& augmented_ground_truth_shapes,
 	std::vector<BoundingBox>& augmented_bboxes,
@@ -185,7 +185,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 real_x = std::max(1, std::min(real_x, images[augmented_images_index[n]].cols - 2)); // which cols
                 real_y = std::max(1, std::min(real_y, images[augmented_images_index[n]].rows - 2)); // which rows
                 //int tmp = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-1, real_x) + images[augmented_images_index[n]](real_y+1, real_x) + images[augmented_images_index[n]](real_y, real_x-1) +images[augmented_images_index[n]](real_y, real_x+1)) / 6 ; //real_y at first
-                cv::Vec3b tmp = images[augmented_images_index[n]](real_y, real_x);
+                int tmp = images[augmented_images_index[n]](real_y, real_x);
                 
                 delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
                 delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
@@ -196,8 +196,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 real_x = std::max(1, std::min(real_x, images[augmented_images_index[n]].cols - 2)); // which cols
                 real_y = std::max(1, std::min(real_y, images[augmented_images_index[n]].rows - 2)); // which rows
                 //int tmp2 = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-1, real_x) + images[augmented_images_index[n]](real_y+1, real_x) + images[augmented_images_index[n]](real_y, real_x-1) +images[augmented_images_index[n]](real_y, real_x+1)) / 6 ;
-                cv::Vec3b tmp2 = images[augmented_images_index[n]](real_y, real_x);
-                pixel_differences(j, n) = colorDistance(tmp, tmp2);
+                int tmp2 = images[augmented_images_index[n]](real_y, real_x);
+                pixel_differences(j, n) = tmp - tmp2;
             }
         }
 
@@ -216,6 +216,9 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                     drop_neg_count++;
                 }
                 augmented_ground_truth_faces[k] = -1;
+                if ( debug_on_ ){
+                    DrawPredictImage(images[augmented_images_index[k]], augmented_current_shapes[k]);
+                }
             }
         }
         if ( drop_pos_count > 0 || drop_neg_count > 0 )
@@ -230,11 +233,16 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 		std::set<int> selected_feature_indexes; //这个是用来表示那个feature已经被用过了
         selected_feature_indexes.clear();
 
+        current_time = time(0);
+        cv::RNG rd(current_time);
 		std::vector<int> images_indexes;
 		for (int j = start_index; j < end_index; j++){
             if ( find_times[j] < MAXFINDTIMES){
-                //if ( j % ( 2 * trees_num_per_forest_ ) != i ) //让每棵树的样本有点不一样
-			        images_indexes.push_back(j);
+                //让每棵树的样本有点不一样
+                int r = rd.uniform(0, 2*trees_num_per_forest_);
+                if ( r != 0 ){
+                    images_indexes.push_back(j);
+                }
             }
 		}
         
@@ -356,6 +364,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             float rows = images[augmented_images_index[idx]].rows;
                             for ( int sw_size = 32 * std::pow(1.08, ss); sw_size < std::min(cols, rows); sw_size = 32 * std::pow(1.08, ss)){
                                 ss++;
+                                int p = (idx+ss) % true_pos_num_;
                                 float shuffle_size = sw_size * 0.08;
                                 for ( int sw_x = shuffle_size * sx; sw_x<cols - sw_size && sx < 256; sw_x+=shuffle_size){
                                     sx++;
@@ -404,7 +413,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
     //                                        std::cout << rect << std::endl;
                                             //测试看看
     //                                        if ( landmark_index_ > 25 ){
-    //                                            cv::Mat_<cv::Vec3b> image = images[augmented_images_index[idx]].clone();
+    //                                            cv::Mat_<uchar> image = images[augmented_images_index[idx]].clone();
     //                                            cv::Rect rect;
     //                                            rect.x = new_box.start_x;
     //                                            rect.y = new_box.start_y;
@@ -432,17 +441,18 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                 break;
                             }
                             ss = 0; sx = 0; sy = 0;
-                            //把图片旋转90度
-                            cv::Mat_<cv::Vec3b> temp = images[augmented_images_index[idx]];
-//                            cv::imshow("origin", temp);
-//                            cv::waitKey(0);
-                            cv::transpose(temp, temp);
-//                            cv::imshow("transpose", temp);
-//                            cv::waitKey(0);
-                            cv::flip(temp, temp, 1);
-//                            cv::imshow("flip", temp);
-//                            cv::waitKey(0);
-                            images[augmented_images_index[idx]] = temp;
+//                            //把图片旋转90度
+                              //这个地方如果索引了同一张图片，一个挖掘完了改索引为正例图片，另一个还没挖掘玩给旋转了，然后就悲剧了，正例被旋转。。。
+//                            cv::Mat_<uchar> temp = images[augmented_images_index[idx]];
+////                            cv::imshow("origin", temp);
+////                            cv::waitKey(0);
+//                            cv::transpose(temp, temp);
+////                            cv::imshow("transpose", temp);
+////                            cv::waitKey(0);
+//                            cv::flip(temp, temp, 1);
+////                            cv::imshow("flip", temp);
+////                            cv::waitKey(0);
+//                            images[augmented_images_index[idx]] = temp;
                         }
                         if ( !faceFound ){
                             find_times[idx] = 256*256*256*4;
@@ -464,10 +474,10 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             
                             BoundingBox pos_box = augmented_bboxes[p*(param_.initial_guess_+1)]; //这个地方坑死了。。。
                             BoundingBox search_box;
-                            search_box.start_x = pos_box.start_x - 0.8 * pos_box.width;
-                            search_box.start_y = pos_box.start_y - 0.8 * pos_box.height;
-                            search_box.width = 2.6 * pos_box.width;
-                            search_box.height = 2.6 * pos_box.height;
+                            search_box.start_x = pos_box.start_x - 0.7 * pos_box.width;
+                            search_box.start_y = pos_box.start_y - 0.7 * pos_box.height;
+                            search_box.width = 2.4 * pos_box.width;
+                            search_box.height = 2.4 * pos_box.height;
                             if ( search_box.start_x < 0 ) search_box.start_x = 0;
                             if ( search_box.start_y < 0 ) search_box.start_y = 0;
                             if (( search_box.start_x + search_box.width ) > cols ) search_box.width = cols - search_box.start_x;
@@ -476,7 +486,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             
                             for ( int sw_size = 32 * std::pow(1.08, ss); sw_size < std::min(search_box.width, search_box.height); sw_size = 32 * std::pow(1.08, ss)){
                                 ss++;
-                                float shuffle_size = sw_size * 0.06;
+                                float shuffle_size = sw_size * 0.08;
                                 for ( int sw_x = shuffle_size * sx; sw_x<search_box.width - sw_size && sx < 256; sw_x+=shuffle_size){
                                     sx++;
                                     for ( int sw_y = shuffle_size * sy; sw_y<search_box.height - sw_size && sy < 256; sw_y+=shuffle_size){
@@ -491,8 +501,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         
                                         float delta_start = sqrtf(powf((new_box.start_x - pos_box.start_x), 2.0) + powf((new_box.start_y - pos_box.start_y), 2.0));
                                         float delta_end = sqrtf(powf((new_box.start_x + new_box.width - pos_box.start_x - pos_box.width), 2.0) + powf((new_box.start_y + new_box.height - pos_box.start_y - pos_box.height), 2.0));
-                                        if ( delta_start < 0.2 * pos_box.width && delta_end < 0.2 * pos_box.width ) continue; //判断与正例的位置接近则不采用
-                                        if ( (delta_start + delta_end) < 0.4 * pos_box.width  ) continue;
+                                        if ( delta_start < 0.15 * pos_box.width && delta_end < 0.15 * pos_box.width ) continue; //判断与正例的位置接近则不采用
+                                        if ( (delta_start + delta_end) < 0.25 * pos_box.width  ) continue;
                                         
 //                                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[p], augmented_bboxes[p]);
 //                                        augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
@@ -509,12 +519,12 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                                                       augmented_current_shapes[idx], new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
                                         
                                         if ( tmp_isface){
-                                            float error = CalculateError2(augmented_ground_truth_shapes[p], augmented_current_shapes[idx], stage_, landmark_index_);
+                                            float error = CalculateError2(augmented_ground_truth_shapes[p*(param_.initial_guess_+1)], augmented_current_shapes[idx], stage_, landmark_index_);
                                             
                                             //FOR DEBUG
                                             if ( debug_on_ ){
                                                 std::cout << " error:" << error << " fi:" << tmp_fi << " stage:" << stage_ << " landmark:" << landmark_index_ << " tree:" << i << " idx:" << idx << " image index:" << augmented_images_index[idx] << " p:" << p << std::endl;
-                                                cv::Mat_<cv::Vec3b> tempImage = images[augmented_images_index[idx]].clone();
+                                                cv::Mat_<uchar> tempImage = images[augmented_images_index[idx]].clone();
                                                 cv::Mat_<float> tempShape = reConvertShape(augmented_current_shapes[idx]);
                                                 for (int iii = 0; iii < tempShape.rows; iii++){
                                                     cv::circle(tempImage, cv::Point2f(tempShape(iii, 0), tempShape(iii, 1)), 1, cv::Scalar(255,255,255));
@@ -900,7 +910,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
     float df = detect_factor_;
     if ( landmark_index_ > 50 ){
         if ( stage_ == 0 ){
-            df = 0.3; //脸的外轮廓多alignement，少detect
+            df = 0.2; //脸的外轮廓多alignement，少detect
         }
         else if ( stage_ == 1 ){
             df = 0.4;
@@ -1013,7 +1023,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 //	return res;
 //}
 
-int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<cv::Vec3b>& image,
+int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<uchar>& image,
 	const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale, float& score){
 	Node* node = trees_[tree_index];
 	while (!node->is_leaf_){
@@ -1027,7 +1037,7 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<cv::Vec3b
 		real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
 		real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
 		//int tmp = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ; //real_y at first
-        cv::Vec3b tmp = image(real_y, real_x);
+        int tmp = image(real_y, real_x);
         
 		delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
 		delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
@@ -1038,9 +1048,9 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<cv::Vec3b
 		real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
 		real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
         //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
-		cv::Vec3b tmp2 = image(real_y, real_x);
+		int tmp2 = image(real_y, real_x);
         
-        if (colorDistance(tmp, tmp2) < node->threshold_){
+        if ( (tmp - tmp2) < node->threshold_){
 			node = node->left_child_;// go left
 		}
 		else{
