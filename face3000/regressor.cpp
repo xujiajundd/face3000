@@ -87,13 +87,26 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                 augmented_ground_truth_shapes.push_back(ground_truth_shapes_[i]);// ReProjection(ProjectShape(ground_truth_shapes_[i], bboxes_[i]), ibox));
                 augmented_ground_truth_faces.push_back(ground_truth_faces[i]);
                 augmented_bboxes.push_back(ibox);
-                cv::Mat_<float> temp = ground_truth_shapes_[index];
-                temp = ProjectShape(temp, bboxes_[index]);
-                temp = ReProjection(temp, ibox);
+                cv::Mat_<float> temp; // = ground_truth_shapes_[index];
+//                temp = ProjectShape(temp, bboxes_[index]);
+//                temp = ReProjection(temp, ibox);
+                do {
+                    do {
+                        index = random_generator.uniform(0, pos_num);
+                    }while(index == i);
+                    temp = ground_truth_shapes_[index];
+                    temp = ProjectShape(temp, bboxes_[index]);
+                    temp = ReProjection(temp, ibox);
+                } while ( CalculateError(ground_truth_shapes[i], temp) > 0.5 );
                 augmented_current_shapes.push_back(temp);
                 current_fi.push_back(0);
                 current_weight.push_back(1);
                 find_times.push_back(0);
+                if ( debug_on_){
+                    if ( CalculateError(ground_truth_shapes[i], temp) > 0.5 ){
+                        DrawPredictImage(images[i], temp);
+                    }
+                }
             }
 		}
 
@@ -178,7 +191,17 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 			augmented_current_shapes[j] = shape_increaments[j] + ProjectShape(augmented_current_shapes[j], augmented_bboxes[j]);
 			augmented_current_shapes[j] = ReProjection(augmented_current_shapes[j], augmented_bboxes[j]);
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
-			    error += CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
+                float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
+                if ( e * (3+i) > 1.0){
+                    //表示本阶段alignment的结果比较差，取消作为正例
+                    find_times[j] = MAXFINDTIMES+8;
+                    augmented_ground_truth_faces[j] = -1;
+                    std::cout << "Alignment error:" << e << " for:"<< j << " image index:" << augmented_images_index[j] << std::endl;
+                    if ( debug_on_ ){
+                        DrawPredictImage(images[augmented_images_index[j]], augmented_current_shapes[j]);
+                    }
+                }
+                error += e;
                 count++;
             }
 		}

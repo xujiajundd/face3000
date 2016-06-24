@@ -910,7 +910,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
     float df = detect_factor_;
     if ( landmark_index_ > 50 ){
         if ( stage_ == 0 ){
-            df = 0.2; //脸的外轮廓多alignement，少detect
+            df = 0.3; //脸的外轮廓多alignement，少detect
         }
         else if ( stage_ == 1 ){
             df = 0.4;
@@ -922,7 +922,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
             df = 0.8;
         }
         else {
-            df = 0.9;
+            df = 0.8;
         }
     }
     for ( int i=0; i<vars.size(); i++){

@@ -601,7 +601,7 @@ int annotate_main(const char *path)
     //如果path为目录名，则参照data进行
     //如果path为jpg或png文件，则单个进行
     //根据path后缀来区分
-    const char *ModelName = "model_t5d4n8i2_p";
+    const char *ModelName = "model_t5d4n8i2";
     annotation.face_detector.LoadCascadeRegressor(ModelName);
 
     std::string current_dir = "";

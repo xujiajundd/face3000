@@ -299,7 +299,7 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
 	//std::cout << name << std::endl;
 	while (fin >> name){
 		//std::cout << "reading file: " << name << std::endl;
-		std::cout << name << std::endl;
+//		std::cout << name << std::endl;
 		std::string pts = name.substr(0, name.length() - 3) + "pts";
         
         cv::Mat_<uchar> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 0);
@@ -470,7 +470,7 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
     int neg_num = 0;
     fin.open(neg_file_names.c_str(), std::ifstream::in);
     while (fin >> name){
-        std::cout << name << std::endl;
+//        std::cout << name << std::endl;
         cv::Mat_<uchar> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 0);
         cv::Mat_<float> ground_truth_shape = ground_truth_shapes[neg_num % pos_num];
         BoundingBox bbox = bboxes[neg_num % pos_num];
@@ -602,13 +602,15 @@ float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& pred
 //}
 
 void DrawPredictImage(cv::Mat_<uchar> &image, cv::Mat_<float>& ishape){
+    cv::Mat_<uchar> temp_image = image.clone();
     cv::Mat_<float> shape = reConvertShape(ishape);
+    
     for (int i = 0; i < shape.rows; i++){
-        cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, cv::Scalar(255,255,255));
+        cv::circle(temp_image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, cv::Scalar(255,255,255));
         if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
-            cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), cv::Scalar(0,255,0));
+            cv::line(temp_image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), cv::Scalar(0,255,0));
     }
-    cv::imshow("show image", image);
+    cv::imshow("show image", temp_image);
     cv::waitKey(0);
 }
 
