@@ -67,7 +67,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "train model_t5d4n8i2l"
+            argument = "train model_t5d4n8i2"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -79,11 +79,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "test model_t5d4n6i2"
+            argument = "annotate"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "annotate"
+            argument = "annotate /Users/xujiajun/developer/dataset/xujj/annotate/face-xujj2"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

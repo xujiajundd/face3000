@@ -300,11 +300,13 @@
 				CLANG_X86_VECTOR_INSTRUCTIONS = default;
 				GCC_FAST_MATH = YES;
 				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_UNROLL_LOOPS = NO;
 				HEADER_SEARCH_PATHS = (
 					/usr/local/include,
 					/Users/xujiajun/developer/external/eigen,
 					/Users/xujiajun/developer/external/dlib,
 				);
+				LD_RUNPATH_SEARCH_PATHS = .;
 				LIBRARY_SEARCH_PATHS = (
 					/usr/local/lib,
 					"$(PROJECT_DIR)/face3000",
@@ -321,11 +323,13 @@
 				CLANG_X86_VECTOR_INSTRUCTIONS = default;
 				GCC_FAST_MATH = YES;
 				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_UNROLL_LOOPS = NO;
 				HEADER_SEARCH_PATHS = (
 					/usr/local/include,
 					/Users/xujiajun/developer/external/eigen,
 					/Users/xujiajun/developer/external/dlib,
 				);
+				LD_RUNPATH_SEARCH_PATHS = .;
 				LIBRARY_SEARCH_PATHS = (
 					/usr/local/lib,
 					"$(PROJECT_DIR)/face3000",

@@ -64,7 +64,7 @@ public:
         std::string temp;
         fin.open(shape_file_name, std::fstream::in);
         if ( !fin ){
-            cout << "pts文件不存在" << std::endl;
+//            cout << "pts文件不存在" << std::endl;
             std::vector<cv::Mat_<float>> shapes;
             cv::Mat_<uchar> grayImage;
             cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
@@ -601,6 +601,43 @@ int annotate_main(const char *path)
     //如果path为目录名，则参照data进行
     //如果path为jpg或png文件，则单个进行
     //根据path后缀来区分
+    std::cout << "标注工具(MAC版)使用说明:" << std::endl;
+    std::cout << "1、在本地创建一个工作目录作为当前目录，把face.zip在当前目录解压" << std::endl;
+    std::cout << "2、启动：打开一个终端窗口，进入工作目录，在命令行模式下，键入:" << std::endl;
+    std::cout << "   $face3000 annotate [图片文件名|视频文件名|目录名]" << std::endl;
+    std::cout << "       图片文件名支持 .jpg, .png" << std::endl;
+    std::cout << "       视频文件名支持 .mp4, .mov" << std::endl;
+    std::cout << "       目录名可为任意合法目录，如果是相对路径，则会在当前工作目录下寻找" << std::endl;
+    std::cout << "       如果没有带文件名或者目录名，则会打开当前工作目录下的data目录，里面有部分标注示例，可参考" << std::endl;
+    std::cout << "3、工作流程：1）如果已收集了一批jpg或者png图片，可在当前工作目录下创建work目录，把图片拷贝进来，然后 face3000 annotate work即可" << std::endl;
+    std::cout << "           2）如果用电脑或者手机拍摄了一段视频（.mp4或.mov）可拷贝视频文件到工作目录，face3000 annotate video文件名.mp4(.mov) 即可。" << std::endl;
+    std::cout << "              程序会自动在视频文件所在目录以该文件名为名创建一个目录，把视频文件中的帧每隔五帧生成.jpg图片，并自动打开开始标注." << std::endl;
+    std::cout << "              如果标注部分内容退出后，下次再次标注，可直接face3000 annotate vidio文件名(不带.mp4 .mov后缀，这是一个自动创建的目录)" << std::endl;
+    std::cout << "4、标注工具使用指令：" << std::endl;
+    std::cout << "   P: Previous，前一张图片" << std::endl;
+    std::cout << "   N: Next，后一张图片" << std::endl;
+    std::cout << "   S: Save，保存标注结果。（如果你改动了一下标注，没有保存时，按P或N翻动图片，则改动信息将丢失）" << std::endl;
+    std::cout << "   D: Delete，删除图片及标注信息" << std::endl;
+    std::cout << "   Q: Quit，退出" << std::endl;
+    std::cout << "5、标注方法：" << std::endl;
+    std::cout << "   打开一张图片时，如果图片还没有经过标注（没有标注数据文件.pts），则程序会自动检测并生成初步的标注数据。如果已有标注，则打开已有的数据" << std::endl;
+    std::cout << "   用鼠标点击任意一个标注点，标注点会选中变成红色，这时候再点击鼠标，改标注点将移动到新点击的地方。工具不支持鼠标拖拽，所以需注意标注点为红色时，表示可移动" << std::endl;
+    std::cout << "   在标注点为红色时，也可以用上下左右剪头来微调移动标注点位置，此时需注意按空格键来确定已移动到目标位置" << std::endl;
+    std::cout << "6、注意事项：" << std::endl;
+    std::cout << "   1）眼眶、嘴的标注点，容易有标注点上下颠倒顺序错误的情况，这种情况下，工具会有红色错误提示，务必改正！" << std::endl;
+    std::cout << "   2）标注时，需注意保存标注结果，如果没保存的情况下翻页将丢失标注改动信息" << std::endl;
+    std::cout << "   3）可运行 face3000 annotate 不带参数来打开缺省data目录下的示例，来了解每个标注点在不同姿态下的合理位置" << std::endl;
+    std::cout << std::endl;
+    std::cout << "标注内容要求：" << std::endl;
+    std::cout << "1、可给自己或家人拍一小段录像作为原始素材，每秒的视频将生成5-6张图片。" << std::endl;
+    std::cout << "2、录像最好分几小段，分别在不同的环境及光线条件下拍摄，比如强烈阳光下、背光、晚上灯光下、较暗的情况等" << std::endl;
+    std::cout << "3、拍摄是脸部姿态，最好有左右倾侧，左右旋转，仰头，低头，闭眼，扬眉，张嘴等动作，注意动作幅度适中，不必过大！" << std::endl;
+    std::cout << "4、除了拍摄录像，如果能收集一些图片亦可，推荐收集老人、小孩、外国不同肤色人等" << std::endl;
+    std::cout << "5、图片中人员可以带眼镜，有少许脸部的遮挡图片也可以接受一小部分" << std::endl;
+    std::cout << "6、视频中的图片，稍微有点运动模糊可以接受" << std::endl;
+    std::cout << std::endl;
+
+
     const char *ModelName = "model_t5d4n8i2";
     annotation.face_detector.LoadCascadeRegressor(ModelName);
 

@@ -323,7 +323,7 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
                     //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
                     int tmp2 = image(real_y, real_x);
                     
-                    if ((tmp-tmp2) < node->threshold_){
+                    if (abs(tmp-tmp2) < node->threshold_){
                         node = node->left_child_;// go left
                     }
                     else{
@@ -680,7 +680,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
         }
     }
 //    std::cout<<"count:"<<scan_count<<std::endl;
-    std::cout<<"count:"<<scan_count<<" face found:"<<faceFound<< std::endl;
+//    std::cout<<"count:"<<scan_count<<" face found:"<<faceFound<< std::endl;
     return faces;
 }
 
@@ -903,7 +903,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
                 //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
                 int tmp2 = image(real_y, real_x);
-                if ( (tmp - tmp2 ) < node->threshold_){
+                if ( abs(tmp - tmp2 ) < node->threshold_){
                     node = node->left_child_;// go left
                 }
                 else{
@@ -972,7 +972,7 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
                 real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
                 //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
                 int tmp2 = image(real_y, real_x);
-                if ( (tmp-tmp2) < node->threshold_){
+                if ( abs(tmp-tmp2) < node->threshold_){
                     node = node->left_child_;// go left
                 }
                 else{
@@ -1219,7 +1219,7 @@ void Regressor::LoadRegressor(std::string ModelName, int stage){
             if ( wy[i] < min_linear ) min_linear = wy[i];
         }
     }
-    std::cout<<"regression value max:" << max_linear << " min:" << min_linear << std::endl;
+//    std::cout<<"regression value max:" << max_linear << " min:" << min_linear << std::endl;
 }
 
 //void Regressor::ConstructLeafCount(){
