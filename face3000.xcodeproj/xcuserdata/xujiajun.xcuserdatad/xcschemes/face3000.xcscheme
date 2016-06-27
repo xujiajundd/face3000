@@ -67,8 +67,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "video model_t6d4n8i2"
-            isEnabled = "NO">
+            argument = "train model_t5d4n8i2l"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "video model_neg_t6d4n4i2"
@@ -79,8 +79,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "train model_t5d4n6i2"
-            isEnabled = "YES">
+            argument = "test model_t5d4n6i2"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "annotate"
