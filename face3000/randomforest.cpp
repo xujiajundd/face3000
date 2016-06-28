@@ -155,7 +155,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 landmark1 = (int)rd.uniform(0, landmark_num_);
                 landmark2 = (int)rd.uniform(0, landmark_num_);
             }
-            else if ( stage_ <= 2 /*&& landmark_index_ < 50*/ ){
+            else if ( stage_ == 1 /*&& landmark_index_ < 50*/ ){
                 landmark1 = landmark_index_;
                 landmark2 = (int)rd.uniform(0, landmark_num_);
             }

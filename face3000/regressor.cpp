@@ -207,6 +207,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 		}
 
         gettimeofday(&t1, NULL);
+        std::cout << std::endl;
         std::cout << "regression error: " <<  error << ": " << error/count << " time:" << t1.tv_sec << std::endl;
 	}
 }
