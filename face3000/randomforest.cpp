@@ -197,7 +197,12 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 real_y = std::max(1, std::min(real_y, images[augmented_images_index[n]].rows - 2)); // which rows
                 //int tmp2 = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-1, real_x) + images[augmented_images_index[n]](real_y+1, real_x) + images[augmented_images_index[n]](real_y, real_x-1) +images[augmented_images_index[n]](real_y, real_x+1)) / 6 ;
                 int tmp2 = images[augmented_images_index[n]](real_y, real_x);
-                pixel_differences(j, n) = abs(tmp - tmp2);
+                if ( i % 2 == 0 ){
+                    pixel_differences(j, n) = abs(tmp - tmp2);
+                }
+                else{
+                    pixel_differences(j, n) = tmp - tmp2;
+                }
             }
         }
 
@@ -1049,13 +1054,22 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<uchar>& i
 		real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
         //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
 		int tmp2 = image(real_y, real_x);
-        
-        if ( abs(tmp - tmp2) < node->threshold_){
-			node = node->left_child_;// go left
-		}
-		else{
-			node = node->right_child_;// go right
-		}
+        if ( tree_index % 2 == 0 ){
+            if ( abs(tmp - tmp2) < node->threshold_){
+                node = node->left_child_;// go left
+            }
+            else{
+                node = node->right_child_;// go right
+            }
+        }
+        else{
+            if ( (tmp - tmp2) < node->threshold_){
+                node = node->left_child_;// go left
+            }
+            else{
+                node = node->right_child_;// go right
+            }
+        }
 	}
     score = node->score_;
 	return node->leaf_identity;

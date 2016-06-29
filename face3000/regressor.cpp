@@ -323,12 +323,22 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
                     real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
                     //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
                     int tmp2 = image(real_y, real_x);
-                    
-                    if (abs(tmp-tmp2) < node->threshold_){
-                        node = node->left_child_;// go left
+
+                    if ( k % 2 == 0 ){
+                        if (abs(tmp-tmp2) < node->threshold_){
+                            node = node->left_child_;// go left
+                        }
+                        else{
+                            node = node->right_child_;// go right
+                        }
                     }
                     else{
-                        node = node->right_child_;// go right
+                        if ( (tmp-tmp2) < node->threshold_){
+                            node = node->left_child_;// go left
+                        }
+                        else{
+                            node = node->right_child_;// go right
+                        }
                     }
                 }
                 global_binary_features[i][ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k, images[augmented_images_index[i]], augmented_bboxes[i], augmented_current_shapes[i], rotations_[i], scales_[i]);
@@ -904,11 +914,21 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
                 //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
                 int tmp2 = image(real_y, real_x);
-                if ( abs(tmp - tmp2 ) < node->threshold_){
-                    node = node->left_child_;// go left
+                if ( k % 2 == 0 ){
+                    if ( abs(tmp - tmp2 ) < node->threshold_){
+                        node = node->left_child_;// go left
+                    }
+                    else{
+                        node = node->right_child_;// go right
+                    }
                 }
                 else{
-                    node = node->right_child_;// go right
+                    if ( (tmp - tmp2 ) < node->threshold_){
+                        node = node->left_child_;// go left
+                    }
+                    else{
+                        node = node->right_child_;// go right
+                    }
                 }
             }
             score += node->score_;
@@ -973,11 +993,21 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
                 real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
                 //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
                 int tmp2 = image(real_y, real_x);
-                if ( abs(tmp-tmp2) < node->threshold_){
-                    node = node->left_child_;// go left
+                if ( k % 2 == 0 ){
+                    if ( abs(tmp-tmp2) < node->threshold_){
+                        node = node->left_child_;// go left
+                    }
+                    else{
+                        node = node->right_child_;// go right
+                    }
                 }
                 else{
-                    node = node->right_child_;// go right
+                    if ( (tmp-tmp2) < node->threshold_){
+                        node = node->left_child_;// go left
+                    }
+                    else{
+                        node = node->right_child_;// go right
+                    }
                 }
             }
             score += node->score_;
