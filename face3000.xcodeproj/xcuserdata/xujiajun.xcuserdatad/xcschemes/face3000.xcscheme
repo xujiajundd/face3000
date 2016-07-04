@@ -63,12 +63,12 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "video model_t5d4n8i2"
-            isEnabled = "NO">
+            argument = "train model_t6d4n8i2"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "train model_t5d4n8i2"
-            isEnabled = "YES">
+            argument = "video model_t6d4n8i2a"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "video model_neg_t6d4n4i2"
@@ -83,7 +83,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "annotate /Users/xujiajun/developer/dataset/xujj/annotate/face-xujj2"
+            argument = "annotate /Users/xujiajun/developer/dataset/xujj/rawface"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

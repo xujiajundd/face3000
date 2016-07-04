@@ -638,7 +638,7 @@ int annotate_main(const char *path)
     std::cout << std::endl;
 
 
-    const char *ModelName = "model_t5d4n8i2";
+    const char *ModelName = "model_t6d4n8i2";
     annotation.face_detector.LoadCascadeRegressor(ModelName);
 
     std::string current_dir = "";

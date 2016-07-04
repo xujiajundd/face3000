@@ -91,9 +91,13 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 //                temp = ProjectShape(temp, bboxes_[index]);
 //                temp = ReProjection(temp, ibox);
                 do {
-                    do {
+                    index = random_generator.uniform(0, pos_num);
+                    while ( index == i ){
                         index = random_generator.uniform(0, pos_num);
-                    }while(index == i);
+                    }
+//                    do {
+//                        index = random_generator.uniform(0, pos_num);
+//                    }while(index == i);
                     temp = ground_truth_shapes_[index];
                     temp = ProjectShape(temp, bboxes_[index]);
                     temp = ReProjection(temp, ibox);
