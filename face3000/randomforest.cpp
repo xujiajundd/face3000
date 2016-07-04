@@ -649,8 +649,8 @@ Node* RandomForest::BuildTree(std::set<int>& selected_feature_indexes, cv::Mat_<
             //计算叶子节点的score
             int num_shapes=0;
             float variance=0.0, Ex=0.0, Ey=0.0, Ex_2=0.0, Ey_2=0.0;
-            float leaf_pos_weight = FLT_EPSILON;
-            float leaf_neg_weight = FLT_EPSILON;
+            float leaf_pos_weight = FLT_MIN;
+            float leaf_neg_weight = FLT_MIN;
             for ( int i=0; i<images_indexes.size(); i++){
                 int index = images_indexes[i];
                 if ( augmented_ground_truth_faces[index] == 1){
@@ -690,8 +690,8 @@ Node* RandomForest::BuildTree(std::set<int>& selected_feature_indexes, cv::Mat_<
             //计算叶子节点的score, 同上
             int num_shapes=0;
             float variance=0.0, Ex=0.0, Ey=0.0, Ex_2=0.0, Ey_2=0.0;
-            float leaf_pos_weight = FLT_EPSILON;
-            float leaf_neg_weight = FLT_EPSILON;
+            float leaf_pos_weight = FLT_MIN;
+            float leaf_neg_weight = FLT_MIN;
             for ( int i=0; i<images_indexes.size(); i++){
                 int index = images_indexes[i];
                 if ( augmented_ground_truth_faces[index] == 1){
@@ -744,8 +744,8 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 	int feature_index = -1;
 //	std::vector<int> tmp_left_indexes, tmp_right_indexes;
     
-    std::vector<float> vars;
-    std::vector<float> entropys;
+    std::vector<double> vars;
+    std::vector<double> entropys;
     std::vector<std::pair<int,int>> thresholds;
     vars.clear();
     entropys.clear();
@@ -764,13 +764,13 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
             //重复循环t次，尝试取不同的threshhold，总共的次数为t*local_feature_num。看看能否使得分类和回归的同时最优可能增加一些
             for ( int t=0; t<1; t++ ){
                 int num_l_shapes = 0, num_r_shapes = 0;
-                float var_lc = 0.0, var_rc = 0.0, var_red = 0.0;
-                float Ex_2_lc = 0.0, Ex_lc = 0.0, Ey_2_lc = 0.0, Ey_lc = 0.0;
-                float Ex_2_rc = 0.0, Ex_rc = 0.0, Ey_2_rc = 0.0, Ey_rc = 0.0;
+                double var_lc = 0.0, var_rc = 0.0, var_red = 0.0;
+                double Ex_2_lc = 0.0, Ex_lc = 0.0, Ey_2_lc = 0.0, Ey_lc = 0.0;
+                double Ex_2_rc = 0.0, Ex_rc = 0.0, Ey_2_rc = 0.0, Ey_rc = 0.0;
                 
                 int num_l_pos_faces = 0, num_l_neg_faces = 0, num_r_pos_faces = 0, num_r_neg_faces = 0;
-                float total_l_pos_weight = 0.0, total_l_neg_weight = 0.0;
-                float total_r_pos_weight = 0.0, total_r_neg_weight = 0.0;
+                double total_l_pos_weight = 0.0, total_l_neg_weight = 0.0;
+                double total_r_pos_weight = 0.0, total_r_neg_weight = 0.0;
                 
                 // random generate threshold
                 int tmp_index = floor((int)(images_indexes.size()*(0.5 + 0.8*(rd.uniform(0.0, 1.0) - 0.5))));
@@ -842,23 +842,23 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
                 int right_sample_num = num_r_pos_faces + num_r_neg_faces;
     //            int total_sample_num =  left_sample_num + right_sample_num;
                 
-                float total_l_weight = total_l_pos_weight + total_l_neg_weight;
-                float total_r_weight = total_r_pos_weight + total_r_neg_weight;
-                float total_weight = total_l_weight + total_r_weight;
+                double total_l_weight = total_l_pos_weight + total_l_neg_weight;
+                double total_r_weight = total_r_pos_weight + total_r_neg_weight;
+                double total_weight = total_l_weight + total_r_weight;
                 
-                float entropy = 0.0, entropy_lc = 0.0, entropy_rc = 0.0;
-                float entropy_tmp = 0.0;
+                double entropy = 0.0, entropy_lc = 0.0, entropy_rc = 0.0;
+                double entropy_tmp = 0.0;
                 
                 if ( left_sample_num == 0 ){
                     entropy_lc = 0.0;
                 }
                 else{
-                    entropy_tmp = total_l_pos_weight / ( total_l_weight + FLT_MIN);
-                    if ( (entropy_tmp-0.0) < FLT_EPSILON || (1.0-entropy_tmp) < FLT_EPSILON){
+                    entropy_tmp = total_l_pos_weight / ( total_l_weight + DBL_MIN);
+                    if ( (entropy_tmp-0.0) < DBL_EPSILON || (1.0-entropy_tmp) < DBL_EPSILON){
                         entropy_lc = 0.0;
                     }
                     else{
-                        entropy_lc = - ( total_l_weight / ( total_weight + FLT_MIN)) * ((entropy_tmp) * log(entropy_tmp)/log(2.0) + ( 1.0 - entropy_tmp) * log(1.0-entropy_tmp)/log(2.0));
+                        entropy_lc = - ( total_l_weight / ( total_weight + DBL_MIN)) * ((entropy_tmp) * log(entropy_tmp)/log(2.0) + ( 1.0 - entropy_tmp) * log(1.0-entropy_tmp)/log(2.0));
                     }
                 }
                 if ( entropy_lc != entropy_lc ){ //判断是不是Nan
@@ -870,12 +870,12 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
                     entropy_rc = 0.0;
                 }
                 else{
-                    entropy_tmp = total_r_pos_weight / ( total_r_weight + FLT_MIN);
-                    if ( (entropy_tmp-0.0) < FLT_EPSILON || (1.0-entropy_tmp) < FLT_EPSILON){
+                    entropy_tmp = total_r_pos_weight / ( total_r_weight + DBL_MIN);
+                    if ( (entropy_tmp-0.0) < DBL_EPSILON || (1.0-entropy_tmp) < DBL_EPSILON){
                         entropy_rc = 0.0;
                     }
                     else{
-                        entropy_rc = - ( total_r_weight / ( total_weight + FLT_MIN)) * ((entropy_tmp ) * log(entropy_tmp)/log(2.0) + ( 1.0 - entropy_tmp) * log(1.0-entropy_tmp)/log(2.0));
+                        entropy_rc = - ( total_r_weight / ( total_weight + DBL_MIN)) * ((entropy_tmp ) * log(entropy_tmp)/log(2.0) + ( 1.0 - entropy_tmp) * log(1.0-entropy_tmp)/log(2.0));
                     }
                 }
 
@@ -905,13 +905,13 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
     //这里把var和entropy做归一化，然后取其和的最小值，这样可以做到分类和回归在同一个feature上都做到较优。用一个factor来控制影响比例
     //这个方法和原论文的方法不同，原论文按照概率值来选择偏向分类还是回归树
     
-    float minvar = *std::min_element(std::begin(vars), std::end(vars));
-    float maxvar = *std::max_element(std::begin(vars), std::end(vars));
-    float minent = *std::min_element(std::begin(entropys), std::end(entropys));
-    float maxent = *std::max_element(std::begin(entropys), std::end(entropys));
+    double minvar = *std::min_element(std::begin(vars), std::end(vars));
+    double maxvar = *std::max_element(std::begin(vars), std::end(vars));
+    double minent = *std::min_element(std::begin(entropys), std::end(entropys));
+    double maxent = *std::max_element(std::begin(entropys), std::end(entropys));
     
-    float summin = FLT_MAX;
-    float indexmin = 0;
+    double summin = DBL_MAX;
+    double indexmin = 0;
     float df = detect_factor_;
     if ( landmark_index_ > 50 ){
         if ( stage_ == 0 ){
@@ -931,9 +931,9 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
         }
     }
     for ( int i=0; i<vars.size(); i++){
-        float tmpvar = ( vars[i] - minvar ) / (maxvar - minvar + FLT_MIN);
-        float tmpent = ( entropys[i] - minent ) / (maxent - minent + FLT_MIN);
-        float tmpsum = (1.0 - df) * tmpvar + df * tmpent; //这个可以根据stage用不同的系数，TODO:要不要根据depth也调整？
+        double tmpvar = ( vars[i] - minvar ) / (maxvar - minvar + FLT_MIN);
+        double tmpent = ( entropys[i] - minent ) / (maxent - minent + FLT_MIN);
+        double tmpsum = (1.0 - df) * tmpvar + df * tmpent; //这个可以根据stage用不同的系数，TODO:要不要根据depth也调整？
         if ( tmpsum < summin ){
             summin = tmpsum;
             indexmin = i;
