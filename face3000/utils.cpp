@@ -580,6 +580,7 @@ float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& pred
     float interocular_distance = sqrt(x*x+y*y);
     float sum = 0;
     float result;
+    
     for (int i=0;i<17;i++){
         sum += norm(ground_truth_shape.row(i)-predicted_shape.row(i));
     }
@@ -587,13 +588,8 @@ float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& pred
     if ( stage > 1 ){
         sum = norm(ground_truth_shape.row(landmark)-predicted_shape.row(landmark));
         float result2 = sum/interocular_distance;
-        if ( result2 < 0.1 ){
+        if ( result2 > 0.3 && result > 0.2 ){
             result = result2;
-        }
-        else if ( result2 < 0.2){
-            if ( result < 0.5 ){
-                result = result2;
-            }
         }
     }
     //std::cout << "error2:" << result << std::endl;

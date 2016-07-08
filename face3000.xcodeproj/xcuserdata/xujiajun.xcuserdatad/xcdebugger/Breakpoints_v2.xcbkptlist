@@ -2,22 +2,4 @@
 <Bucket
    type = "1"
    version = "2.0">
-   <Breakpoints>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "face3000/regressor.cpp"
-            timestampString = "488435684.440174"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "200"
-            endingLineNumber = "200"
-            landmarkName = "CascadeRegressor::Train(std::vector&lt;cv::Mat_&lt;uchar&gt; &gt;&amp; images, std::vector&lt;cv::Mat_&lt;float&gt; &gt;&amp; ground_truth_shapes, std::vector&lt;int&gt; ground_truth_faces, std::vector&lt;BoundingBox&gt;&amp; bboxes, Parameters&amp; params, int pos_num )"
-            landmarkType = "5">
-         </BreakpointContent>
-      </BreakpointProxy>
-   </Breakpoints>
 </Bucket>

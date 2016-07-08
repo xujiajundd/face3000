@@ -52,9 +52,9 @@ public:
         idx = cidx;
         file_name = lists[idx];
         image = cv::imread(file_name, 1);
-        float scale = max(image.cols,image.rows) / 1024.0;
+        float scale = min(image.cols,image.rows) / 800.0;
         imageScaled = false;
-        if ( scale > 1.0 ){
+        if ( scale > 1.0 || scale < 0.5 ){
             cv::resize(image, image, cv::Size(image.cols / scale, image.rows / scale), 0, 0, cv::INTER_LINEAR);
             imageScaled = true;
         }
@@ -68,7 +68,7 @@ public:
             std::vector<cv::Mat_<float>> shapes;
             cv::Mat_<uchar> grayImage;
             cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
-            std::vector<cv::Rect> rects = face_detector.detectMultiScale(grayImage, shapes, 1.1, 2, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, min(image.rows,image.cols) / 3);
+            std::vector<cv::Rect> rects = face_detector.detectMultiScale(grayImage, shapes, 1.1, 2, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, min(image.rows,image.cols) / 5);
             if ( rects.size() > 0 ){
                 shape = reConvertShape(shapes[0]);
             }

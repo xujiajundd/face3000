@@ -101,19 +101,20 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                     temp = ground_truth_shapes_[index];
                     temp = ProjectShape(temp, bboxes_[index]);
                     temp = ReProjection(temp, ibox);
-                } while ( CalculateError(ground_truth_shapes[i], temp) > 0.5 );
+                    if ( debug_on_){
+                        if ( CalculateError(ground_truth_shapes[i], temp) > 0.5 ){
+                            DrawPredictImage(images[i], ground_truth_shapes[i]);
+                            DrawPredictImage(images[i], temp);
+                        }
+                    }
+                } while ( CalculateError(ground_truth_shapes[i], temp) > 0.5 ); //这个地方可能会死循环的
                 augmented_current_shapes.push_back(temp);
                 current_fi.push_back(0);
                 current_weight.push_back(1);
                 find_times.push_back(0);
-                if ( debug_on_){
-                    if ( CalculateError(ground_truth_shapes[i], temp) > 0.5 ){
-                        DrawPredictImage(images[i], temp);
-                    }
-                }
+
             }
 		}
-
 	}
 
     for ( int i = pos_num; i < images_.size(); i++ ){

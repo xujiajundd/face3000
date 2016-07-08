@@ -151,14 +151,14 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
             //TODO，这个地方可以试多个策略：1）自己，2）自己和随机一个，3）随机两个
             //TODO，在前2个stage，用3，第三stage用2，后续stage，用1？如何？
             int landmark1, landmark2;
-            if ( stage_ == 0 /*&& landmark_index_ < 50*/ ){
+            if ( stage_ == 0 || n % (stage_ + 1) == 0 /*&& landmark_index_ < 50*/ ){
                 landmark1 = (int)rd.uniform(0, landmark_num_);
                 landmark2 = (int)rd.uniform(0, landmark_num_);
             }
-            else if ( stage_ == 1 /*&& landmark_index_ < 50*/ ){
-                landmark1 = landmark_index_;
-                landmark2 = (int)rd.uniform(0, landmark_num_);
-            }
+//            else if ( stage_ == 1 /*&& landmark_index_ < 50*/ ){
+//                landmark1 = landmark_index_;
+//                landmark2 = (int)rd.uniform(0, landmark_num_);
+//            }
             else{
                 landmark1 = landmark_index_;
                 landmark2 = landmark_index_;
@@ -212,7 +212,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         for(int k=0;k<current_weight.size();++k)
         {
             current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
-            if ( current_weight[k] > 10000000000000000.0 && find_times[k] < MAXFINDTIMES){ //试验一下去掉这个的效果
+            if ( current_weight[k] > 1000000000000000.0 && find_times[k] < MAXFINDTIMES){ //试验一下去掉这个的效果
                 find_times[k] = MAXFINDTIMES+8;
                 if ( augmented_ground_truth_faces[k] == 1 ){
                     drop_pos_count++;
@@ -479,10 +479,10 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             
                             BoundingBox pos_box = augmented_bboxes[p*(param_.initial_guess_+1)]; //这个地方坑死了。。。
                             BoundingBox search_box;
-                            search_box.start_x = pos_box.start_x - 0.7 * pos_box.width;
-                            search_box.start_y = pos_box.start_y - 0.7 * pos_box.height;
-                            search_box.width = 2.4 * pos_box.width;
-                            search_box.height = 2.4 * pos_box.height;
+                            search_box.start_x = pos_box.start_x - 0.8 * pos_box.width;
+                            search_box.start_y = pos_box.start_y - 0.8 * pos_box.height;
+                            search_box.width = 2.6 * pos_box.width;
+                            search_box.height = 2.6 * pos_box.height;
                             if ( search_box.start_x < 0 ) search_box.start_x = 0;
                             if ( search_box.start_y < 0 ) search_box.start_y = 0;
                             if (( search_box.start_x + search_box.width ) > cols ) search_box.width = cols - search_box.start_x;
@@ -506,8 +506,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         
                                         float delta_start = sqrtf(powf((new_box.start_x - pos_box.start_x), 2.0) + powf((new_box.start_y - pos_box.start_y), 2.0));
                                         float delta_end = sqrtf(powf((new_box.start_x + new_box.width - pos_box.start_x - pos_box.width), 2.0) + powf((new_box.start_y + new_box.height - pos_box.start_y - pos_box.height), 2.0));
-                                        if ( delta_start < 0.15 * pos_box.width && delta_end < 0.15 * pos_box.width ) continue; //判断与正例的位置接近则不采用
-                                        if ( (delta_start + delta_end) < 0.2 * pos_box.width  ) continue;
+                                        if ( delta_start < 0.2 * pos_box.width && delta_end < 0.2 * pos_box.width ) continue; //判断与正例的位置接近则不采用
+                                        if ( (delta_start + delta_end) < 0.3 * pos_box.width  ) continue;
                                         
 //                                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[p], augmented_bboxes[p]);
 //                                        augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
@@ -525,6 +525,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         
                                         if ( tmp_isface){
                                             float error = CalculateError2(augmented_ground_truth_shapes[p*(param_.initial_guess_+1)], augmented_current_shapes[idx], stage_, landmark_index_);
+                                            //float error = CalculateError(augmented_ground_truth_shapes[p*(param_.initial_guess_+1)], augmented_current_shapes[idx]);
                                             
                                             //FOR DEBUG
                                             if ( debug_on_ ){
@@ -567,7 +568,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                             }
                                             
                                             
-                                            if ( error >= 0.2 ){
+                                            if ( error >= 0.3 ){
                                                 faceFound = true;
                                                 current_fi[idx] = tmp_fi;
                                                 current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
@@ -913,23 +914,23 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
     double summin = DBL_MAX;
     double indexmin = 0;
     float df = detect_factor_;
-    if ( landmark_index_ > 50 ){
-        if ( stage_ == 0 ){
-            df = 0.3; //脸的外轮廓多alignement，少detect
-        }
-        else if ( stage_ == 1 ){
-            df = 0.4;
-        }
-        else if ( stage_ == 2 ){
-            df = 0.7;
-        }
-        else if ( stage_ == 3 ){
-            df = 0.8;
-        }
-        else {
-            df = 0.9;
-        }
-    }
+//    if ( landmark_index_ > 50 ){
+//        if ( stage_ == 0 ){
+//            df = 0.3; //脸的外轮廓多alignement，少detect
+//        }
+//        else if ( stage_ == 1 ){
+//            df = 0.4;
+//        }
+//        else if ( stage_ == 2 ){
+//            df = 0.7;
+//        }
+//        else if ( stage_ == 3 ){
+//            df = 0.8;
+//        }
+//        else {
+//            df = 0.9;
+//        }
+//    }
     for ( int i=0; i<vars.size(); i++){
         double tmpvar = ( vars[i] - minvar ) / (maxvar - minvar + FLT_MIN);
         double tmpent = ( entropys[i] - minent ) / (maxent - minent + FLT_MIN);
