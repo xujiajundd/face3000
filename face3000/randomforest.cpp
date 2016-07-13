@@ -212,7 +212,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         for(int k=0;k<current_weight.size();++k)
         {
             current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
-            if ( current_weight[k] > 1000000000000000.0 && find_times[k] < MAXFINDTIMES){ //试验一下去掉这个的效果
+            if ( current_weight[k] > 10000000000000000.0 && find_times[k] < MAXFINDTIMES){ //试验一下去掉这个的效果
                 find_times[k] = MAXFINDTIMES+8;
                 if ( augmented_ground_truth_faces[k] == 1 ){
                     drop_pos_count++;
@@ -506,8 +506,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         
                                         float delta_start = sqrtf(powf((new_box.start_x - pos_box.start_x), 2.0) + powf((new_box.start_y - pos_box.start_y), 2.0));
                                         float delta_end = sqrtf(powf((new_box.start_x + new_box.width - pos_box.start_x - pos_box.width), 2.0) + powf((new_box.start_y + new_box.height - pos_box.start_y - pos_box.height), 2.0));
-                                        if ( delta_start < 0.2 * pos_box.width && delta_end < 0.2 * pos_box.width ) continue; //判断与正例的位置接近则不采用
-                                        if ( (delta_start + delta_end) < 0.3 * pos_box.width  ) continue;
+                                        if ( delta_start < 0.15 * pos_box.width && delta_end < 0.15 * pos_box.width ) continue; //判断与正例的位置接近则不采用
+                                        if ( (delta_start + delta_end) < 0.2 * pos_box.width  ) continue;
                                         
 //                                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[p], augmented_bboxes[p]);
 //                                        augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
@@ -568,7 +568,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                             }
                                             
                                             
-                                            if ( error >= 0.3 ){
+                                            if ( error >= 0.2 ){
                                                 faceFound = true;
                                                 current_fi[idx] = tmp_fi;
                                                 current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
@@ -1111,7 +1111,7 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<uchar>& i
 RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std::vector<cv::Mat_<float> >& regression_targets, CascadeRegressor *casRegressor, int true_pos_num){
 	stage_ = stage;
     param_ = param;
-	local_features_num_ = param.local_features_num_ / ( stage_ + 1 );
+	local_features_num_ = 200 + param.local_features_num_ / ( stage_ + 1 );
 	landmark_index_ = landmark_index;
     landmark_num_ = param.landmarks_num_per_face_;
 	tree_depth_ = param.tree_depth_;

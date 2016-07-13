@@ -52,12 +52,12 @@ public:
         idx = cidx;
         file_name = lists[idx];
         image = cv::imread(file_name, 1);
-        float scale = min(image.cols,image.rows) / 800.0;
+        float scale = max(image.cols,image.rows) / 1024.0;
         imageScaled = false;
-        if ( scale > 1.0 || scale < 0.5 ){
+//        if ( scale > 1.0 || scale < 0.5 ){
             cv::resize(image, image, cv::Size(image.cols / scale, image.rows / scale), 0, 0, cv::INTER_LINEAR);
             imageScaled = true;
-        }
+//s        }
         shape_file_name  = file_name.substr(0, file_name.length() - 3) + "pts";
         int landmarks = 0;
         std::ifstream fin;

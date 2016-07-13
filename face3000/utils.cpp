@@ -588,7 +588,7 @@ float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& pred
     if ( stage > 1 ){
         sum = norm(ground_truth_shape.row(landmark)-predicted_shape.row(landmark));
         float result2 = sum/interocular_distance;
-        if ( result2 > 0.3 && result > 0.2 ){
+        if ( result2 > 0.2 && result > 0.1 ){
             result = result2;
         }
     }
