@@ -824,3 +824,24 @@ int annotate_main(const char *path)
     return 0;
 }
 //==============================================================================
+
+int annotate_filter(const char *path)
+{
+    const char *ModelName = "model_t6d4n8i2";
+    annotation.face_detector.LoadCascadeRegressor(ModelName);
+
+    std::vector<std::string> lists;
+    std::string spath = std::string(path);
+    lists = get_file_lists(spath);
+    for ( int i=0; i<lists.size(); i++ ){
+        std::string file_name = lists[i];
+        cv::Mat_<uchar> image = cv::imread(file_name, 0);
+        std::vector<cv::Mat_<float>> shapes;
+        std::vector<cv::Rect> rects = annotation.face_detector.detectMultiScale(image, shapes, 1.1, 1, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, min(image.rows,image.cols) / 4);
+        if ( rects.size() == 0 ){
+            remove(file_name.c_str());
+        }
+
+    }
+    return 0;
+}

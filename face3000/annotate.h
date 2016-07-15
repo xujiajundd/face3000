@@ -10,5 +10,6 @@
 #define annotate_h
 
 int annotate_main(const char *path);
+int annotate_filter(const char *path);
 
 #endif /* annotate_h */

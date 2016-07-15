@@ -608,12 +608,12 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.7);
     params.detect_factor_by_stage_.push_back(0.6);
     params.detect_factor_by_stage_.push_back(0.5);
-    params.detect_factor_by_stage_.push_back(0.5);
+    params.detect_factor_by_stage_.push_back(0.4);
     params.detect_factor_by_stage_.push_back(0.7);
     params.detect_factor_by_stage_.push_back(0.4);
     params.detect_factor_by_stage_.push_back(0.2);
     
-    params.tree_depth_ = 4;
+    params.tree_depth_ = 5;
     params.trees_num_per_forest_ = 8;
     params.initial_guess_ = 2;
 
@@ -904,6 +904,12 @@ int main(int argc, char* argv[])
             std::cout << "annotate image\n";
             if ( argc == 3){
                 annotate_main(argv[2]);
+            }
+        }
+        if (strcmp(argv[1], "annotate_filter") == 0){
+            std::cout << "annotate filter image\n";
+            if ( argc == 3){
+                annotate_filter(argv[2]);
             }
         }
 	}
