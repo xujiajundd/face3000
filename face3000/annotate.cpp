@@ -68,7 +68,7 @@ public:
             std::vector<cv::Mat_<float>> shapes;
             cv::Mat_<uchar> grayImage;
             cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
-            std::vector<cv::Rect> rects = face_detector.detectMultiScale(grayImage, shapes, 1.1, 2, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, min(image.rows,image.cols) / 5);
+            std::vector<cv::Rect> rects = face_detector.detectMultiScale(grayImage, shapes, 1.1, 1, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, min(image.rows,image.cols) / 5);
             if ( rects.size() > 0 ){
                 shape = reConvertShape(shapes[0]);
             }
