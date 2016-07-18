@@ -212,7 +212,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         for(int k=0;k<current_weight.size();++k)
         {
             current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
-            if ( current_weight[k] > 1000000000000000.0 && find_times[k] < MAXFINDTIMES){ //试验一下去掉这个的效果
+            if ( current_weight[k] > 90000000000000000.0 && find_times[k] < MAXFINDTIMES){ //试验一下去掉这个的效果
                 find_times[k] = MAXFINDTIMES+8;
                 if ( augmented_ground_truth_faces[k] == 1 ){
                     drop_pos_count++;
@@ -569,7 +569,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                             }
                                             
                                             
-                                            if ( error >= 0.2 ){
+                                            if ( error >= 0.4 || ( error > 0.2 && stage_ > 1)){
                                                 faceFound = true;
                                                 current_fi[idx] = tmp_fi;
                                                 current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);

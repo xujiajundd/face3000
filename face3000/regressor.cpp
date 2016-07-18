@@ -589,6 +589,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
                                                          int minSize){
     std::vector<cv::Rect> faces;
     shapes.clear();
+    faces.clear();
     float shuffle = 0.1;
     int order = flags | CASCADE_FLAG_SEARCH_MAX_TO_MIN;
     int biggest = flags | CASCADE_FLAG_BIGGEST_ONLY;

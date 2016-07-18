@@ -64,10 +64,10 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "train model_t6d4n8i2"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "test2 model_t6d4n8i2"
+            argument = "video model_t6d4n8i2"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -75,11 +75,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "test model_neg_d5n4i2"
-            isEnabled = "NO">
+            argument = "video model_t6d4n9i2"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "annotate"
+            argument = "annotate  /Users/xujiajun/developer/dataset/xujj/avatar"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

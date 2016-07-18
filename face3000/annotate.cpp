@@ -74,6 +74,7 @@ public:
             }
             else{
                 //用平均脸在中间
+                std::cout << "no faces" << std::endl;
                 BoundingBox bbox;
                 bbox.width = min(image.cols, image.rows) / 2;
                 bbox.height = bbox.width;
@@ -540,7 +541,7 @@ std::vector<std::string> get_file_lists(string path){
             //            std::cout << fullFilePath << std::endl;
             string::size_type pos = _fileName.rfind('.');
             std::string ext = _fileName.substr(pos);
-            if (ext == ".jpg" || ext == ".png" || ext == ".JPG" || ext == ".PNG"){
+            if (ext == ".jpg" || ext == ".png" || ext == ".JPG" || ext == ".PNG" || ext == ".jpeg"){
                 lists.push_back(fullFilePath);
             }
         } else {
@@ -827,7 +828,7 @@ int annotate_main(const char *path)
 
 int annotate_filter(const char *path)
 {
-    const char *ModelName = "model_t6d4n8i2";
+    const char *ModelName = "model_t6d4n9i2";
     annotation.face_detector.LoadCascadeRegressor(ModelName);
 
     std::vector<std::string> lists;
@@ -837,9 +838,17 @@ int annotate_filter(const char *path)
         std::string file_name = lists[i];
         cv::Mat_<uchar> image = cv::imread(file_name, 0);
         std::vector<cv::Mat_<float>> shapes;
-        std::vector<cv::Rect> rects = annotation.face_detector.detectMultiScale(image, shapes, 1.1, 1, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, min(image.rows,image.cols) / 4);
+        std::cout << "process:" << file_name;
+        std::vector<cv::Rect> rects = annotation.face_detector.detectMultiScale(image, shapes, 1.1, 1, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, min(image.rows,image.cols) / 3);
         if ( rects.size() == 0 ){
+//            std::string dfile =  file_name + ".bak";
+//            int ret = rename(file_name.c_str(), dfile.c_str());
+//            std::cout << dfile << " " << file_name << " " << ret << std::endl;
+            std::cout << ":removed" << std::endl;
             remove(file_name.c_str());
+        }
+        else{
+            std::cout << std::endl;
         }
 
     }
