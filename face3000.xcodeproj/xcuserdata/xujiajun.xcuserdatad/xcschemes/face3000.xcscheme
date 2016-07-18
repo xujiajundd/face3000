@@ -75,7 +75,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "video model_t6d4n9i2"
+            argument = "train model_t6d4n9i2"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
