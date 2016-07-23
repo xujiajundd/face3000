@@ -64,15 +64,15 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "video model_t6d4n9i2"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "video model_t6d4n8i2"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "annotate /Users/xujiajun/developer/dataset/xujj/baidu"
-            isEnabled = "NO">
+            argument = "train model_t6d5n8i2"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "video model_t6d4n9i2"

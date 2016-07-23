@@ -8,6 +8,7 @@ Node::Node(){
 	left_child_ = NULL;
 	right_child_ = NULL;
 	is_leaf_ = false;
+    is_leaf_a = false;
 	threshold_ = 0.0;
 	leaf_identity = -1;
 //	samples_ = -1;
@@ -23,6 +24,7 @@ Node::Node(Node* left, Node* right, float thres, bool leaf){
 	left_child_ = left;
 	right_child_ = right;
 	is_leaf_ = leaf;
+    is_leaf_a = leaf;
 	threshold_ = thres;
 	//offset_ = cv::Point2f(0, 0);
 }
@@ -643,10 +645,16 @@ Node* RandomForest::BuildTree(std::set<int>& selected_feature_indexes, cv::Mat_<
 		node->depth_ = current_depth;
 //		node->samples_ = images_indexes.size();
 		std::vector<int> left_indexes, right_indexes;
+        if ( current_depth == tree_depth_ - 1 ){
+            node->is_leaf_a = true;
+            node->leaf_identity = all_leaf_nodes_;
+            all_leaf_nodes_++;
+          
+        }
 		if (current_depth == tree_depth_){ // the node reaches max depth
 			node->is_leaf_ = true;
-			node->leaf_identity = all_leaf_nodes_;
-			all_leaf_nodes_++;
+//			node->leaf_identity = all_leaf_nodes_;
+//			all_leaf_nodes_++;
             //计算叶子节点的score
             float leaf_pos_weight = FLT_MIN;
             float leaf_neg_weight = FLT_MIN;
@@ -672,8 +680,11 @@ Node* RandomForest::BuildTree(std::set<int>& selected_feature_indexes, cv::Mat_<
 		if (ret == 1){ // the current node contain all sample when reaches max variance reduction, it is leaf node
             std::cout<< "the current node contain all sample when reaches max variance reduction, it is leaf node" << " images:" << images_indexes.size() << std::endl;
 			node->is_leaf_ = true;
-			node->leaf_identity = all_leaf_nodes_;
-			all_leaf_nodes_++;
+            if (current_depth < tree_depth_ - 1 ) {
+                node->is_leaf_a = true;
+                node->leaf_identity = all_leaf_nodes_;
+                all_leaf_nodes_++;
+            }
             //计算叶子节点的score, 同上
             float leaf_pos_weight = FLT_MIN;
             float leaf_neg_weight = FLT_MIN;
@@ -903,6 +914,12 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 //            df = 0.9;
 //        }
 //    }
+    if ( node->depth_ >= tree_depth_ - 1){
+        df = 1.0; //全部用于detect分类
+    }
+    else if ( landmark_index_ < 17 ){
+        df = detect_factor_ + 0.1;
+    }
     for ( int i=0; i<vars.size(); i++){
         double tmpvar = ( vars[i] - minvar ) / (maxvar - minvar + FLT_MIN);
         double tmpent = ( entropys[i] - minent ) / (maxent - minent + FLT_MIN);
@@ -1125,6 +1142,7 @@ void RandomForest::WriteTree(Node* p, std::ofstream& fout){
 		fout <<"Y" << " "
 			<< p->threshold_ << " " 
 			<< p->is_leaf_ << " "
+            << p->is_leaf_a << " "
 			<< p->leaf_identity << " "
 			<< p->depth_ << " "
             << p->score_ << " "
@@ -1146,6 +1164,7 @@ Node* RandomForest::ReadTree(std::ifstream& fin){
 		Node* p = new Node();
 		fin >> p->threshold_
 			>> p->is_leaf_
+            >> p->is_leaf_a
 			>> p->leaf_identity
 			>> p->depth_
             >> p->score_

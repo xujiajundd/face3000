@@ -303,9 +303,13 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
         const cv::Mat_<float>& current_shape = augmented_current_shapes[i];
         for (int j = 0; j < params_.landmarks_num_per_face_; ++j){
             for (int k = 0; k < params_.trees_num_per_forest_; ++k){
-
                 Node* node = rd_forests_[j].trees_[k];
                 while (!node->is_leaf_){
+                    if ( node->is_leaf_a ){
+                        global_binary_features[i][ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k, images[augmented_images_index[i]], augmented_bboxes[i], augmented_current_shapes[i], rotations_[i], scales_[i]);
+                        global_binary_features[i][ind].value = 1.0;
+                        ind++;
+                    }
                     FeatureLocations& pos = node->feature_locations_;
                     float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
                     float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
@@ -346,9 +350,7 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
                         }
                     }
                 }
-                global_binary_features[i][ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k, images[augmented_images_index[i]], augmented_bboxes[i], augmented_current_shapes[i], rotations_[i], scales_[i]);
-                global_binary_features[i][ind].value = 1.0;
-                ind++;
+
                 //std::cout << global_binary_features[i][ind].index << " ";
             }
             index += rd_forests_[j].all_leaf_nodes_;
@@ -738,150 +740,7 @@ Regressor::~Regressor(){
         delete[] tmp_binary_features;
     }
 }
-/*
-struct feature_node* Regressor::GetGlobalBinaryFeaturesThread(cv::Mat_<uchar>& image,
-    cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale){
-    struct feature_node* binary_features = new feature_node[params_.trees_num_per_forest_*params_.landmarks_num_per_face_+1];
-    tmp_binary_features = binary_features;
-    tmp_image = image;
-    tmp_current_shape = current_shape;
-    tmp_bbox = bbox;
-    tmp_rotation = rotation;
-    tmp_scale = scale;
-    // cur_landmark.store(0);
 
-
-    int num_threads = 2;
-    std::thread t1, t2;
-    std::vector<std::thread> pool;
-    //struct timeval tt1, tt2;
-    //gettimeofday(&tt1, NULL);
-    for(int i = 0; i < num_threads; i++){
-        //t1 = std::thread(&Regressor::GetFeaThread, this);
-        pool.push_back(std::thread(&Regressor::GetFeaThread, this));
-    }
-    //gettimeofday(&tt2, NULL);
-    //std::cout << "threads: " << tt2.tv_sec - tt1.tv_sec + (tt2.tv_usec - tt1.tv_usec)/1000000.0 << std::endl;
-
-    for(int i = 0; i < num_threads; i++){
-        pool[i].join();
-    }
-
-    binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].index = -1;
-    binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].value = -1.0;
-
-    return binary_features;
-}
-*/
-/*
-void Regressor::GetFeaThread(){
-    int cur = -1;
-    while(1){
-        cur = cur_landmark.fetch_add(1);
-        if(cur >= params_.landmarks_num_per_face_){
-            return;
-        }
-        //std::cout << stage_ << ": " << cur << std::endl;
-        int ind = cur*params_.trees_num_per_forest_;
-        for (int k = 0; k < params_.trees_num_per_forest_; ++k)
-        {
-            Node* node = rd_forests_[cur].trees_[k];
-            while (!node->is_leaf_){
-                FeatureLocations& pos = node->feature_locations_;
-                float delta_x = tmp_rotation(0, 0)*pos.start.x + tmp_rotation(0, 1)*pos.start.y;
-                float delta_y = tmp_rotation(1, 0)*pos.start.x + tmp_rotation(1, 1)*pos.start.y;
-                delta_x = tmp_scale*delta_x*tmp_bbox.width / 2.0;
-                delta_y = tmp_scale*delta_y*tmp_bbox.height / 2.0;
-                int real_x = delta_x + tmp_current_shape(cur, 0);
-                int real_y = delta_y + tmp_current_shape(cur, 1);
-                real_x = std::max(0, std::min(real_x, tmp_image.cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, tmp_image.rows - 1)); // which rows
-                int tmp = (int)tmp_image(real_y, real_x); //real_y at first
-
-                delta_x = tmp_rotation(0, 0)*pos.end.x + tmp_rotation(0, 1)*pos.end.y;
-                delta_y = tmp_rotation(1, 0)*pos.end.x + tmp_rotation(1, 1)*pos.end.y;
-                delta_x = tmp_scale*delta_x*tmp_bbox.width / 2.0;
-                delta_y = tmp_scale*delta_y*tmp_bbox.height / 2.0;
-                real_x = delta_x + tmp_current_shape(cur, 0);
-                real_y = delta_y + tmp_current_shape(cur, 1);
-                real_x = std::max(0, std::min(real_x, tmp_image.cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, tmp_image.rows - 1)); // which rows
-                if ((tmp - (int)tmp_image(real_y, real_x)) < node->threshold_){
-                    node = node->left_child_;// go left
-                }
-                else{
-                    node = node->right_child_;// go right
-                }
-            }
-
-            //int ind = j*params_.trees_num_per_forest_ + k;
-            tmp_binary_features[ind].index = leaf_index_count[cur] + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
-            tmp_binary_features[ind].value = 1.0;
-            ind++;
-            //std::cout << binary_features[ind].index << " ";
-        }
-    }
-}
-*/
-
-//del by xujj
-//struct feature_node* Regressor::GetGlobalBinaryFeaturesMP(cv::Mat_<uchar>& image,
-//    cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale){
-//    int index = 1;
-//
-//    struct feature_node* binary_features = new feature_node[params_.trees_num_per_forest_*params_.landmarks_num_per_face_+1];
-//    //int ind = 0;
-//#pragma omp parallel for
-//    for (int j = 0; j < params_.landmarks_num_per_face_; ++j)
-//    {
-//        for (int k = 0; k < params_.trees_num_per_forest_; ++k)
-//        {
-//            Node* node = rd_forests_[j].trees_[k];
-//            while (!node->is_leaf_){
-//                FeatureLocations& pos = node->feature_locations_;
-//                float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
-//                float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
-//                delta_x = scale*delta_x*bbox.width / 2.0;
-//                delta_y = scale*delta_y*bbox.height / 2.0;
-//                int real_x = delta_x + current_shape(j, 0);
-//                int real_y = delta_y + current_shape(j, 1);
-//                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-//                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-//                int tmp = (int)image(real_y, real_x); //real_y at first
-//
-//                delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
-//                delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
-//                delta_x = scale*delta_x*bbox.width / 2.0;
-//                delta_y = scale*delta_y*bbox.height / 2.0;
-//                real_x = delta_x + current_shape(j, 0);
-//                real_y = delta_y + current_shape(j, 1);
-//                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-//                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-//                if ((tmp - (int)image(real_y, real_x)) < node->threshold_){
-//                    node = node->left_child_;// go left
-//                }
-//                else{
-//                    node = node->right_child_;// go right
-//                }
-//            }
-//
-//            //int ind = j*params_.trees_num_per_forest_ + k;
-//            int ind = feature_node_index[j] + k;
-//            binary_features[ind].index = leaf_index_count[j] + node->leaf_identity;
-//            //binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
-//            binary_features[ind].value = 1.0;
-//            //ind++;
-//            //std::cout << binary_features[ind].index << " ";
-//        }
-//
-//        //index += rd_forests_[j].all_leaf_nodes_;
-//    }
-//    //std::cout << "\n";
-//    //std::cout << index << ":" << params_.trees_num_per_forest_*params_.landmarks_num_per_face_ << std::endl;
-//    binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].index = -1;
-//    binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].value = -1.0;
-//    return binary_features;
-//}
 
 struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
     cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face){
@@ -899,6 +758,11 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
         {
             Node* node = rd_forests_[j].trees_[k];
             while (!node->is_leaf_){
+                if ( node->is_leaf_a ){
+                    tmp_binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
+                    tmp_binary_features[ind].value = 1.0;
+                    ind++;
+                }
                 FeatureLocations& pos = node->feature_locations_;
                 float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
                 float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
@@ -946,9 +810,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
             //int ind = j*params_.trees_num_per_forest_ + k;
             //int ind = feature_node_index[j] + k;
             //binary_features[ind].index = leaf_index_count[j] + node->leaf_identity;
-            tmp_binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
-            tmp_binary_features[ind].value = 1.0;
-            ind++;
+
             //std::cout << binary_features[ind].index << " ";
         }
 
@@ -976,6 +838,11 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
         {
             Node* node = rd_forests_[j].trees_[k];
             while (!node->is_leaf_){
+                if ( node->is_leaf_a ){
+                    tmp_binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
+                    tmp_binary_features[ind].value = 1.0;
+                    ind++;
+                }
                 FeatureLocations& pos = node->feature_locations_;
                 float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
                 float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
@@ -1025,9 +892,6 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
             //int ind = j*params_.trees_num_per_forest_ + k;
             //int ind = feature_node_index[j] + k;
             //binary_features[ind].index = leaf_index_count[j] + node->leaf_identity;
-            tmp_binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
-            tmp_binary_features[ind].value = 1.0;
-            ind++;
             //std::cout << binary_features[ind].index << " ";
             if ( stage == currentStage && landmark == j && tree == k){
                 is_face = 1;
