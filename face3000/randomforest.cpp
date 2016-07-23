@@ -13,7 +13,6 @@ Node::Node(){
 //	samples_ = -1;
 //	thre_changed_ = false;
     score_ = 0.0;
-    variance_ = 0.0;
 }
 
 Node::Node(Node* left, Node* right, float thres){
@@ -649,35 +648,21 @@ Node* RandomForest::BuildTree(std::set<int>& selected_feature_indexes, cv::Mat_<
 			node->leaf_identity = all_leaf_nodes_;
 			all_leaf_nodes_++;
             //计算叶子节点的score
-            int num_shapes=0;
-            float variance=0.0, Ex=0.0, Ey=0.0, Ex_2=0.0, Ey_2=0.0;
             float leaf_pos_weight = FLT_MIN;
             float leaf_neg_weight = FLT_MIN;
             for ( int i=0; i<images_indexes.size(); i++){
                 int index = images_indexes[i];
                 if ( augmented_ground_truth_faces[index] == 1){
-                    num_shapes++;
-                    float value = regression_targets_->at(index)(landmark_index_, 0);
-                    Ex_2 += pow(value, 2);
-                    Ex += value;
-                    value = regression_targets_->at(index)(landmark_index_, 1);
-                    Ey_2 += pow(value, 2);
-                    Ey += value;
                     leaf_pos_weight += current_weight[index];
                 }
                 else{
                     leaf_neg_weight += current_weight[index];
                 }
             }
-            if ( num_shapes > 0 ){ //第三个stage后，开始加上alignment的结果情况
-                variance = Ex_2 / num_shapes - pow(Ex / num_shapes, 2) + Ey_2 / num_shapes - pow(Ey / num_shapes, 2);
-                variance = sqrtf(variance);
-            }
             
              //加上一个shape alignment的情况来影响score试试，让shape不好的正例score降低
 //            node->score_ = 0.5*(((leaf_pos_weight-0.0)<FLT_EPSILON)?0:log(leaf_pos_weight))-0.5*(((leaf_neg_weight-0.0)<FLT_EPSILON)?0:log(leaf_neg_weight))/*/log(2.0)*/;
             node->score_ = 0.5*(log(leaf_pos_weight)- log(leaf_neg_weight)) /*/log(2.0)*/;
-            node->variance_ = variance;
 			return node;
 		}
 
@@ -690,34 +675,20 @@ Node* RandomForest::BuildTree(std::set<int>& selected_feature_indexes, cv::Mat_<
 			node->leaf_identity = all_leaf_nodes_;
 			all_leaf_nodes_++;
             //计算叶子节点的score, 同上
-            int num_shapes=0;
-            float variance=0.0, Ex=0.0, Ey=0.0, Ex_2=0.0, Ey_2=0.0;
             float leaf_pos_weight = FLT_MIN;
             float leaf_neg_weight = FLT_MIN;
             for ( int i=0; i<images_indexes.size(); i++){
                 int index = images_indexes[i];
                 if ( augmented_ground_truth_faces[index] == 1){
-                    num_shapes++;
-                    float value = regression_targets_->at(index)(landmark_index_, 0);
-                    Ex_2 += pow(value, 2);
-                    Ex += value;
-                    value = regression_targets_->at(index)(landmark_index_, 1);
-                    Ey_2 += pow(value, 2);
-                    Ey += value;
                     leaf_pos_weight += current_weight[index];
                 }
                 else{
                     leaf_neg_weight += current_weight[index];
                 }
             }
-            if ( num_shapes > 0 ){ //第三个stage后，开始加上alignment的结果情况
-                variance = Ex_2 / num_shapes - pow(Ex / num_shapes, 2) + Ey_2 / num_shapes - pow(Ey / num_shapes, 2);
-                variance = sqrtf(variance);
-            }
             
 //            node->score_ = 0.5*(((leaf_pos_weight-0.0)<FLT_EPSILON)?0:log(leaf_pos_weight))-0.5*(((leaf_neg_weight-0.0)<FLT_EPSILON)?0:log(leaf_neg_weight))/*/log(2.0)*/;
             node->score_ = 0.5*(log(leaf_pos_weight)- log(leaf_neg_weight));
-            node->variance_ = variance;
 			return node;
 		}
 
@@ -1157,7 +1128,6 @@ void RandomForest::WriteTree(Node* p, std::ofstream& fout){
 			<< p->leaf_identity << " "
 			<< p->depth_ << " "
             << p->score_ << " "
-            << p->variance_ << " "
             << p->feature_locations_.lmark1 << " "
             << p->feature_locations_.lmark2 << " "
 			<< p->feature_locations_.start.x << " "
@@ -1179,7 +1149,6 @@ Node* RandomForest::ReadTree(std::ifstream& fin){
 			>> p->leaf_identity
 			>> p->depth_
             >> p->score_
-            >> p->variance_
             >> p->feature_locations_.lmark1
             >> p->feature_locations_.lmark2
 			>> p->feature_locations_.start.x

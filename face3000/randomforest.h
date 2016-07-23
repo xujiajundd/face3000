@@ -17,7 +17,6 @@ public:
 //	bool thre_changed_;
 	FeatureLocations feature_locations_;
     float score_; //这个score，在叶子节点存放score，在根节点存放实际是threshold
-    float variance_;
 	Node(Node* left, Node* right, float thres, bool leaf);
 	Node(Node* left, Node* right, float thres);
 	Node();

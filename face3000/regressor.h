@@ -43,10 +43,10 @@ public:
 		const int stage,
         const int pos_num,
         CascadeRegressor *casRegressor);
-    struct feature_node* GetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, float& variance, int& is_face);
+    struct feature_node* GetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face);
     struct feature_node* NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, int stage, int currentStage, int landmark, int tree, bool& stop);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape,
-		BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, float& variance, int& is_face);
+		BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face);
     cv::Mat_<float> NegMinePredict(cv::Mat_<uchar>& image,
                                               cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, int stage, int currentStage, int landmark, int tree);
 	void LoadRegressor(std::string ModelName, int stage);
@@ -83,7 +83,7 @@ public:
 		Parameters& params,
         int pos_num);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& ground_truth_shape);
-	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& score, float& variance);
+	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& score);
     cv::Mat_<float> NegMinePredict(cv::Mat_<uchar>& image,
                                    cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& fi, int stage, int landmark, int tree);
 	void LoadCascadeRegressor(std::string ModelName);
