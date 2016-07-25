@@ -948,11 +948,11 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 		if (left_indexes.size() == 0 || right_indexes.size() == 0){
 			node->is_leaf_ = true; // the node can contain all the samples
             std::cout << "minvar:" << minvar << " maxvar:" << maxvar << " minent:" << minent << " maxent:" << maxent << " threshhold:" << threshold <<" index:" << indexmin << " size:" << images_indexes.size() << std::endl;
-            if (threshold == 0 ){
-                for ( int i=0; i<vars.size(); i++){
-                    std::cout << i << ": var:" << vars[i] << " entropy:" << entropys[i] << " threshold:" << thresholds[i].first << " index:" << thresholds[i].second << std::endl;
-                }
-            }
+//            if (threshold == 0 ){
+//                for ( int i=0; i<vars.size(); i++){
+//                    std::cout << i << ": var:" << vars[i] << " entropy:" << entropys[i] << " threshold:" << thresholds[i].first << " index:" << thresholds[i].second << std::endl;
+//                }
+//            }
 			return 1;
 		}
 		node->threshold_ = threshold;

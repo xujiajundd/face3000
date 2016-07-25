@@ -350,7 +350,11 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
                         }
                     }
                 }
-
+                if ( node->is_leaf_a ){
+                    global_binary_features[i][ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k, images[augmented_images_index[i]], augmented_bboxes[i], augmented_current_shapes[i], rotations_[i], scales_[i]);
+                    global_binary_features[i][ind].value = 1.0;
+                    ind++;
+                }
                 //std::cout << global_binary_features[i][ind].index << " ";
             }
             index += rd_forests_[j].all_leaf_nodes_;
@@ -810,7 +814,11 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
             //int ind = j*params_.trees_num_per_forest_ + k;
             //int ind = feature_node_index[j] + k;
             //binary_features[ind].index = leaf_index_count[j] + node->leaf_identity;
-
+            if ( node->is_leaf_a ){
+                tmp_binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
+                tmp_binary_features[ind].value = 1.0;
+                ind++;
+            }
             //std::cout << binary_features[ind].index << " ";
         }
 
@@ -892,6 +900,11 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
             //int ind = j*params_.trees_num_per_forest_ + k;
             //int ind = feature_node_index[j] + k;
             //binary_features[ind].index = leaf_index_count[j] + node->leaf_identity;
+            if ( node->is_leaf_a ){
+                tmp_binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
+                tmp_binary_features[ind].value = 1.0;
+                ind++;
+            }
             //std::cout << binary_features[ind].index << " ";
             if ( stage == currentStage && landmark == j && tree == k){
                 is_face = 1;
@@ -1109,7 +1122,7 @@ void Regressor::LoadRegressor(std::string ModelName, int stage){
     for ( int i = 0; i < linear_model_x_[0]->nr_feature; i++){
         modreg[i] = new float[2*params_.landmarks_num_per_face_];
         for ( int j = 0; j<params_.landmarks_num_per_face_; j++ ){
-            float *wx =linear_model_x_[j]->w;
+            float *wx =linear_model_x_[j]->w; 
             float *wy = linear_model_y_[j]->w;
             modreg[i][2*j] = wx[i];
             modreg[i][2*j+1] = wy[i];
