@@ -198,7 +198,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 real_y = std::max(1, std::min(real_y, images[augmented_images_index[n]].rows - 2)); // which rows
                 //int tmp2 = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-1, real_x) + images[augmented_images_index[n]](real_y+1, real_x) + images[augmented_images_index[n]](real_y, real_x-1) +images[augmented_images_index[n]](real_y, real_x+1)) / 6 ;
                 int tmp2 = images[augmented_images_index[n]](real_y, real_x);
-                if ( i % 2 == 0 ){
+                if ( true || i % 2 == 0 ){
                     pixel_differences(j, n) = abs(tmp - tmp2);
                 }
                 else{
@@ -493,7 +493,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             for ( int sw_size = 32 * std::pow(1.08, ss); sw_size < std::min(search_box.width, search_box.height); sw_size = 32 * std::pow(1.08, ss)){
                                 ss++;
                                 float shuffle_size = sw_size * 0.08;
-                                if ( shuffle_size > 15 ) shuffle_size = 15;
+                                if ( shuffle_size > 10 ) shuffle_size = 10;
                                 for ( int sw_x = shuffle_size * sx; sw_x<search_box.width - sw_size && sx < 256; sw_x+=shuffle_size){
                                     sx++;
                                     for ( int sw_y = shuffle_size * sy; sw_y<search_box.height - sw_size && sy < 256; sw_y+=shuffle_size){
@@ -508,8 +508,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         
                                         float delta_start = sqrtf(powf((new_box.start_x - pos_box.start_x), 2.0) + powf((new_box.start_y - pos_box.start_y), 2.0));
                                         float delta_end = sqrtf(powf((new_box.start_x + new_box.width - pos_box.start_x - pos_box.width), 2.0) + powf((new_box.start_y + new_box.height - pos_box.start_y - pos_box.height), 2.0));
-                                        if ( delta_start < 0.15 * pos_box.width && delta_end < 0.15 * pos_box.width ) continue; //判断与正例的位置接近则不采用
-                                        if ( (delta_start + delta_end) < 0.2 * pos_box.width  ) continue;
+                                        if ( delta_start < 0.2 * pos_box.width && delta_end < 0.2 * pos_box.width ) continue; //判断与正例的位置接近则不采用
+                                        if ( (delta_start + delta_end) < 0.3 * pos_box.width  ) continue;
                                         
 //                                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[p], augmented_bboxes[p]);
 //                                        augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
@@ -917,9 +917,9 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
     if ( node->depth_ >= tree_depth_ - 1){
         df = 1.0; //全部用于detect分类
     }
-    else if ( landmark_index_ < 17 ){
-        df = detect_factor_ + 0.1;
-    }
+//    else if ( landmark_index_ < 17 ){
+//        df = detect_factor_ + 0.1;
+//    }
     for ( int i=0; i<vars.size(); i++){
         double tmpvar = ( vars[i] - minvar ) / (maxvar - minvar + FLT_MIN);
         double tmpent = ( entropys[i] - minent ) / (maxent - minent + FLT_MIN);
@@ -1044,7 +1044,7 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<uchar>& i
 		real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
         //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
 		int tmp2 = image(real_y, real_x);
-        if ( tree_index % 2 == 0 ){
+        if ( true || tree_index % 2 == 0 ){
             if ( abs(tmp - tmp2) < node->threshold_){
                 node = node->left_child_;// go left
             }

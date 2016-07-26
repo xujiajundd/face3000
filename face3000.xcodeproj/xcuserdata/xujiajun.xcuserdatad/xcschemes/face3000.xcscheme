@@ -79,11 +79,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "annotate  /Users/xujiajun/developer/dataset/xujj/avatar"
+            argument = "annotate  /Users/xujiajun/developer/dataset/xujj/dianxin"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "annotate /Users/xujiajun/developer/dataset/xujj/face-hkz"
+            argument = "annotate /Users/xujiajun/developer/dataset/xujj/neg-a"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

@@ -71,7 +71,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
             else{
                 BoundingBox ibox = bboxes_[i];
                 float minor = random_generator.uniform(-ibox.width, ibox.width);
-                minor = 0.02 * minor;
+                minor = 0.1 * minor;
                 ibox.start_x -= minor/2.0;
                 ibox.start_y -= minor/2.0;
                 ibox.width += minor;
@@ -215,6 +215,13 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
         std::cout << std::endl;
         std::cout << "regression error: " <<  error << ": " << error/count << " time:" << t1.tv_sec << std::endl;
 	}
+    if ( debug_on_){
+        for ( int n=0; n<augmented_ground_truth_faces.size(); n++){
+            if ( find_times[n] < MAXFINDTIMES && augmented_ground_truth_faces[n] == -1 ){
+                DrawPredictImage(images[augmented_images_index[n]], augmented_current_shapes[n]);
+            }
+        }
+    }
 }
 
 std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& images,
@@ -333,7 +340,7 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
                     //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
                     int tmp2 = image(real_y, real_x);
 
-                    if ( k % 2 == 0 ){
+                    if ( true || k % 2 == 0 ){
                         if (abs(tmp-tmp2) < node->threshold_){
                             node = node->left_child_;// go left
                         }
@@ -788,7 +795,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
                 //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
                 int tmp2 = image(real_y, real_x);
-                if ( k % 2 == 0 ){
+                if ( true || k % 2 == 0 ){
                     if ( abs(tmp - tmp2 ) < node->threshold_){
                         node = node->left_child_;// go left
                     }
@@ -873,7 +880,7 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
                 real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
                 //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
                 int tmp2 = image(real_y, real_x);
-                if ( k % 2 == 0 ){
+                if ( true || k % 2 == 0 ){
                     if ( abs(tmp-tmp2) < node->threshold_){
                         node = node->left_child_;// go left
                     }
