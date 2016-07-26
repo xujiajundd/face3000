@@ -183,8 +183,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 delta_y = scale*delta_y*augmented_bboxes[n].height / 2.0;
                 int real_x = delta_x + augmented_current_shapes[n](pos.lmark1, 0);
                 int real_y = delta_y + augmented_current_shapes[n](pos.lmark1, 1);
-                real_x = std::max(1, std::min(real_x, images[augmented_images_index[n]].cols - 2)); // which cols
-                real_y = std::max(1, std::min(real_y, images[augmented_images_index[n]].rows - 2)); // which rows
+                real_x = std::max(0, std::min(real_x, images[augmented_images_index[n]].cols - 1)); // which cols
+                real_y = std::max(0, std::min(real_y, images[augmented_images_index[n]].rows - 1)); // which rows
                 //int tmp = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-1, real_x) + images[augmented_images_index[n]](real_y+1, real_x) + images[augmented_images_index[n]](real_y, real_x-1) +images[augmented_images_index[n]](real_y, real_x+1)) / 6 ; //real_y at first
                 int tmp = images[augmented_images_index[n]](real_y, real_x);
                 
@@ -194,8 +194,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 delta_y = scale*delta_y*augmented_bboxes[n].height / 2.0;
                 real_x = delta_x + augmented_current_shapes[n](pos.lmark2, 0);
                 real_y = delta_y + augmented_current_shapes[n](pos.lmark2, 1);
-                real_x = std::max(1, std::min(real_x, images[augmented_images_index[n]].cols - 2)); // which cols
-                real_y = std::max(1, std::min(real_y, images[augmented_images_index[n]].rows - 2)); // which rows
+                real_x = std::max(0, std::min(real_x, images[augmented_images_index[n]].cols - 1)); // which cols
+                real_y = std::max(0, std::min(real_y, images[augmented_images_index[n]].rows - 1)); // which rows
                 //int tmp2 = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-1, real_x) + images[augmented_images_index[n]](real_y+1, real_x) + images[augmented_images_index[n]](real_y, real_x-1) +images[augmented_images_index[n]](real_y, real_x+1)) / 6 ;
                 int tmp2 = images[augmented_images_index[n]](real_y, real_x);
                 if ( true || i % 2 == 0 ){
@@ -1029,8 +1029,8 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<uchar>& i
 		delta_y = scale*delta_y*bbox.height / 2.0;
 		int real_x = delta_x + current_shape(pos.lmark1, 0);
 		int real_y = delta_y + current_shape(pos.lmark1, 1);
-		real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
-		real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
+		real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+		real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
 		//int tmp = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ; //real_y at first
         int tmp = image(real_y, real_x);
         
@@ -1040,8 +1040,8 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<uchar>& i
 		delta_y = scale*delta_y*bbox.height / 2.0;
 		real_x = delta_x + current_shape(pos.lmark2, 0);
 		real_y = delta_y + current_shape(pos.lmark2, 1);
-		real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
-		real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
+		real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+		real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
         //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
 		int tmp2 = image(real_y, real_x);
         if ( true || tree_index % 2 == 0 ){

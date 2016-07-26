@@ -43,10 +43,10 @@ public:
 		const int stage,
         const int pos_num,
         CascadeRegressor *casRegressor);
-    struct feature_node* GetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face);
+    struct feature_node* GetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold);
     struct feature_node* NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, int stage, int currentStage, int landmark, int tree, bool& stop);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape,
-		BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face);
+		BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold);
     cv::Mat_<float> NegMinePredict(cv::Mat_<uchar>& image,
                                               cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, int stage, int currentStage, int landmark, int tree);
 	void LoadRegressor(std::string ModelName, int stage);

@@ -324,8 +324,8 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
                     delta_y = scale*delta_y*bbox.height / 2.0;
                     int real_x = delta_x + current_shape(pos.lmark1, 0);
                     int real_y = delta_y + current_shape(pos.lmark1, 1);
-                    real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
-                    real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows//////
+                    real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+                    real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows//////
                     // int tmp = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ; //real_y at first
                     int tmp = image(real_y, real_x);
                     
@@ -335,8 +335,8 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
                     delta_y = scale*delta_y*bbox.height / 2.0;
                     real_x = delta_x + current_shape(pos.lmark2, 0);
                     real_y = delta_y + current_shape(pos.lmark2, 1);
-                    real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
-                    real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
+                    real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+                    real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
                     //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
                     int tmp2 = image(real_y, real_x);
 
@@ -486,6 +486,7 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
 cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
 	cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& score){
 
+    float lastThreshold = -1.0;
 	for (int i = 0; i < params_.predict_regressor_stages_; i++){
         cv::Mat_<float> rotation;
 		float scale;
@@ -495,7 +496,7 @@ cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
 		getSimilarityTransform(ProjectShape(current_shape, bbox), params_.mean_shape_, rotation, scale);
 //        gettimeofday(&t2, NULL);
 //        std::cout << "transform: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << std::endl;
-		cv::Mat_<float> shape_increaments = regressors_[i].Predict(image, current_shape, bbox, rotation, scale, score, is_face);
+		cv::Mat_<float> shape_increaments = regressors_[i].Predict(image, current_shape, bbox, rotation, scale, score, is_face, lastThreshold);
         if ( is_face != 1){
             //std::cout << "检测不是face!!!!!!!!!!!!!!!!!!!!!!"<< std::endl;
             return current_shape;
@@ -754,7 +755,7 @@ Regressor::~Regressor(){
 
 
 struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
-    cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face){
+    cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold){
     int index = 1;
     if ( tmp_binary_features == NULL ){
 //        struct feature_node* binary_features = new feature_node[params_.trees_num_per_forest_*params_.groups_[groupNum].size()+1]; //这条性能可能可以优化
@@ -767,6 +768,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
     {
         for (int k = 0; k < params_.trees_num_per_forest_; ++k)
         {
+            int outBound = 0;
             Node* node = rd_forests_[j].trees_[k];
             while (!node->is_leaf_){
                 if ( node->is_leaf_a ){
@@ -781,8 +783,11 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
                 int real_x = delta_x + current_shape(pos.lmark1, 0);
                 int real_y = delta_y + current_shape(pos.lmark1, 1);
-                real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
-                real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
+                if ( real_x < 0 || real_y < 0 || real_x >= image.cols || real_y >= image.rows ){
+                    outBound++;
+                }
+                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
                 //int tmp = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ; //real_y at first
                 int tmp = image(real_y, real_x);
                 delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
@@ -791,8 +796,11 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
                 real_x = delta_x + current_shape(pos.lmark2, 0);
                 real_y = delta_y + current_shape(pos.lmark2, 1);
-                real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
-                real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
+                if ( real_x < 0 || real_y < 0 || real_x >= image.cols || real_y >= image.rows ){
+                    outBound++;
+                }
+                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
                 //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
                 int tmp2 = image(real_y, real_x);
                 if ( true || k % 2 == 0 ){
@@ -812,7 +820,22 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                     }
                 }
             }
-            score += node->score_;
+            if ( outBound > 6 ) {
+                if ( k == 0 ){
+                    if ( j == 0 ){
+                        score += rd_forests_[j].trees_[k]->score_ - lastThreshold;
+                    }
+                    else{
+                        score += rd_forests_[j].trees_[k]->score_ - rd_forests_[j-1].trees_[params_.trees_num_per_forest_-1]->score_;
+                    }
+                }
+                else{
+                    score += rd_forests_[j].trees_[k]->score_ - rd_forests_[j].trees_[k-1]->score_;
+                }
+            }
+            else{
+                score += node->score_;
+            }
             if ( score < rd_forests_[j].trees_[k]->score_ ){
                 is_face = - stage_;
                 //std::cout <<"stage:"<<stage_ << "lmark=" << j << " tree=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
@@ -835,6 +858,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
     //std::cout << index << ":" << params_.trees_num_per_forest_*params_.landmarks_num_per_face_ << std::endl;
     tmp_binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].index = -1;
     tmp_binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].value = -1.0;
+    lastThreshold = rd_forests_[params_.landmarks_num_per_face_-1].trees_[params_.trees_num_per_forest_-1]->score_;
     return tmp_binary_features;
 }
 
@@ -865,8 +889,8 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
                 delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
                 int real_x = delta_x + current_shape(pos.lmark1, 0);
                 int real_y = delta_y + current_shape(pos.lmark1, 1);
-                real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
-                real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
+                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
                 //int tmp = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ; //real_y at first
                 int tmp = image(real_y, real_x);
                 
@@ -876,8 +900,8 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
                 delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
                 real_x = delta_x + current_shape(pos.lmark2, 0);
                 real_y = delta_y + current_shape(pos.lmark2, 1);
-                real_x = std::max(1, std::min(real_x, image.cols - 2)); // which cols
-                real_y = std::max(1, std::min(real_y, image.rows - 2)); // which rows
+                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
+                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
                 //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
                 int tmp2 = image(real_y, real_x);
                 if ( true || k % 2 == 0 ){
@@ -930,10 +954,10 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
 }
 
 cv::Mat_<float> Regressor::Predict(cv::Mat_<uchar>& image,
-	cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face){
+	cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold){
 
     cv::Mat_<float> predict_result;
-    feature_node* binary_features = GetGlobalBinaryFeatures(image, current_shape, bbox, rotation, scale, score, is_face);
+    feature_node* binary_features = GetGlobalBinaryFeatures(image, current_shape, bbox, rotation, scale, score, is_face, lastThreshold);
     if ( is_face != 1 ){
         return predict_result;
     }
