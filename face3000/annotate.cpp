@@ -68,7 +68,7 @@ public:
             std::vector<cv::Mat_<float>> shapes;
             cv::Mat_<uchar> grayImage;
             cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
-            std::vector<cv::Rect> rects = face_detector.detectMultiScale(grayImage, shapes, 1.1, 1, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, min(image.rows,image.cols) / 5);
+            std::vector<cv::Rect> rects = face_detector.detectMultiScale(grayImage, shapes, 1.1, 1, 0, min(image.rows,image.cols) / 5);
             if ( rects.size() > 0 ){
                 shape = reConvertShape(shapes[0]);
             }
@@ -839,7 +839,7 @@ int annotate_filter(const char *path)
         cv::Mat_<uchar> image = cv::imread(file_name, 0);
         std::vector<cv::Mat_<float>> shapes;
         std::cout << "process:" << file_name;
-        std::vector<cv::Rect> rects = annotation.face_detector.detectMultiScale(image, shapes, 1.1, 1, 0|CASCADE_FLAG_SEARCH_MAX_TO_MIN, min(image.rows,image.cols) / 3);
+        std::vector<cv::Rect> rects = annotation.face_detector.detectMultiScale(image, shapes, 1.1, 1, 0, min(image.rows,image.cols) / 3);
         if ( rects.size() == 0 ){
 //            std::string dfile =  file_name + ".bak";
 //            int ret = rename(file_name.c_str(), dfile.c_str());

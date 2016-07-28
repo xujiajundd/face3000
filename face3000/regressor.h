@@ -61,8 +61,7 @@ public:
 enum
 {
     CASCADE_FLAG_BIGGEST_ONLY = 1,
-    CASCADE_FLAG_SEARCH_MAX_TO_MIN = 2,
-    CASCADE_FLAG_TRACK_MODE = 4  //跟踪模式，根据上次的检测结果在周围检索
+    CASCADE_FLAG_TRACK_MODE = 2  //跟踪模式，根据上次的检测结果在周围检索
 };
 
 class CascadeRegressor {
@@ -72,7 +71,11 @@ public:
 	std::vector<cv::Mat_<float> > ground_truth_shapes_;
 	std::vector<BoundingBox> bboxes_;
 	std::vector<Regressor> regressors_;
-    cv::Mat_<float> lastRes;
+//    cv::Mat_<float> lastRes;
+    struct timeval previousFrameTime;
+    struct timeval previousScanTime;
+    std::vector<cv::Mat_<float>> previousFrameRotations;
+    std::vector<cv::Mat_<float>> previousFrameShapes;
     int antiJitter;
 public:
 	CascadeRegressor();
@@ -83,7 +86,8 @@ public:
 		Parameters& params,
         int pos_num);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& ground_truth_shape);
-	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& score);
+    cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& score);
+    cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& score, cv::Mat_<float>& rot);
     cv::Mat_<float> NegMinePredict(cv::Mat_<uchar>& image,
                                    cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& fi, int stage, int landmark, int tree);
 	void LoadCascadeRegressor(std::string ModelName);

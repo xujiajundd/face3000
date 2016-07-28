@@ -12,7 +12,13 @@
 
 
 CascadeRegressor::CascadeRegressor(){
-    lastRes = cv::Mat_<float>(68,2,0.0);
+//    lastRes = cv::Mat_<float>(68,2,0.0);
+    previousScanTime.tv_sec = 0;
+    previousScanTime.tv_usec = 0;
+    previousFrameTime.tv_sec = 0;
+    previousFrameTime.tv_usec = 0;
+    previousFrameRotations.clear();
+    previousFrameShapes.clear();
 }
 
 void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
@@ -482,14 +488,20 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
 //	return res;
 //}
 
+cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
+                                          cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& score ){
+    cv::Mat_<float> rot(2,2,0.0);
+    return Predict(image, current_shape, bbox, is_face, score, rot);
+}
 
 cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
-	cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& score){
+                                          cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& score, cv::Mat_<float>& rot){
 
+    cv::Mat_<float> rotation;
+    float scale;
     float lastThreshold = -1.0;
 	for (int i = 0; i < params_.predict_regressor_stages_; i++){
-        cv::Mat_<float> rotation;
-		float scale;
+
 //        struct timeval t1, t2;
 //        gettimeofday(&t1, NULL);
         //这个耗时百分之一毫秒左右，
@@ -519,7 +531,7 @@ cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
 //        }
 //        return lastRes;
 //    }
-
+    rot = rotation;
 	return res;
 }
 
@@ -605,97 +617,162 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
     shapes.clear();
     faces.clear();
     float shuffle = 0.1;
-    int order = flags | CASCADE_FLAG_SEARCH_MAX_TO_MIN;
-    int biggest = flags | CASCADE_FLAG_BIGGEST_ONLY;
-    int track_mode = flags | CASCADE_FLAG_TRACK_MODE;
+    int biggest = flags & CASCADE_FLAG_BIGGEST_ONLY;
+    int track_mode = flags & CASCADE_FLAG_TRACK_MODE;
     int currentSize;
 
     int faceFound = 0;
     int nonface = 0;
-    if ( order == CASCADE_FLAG_SEARCH_MAX_TO_MIN ){
-        currentSize = std::min(image.cols, image.rows);
-    }
-    else{
-        currentSize = minSize;
-    }
 
     struct candidate{
         float score;
         BoundingBox box;
         cv::Mat_<float> shape;
+        cv::Mat_<float> rotation;
         int neighbors;
     };
 
     std::vector<struct candidate> candidates;
-    BoundingBox box;
+
+    std::vector<cv::Rect> searchRects;
+    std::vector<int> minSizes;
+    std::vector<int> maxSizes;
+    searchRects.clear();
+    minSizes.clear();
+    maxSizes.clear();
+
+    struct timeval current_time;
+    gettimeofday(&current_time, NULL);
 
     //测试一下初始位置旋转过来的效果，可用于下一步做跟踪
-    cv::Mat_<float> mean_shape(params_.landmarks_num_per_face_, 2, 0.0);
-    for ( int i=0; i<params_.landmarks_num_per_face_; i++){
-        float cos = 1.0;
-        float sin = 0.0;
-        mean_shape(i,0)=  cos*params_.mean_shape_(i,0) + sin*params_.mean_shape_(i,1);
-        mean_shape(i,1)= -sin*params_.mean_shape_(i,0) + cos*params_.mean_shape_(i,1);
-    }
+    cv::Mat_<float> default_shape;//(params_.landmarks_num_per_face_, 2, 0.0);
+//    for ( int i=0; i<params_.landmarks_num_per_face_; i++){
+//        float cos = 0.0;
+//        float sin = 1.0;
+//        default_shape(i,0)=  cos*params_.mean_shape_(i,0) + sin*params_.mean_shape_(i,1);
+//        default_shape(i,1)= -sin*params_.mean_shape_(i,0) + cos*params_.mean_shape_(i,1);
+//    }
 
-    //TODO:可以根据返回的score或者stage，改变shuffle及scale的尺度？不同尺度下，也可以利用改信息？
-    int scan_count=0;
-    while ( currentSize >= minSize && currentSize <= std::min(image.cols, image.rows)){
-        box.width = currentSize;
-        box.height = currentSize;
-        for ( int i=0; i<image.cols-currentSize; i+= currentSize*shuffle){
-            box.start_x = i;
-            box.center_x = box.start_x + box.width/2.0;
-            for ( int j=0; j<image.rows-currentSize; j+=currentSize*shuffle){
-                scan_count++;
-                box.start_y = j;
-                box.center_y = box.start_y + box.width/2.0;
-                int is_face = 1;
-                cv::Mat_<float> current_shape = ReProjection(mean_shape, box);
-                float score = 0;
-                cv::Mat_<float> res = Predict(image, current_shape, box, is_face, score);
-                if ( is_face == 1){
-                    faceFound++;
-                    bool has_overlap = false;
-                    for ( int c=0; c<candidates.size(); c++){
-                        if ( box_overlap(box, candidates[c].box)){ //TODO:这个算法这样有漏洞的
-                            if ( score > candidates[c].score){
-                                candidates[c].score = score;
-                                candidates[c].box = box;
-                                candidates[c].shape = res;
-                                candidates[c].neighbors++;
-                            }
-                            else{
-                                candidates[c].neighbors++;
-                            }
-                            //这个结果处理完
-                            has_overlap = true;
-                            break;
-                        }
-                        else{
-
-                        }
-                    }
-                    if ( !has_overlap ){
-                        struct candidate cand;
-                        cand.score = score;
-                        cand.box = box;
-                        cand.shape = res;
-                        cand.neighbors = 0;
-                        candidates.push_back(cand);
-                    }
-                }
-                else{
-                    nonface++;
-                }
+    if ( track_mode ){
+        //跟踪模式，首先是时间与上次帧在100ms之内，然后，计算defaultshape和框。
+        if ((current_time.tv_sec*1000000 - previousFrameTime.tv_sec*1000000 + current_time.tv_usec - previousFrameTime.tv_usec) > 300000 || previousFrameShapes.size() == 0){
+            //没有有效的上次识别
+            if ( current_time.tv_sec - previousScanTime.tv_sec > 1 ){
+                //做一次全局扫描
+                minSizes.push_back(minSize);
+                maxSizes.push_back(std::min(image.cols, image.rows));
+                cv::Rect sRect;
+                sRect.x = 0; sRect.y = 0; sRect.width = image.cols; sRect.height = image.rows;
+                searchRects.push_back(sRect);
+                default_shape = params_.mean_shape_;
+            }
+            else{
+                //这次轮空即可
+                //std::cout << "current_time " << current_time.tv_sec << " " << current_time.tv_usec << " " << previousScanTime.tv_sec <<  std::endl;
+                return faces;
             }
         }
-        //std::cout<<"count:"<<scan_count<<" face found:"<<faceFound<< std::endl;
-        if ( order == CASCADE_FLAG_SEARCH_MAX_TO_MIN ){
+        else{
+            for ( int i=0; i < previousFrameShapes.size(); i++){
+                BoundingBox sbox = CalculateBoundingBox(previousFrameShapes[i]);
+                minSizes.push_back(sbox.width*0.8);
+                maxSizes.push_back(sbox.width*1.2);
+                cv::Rect sRect;
+                sRect.x = sbox.start_x - sbox.width/2.0;
+                sRect.y = sbox.start_y - sbox.height/2.0;
+                sRect.width = 2 * sbox.width;
+                sRect.height = 2 * sbox.height;
+                if ( sRect.x < -image.cols/2 ) sRect.x = -image.cols/2;
+                if ( sRect.y < -image.rows/2 ) sRect.y = -image.rows/2;
+                if ( sRect.x + sRect.width >  image.cols + sbox.width/2 ) sRect.width = image.cols + sbox.width /2 - sRect.x;
+                if ( sRect.y + sRect.height > image.rows + sbox.height/2 ) sRect.height = image.rows + sbox.height/2 - sRect.y;
+                searchRects.push_back(sRect);
+                cv::Mat_<float> rot;
+                cv::transpose(previousFrameRotations[i], rot);
+                default_shape =  params_.mean_shape_ * rot;
+            }
+        }
+    }
+    else{
+        minSizes.push_back(minSize);
+        maxSizes.push_back(std::min(image.cols, image.rows));
+        cv::Rect sRect;
+        sRect.x = 0; sRect.y = 0; sRect.width = image.cols; sRect.height = image.rows;
+        searchRects.push_back(sRect);
+        default_shape = params_.mean_shape_;
+    }
+    //TODO:可以根据返回的score或者stage，改变shuffle及scale的尺度？不同尺度下，也可以利用改信息？
+    int scan_count=0;
+    for( int s=0; s<searchRects.size(); s++ ){
+        cv::Rect sRect = searchRects[s];
+        currentSize = maxSizes[s];
+        while ( currentSize >= minSizes[s] && currentSize <= maxSizes[s]){
+            BoundingBox box;
+            box.width = currentSize;
+            box.height = currentSize;
+            for ( int i=sRect.x; i<=sRect.x+sRect.width-currentSize; i+= currentSize*shuffle){
+                box.start_x = i;
+                box.center_x = box.start_x + box.width/2.0;
+                for ( int j=sRect.y; j<=sRect.y+sRect.height-currentSize; j+=currentSize*shuffle){
+                    scan_count++;
+                    box.start_y = j;
+                    box.center_y = box.start_y + box.height/2.0;
+                    int is_face = 1;
+                    cv::Mat_<float> current_shape = ReProjection(default_shape, box);
+                    float score = 0;
+                    cv::Mat_<float> rotation(2,2,0.0);
+                    cv::Mat_<float> res = Predict(image, current_shape, box, is_face, score, rotation);
+                    if ( is_face == 1){
+                        faceFound++;
+                        bool has_overlap = false;
+                        for ( int c=0; c<candidates.size(); c++){
+                            if ( box_overlap(box, candidates[c].box)){ //TODO:这个算法这样有漏洞的
+                                if ( score > candidates[c].score){
+                                    candidates[c].score = score;
+                                    candidates[c].box = box;
+                                    candidates[c].shape = res;
+                                    candidates[c].neighbors++;
+                                    candidates[c].rotation = rotation;
+                                    if ( candidates[c].neighbors > 3 ) goto _destfor;
+                                }
+                                else{
+                                    candidates[c].neighbors++;
+                                }
+                                //这个结果处理完
+                                has_overlap = true;
+                                break;
+                            }
+                            else{
+
+                            }
+                        }
+                        if ( !has_overlap ){
+                            struct candidate cand;
+                            cand.score = score;
+                            cand.box = box;
+                            cand.shape = res;
+                            cand.neighbors = 0;
+                            cand.rotation = rotation;
+                            candidates.push_back(cand);
+                        }
+                    }
+                    else{
+                        nonface++;
+                    }
+                }
+            }
+            //std::cout<<"count:"<<scan_count<<" face found:"<<faceFound<< std::endl;
             currentSize /= scaleFactor;
         }
-        else{
-            currentSize *= scaleFactor;
+    }
+
+_destfor:
+    for ( int c=0; c<candidates.size(); c++){
+        if ( candidates[c].neighbors >= minNeighbors  ){
+            previousFrameRotations.clear();
+            previousFrameShapes.clear();
+            gettimeofday(&previousFrameTime, NULL);
+            break;
         }
     }
 
@@ -708,8 +785,12 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
             rect.height = candidates[c].box.height;
             faces.push_back(rect);
             shapes.push_back(candidates[c].shape);
+            previousFrameRotations.push_back(candidates[c].rotation);
+            previousFrameShapes.push_back(candidates[c].shape);
         }
     }
+    if ( faces.size() == 0 )
+        gettimeofday(&previousScanTime, NULL);
 //    std::cout<<"count:"<<scan_count<<std::endl;
 //    std::cout<<"count:"<<scan_count<<" face found:"<<faceFound<< std::endl;
     return faces;

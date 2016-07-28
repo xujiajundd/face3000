@@ -570,8 +570,9 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                             }
                                             
                                             
-                                            if ( error >= 0.3 || ( error > 0.2 && stage_ > 1)){
+                                            if ( error >= 0.4 || ( error > 0.3 && stage_ > 1)){
                                                 faceFound = true;
+                                                if ( tmp_fi > 0 ) tmp_fi = 0;
                                                 current_fi[idx] = tmp_fi;
                                                 current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
 //                                                augmented_current_shapes[idx] = shape;
