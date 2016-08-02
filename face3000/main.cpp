@@ -39,9 +39,14 @@ void DrawPredictedImage(cv::Mat_<uchar> image, cv::Mat_<float>& ishape){
     Mat_<float> shape = reConvertShape(ishape);
     for (int i = 0; i < shape.rows; i++){
         cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, Scalar(255,255,255));
-        if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
+        if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!= 60 && i!=68 && i!=69)
             cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), Scalar(0,255,0));
     }
+    cv::line(image, cv::Point2f(shape(36, 0), shape(36, 1)), cv::Point2f(shape(41, 0), shape(41, 1)), Scalar(0,255,0));
+    cv::line(image, cv::Point2f(shape(42, 0), shape(42, 1)), cv::Point2f(shape(47, 0), shape(47, 1)), Scalar(0,255,0));
+    cv::line(image, cv::Point2f(shape(30, 0), shape(30, 1)), cv::Point2f(shape(35, 0), shape(35, 1)), Scalar(0,255,0));
+    cv::line(image, cv::Point2f(shape(48, 0), shape(48, 1)), cv::Point2f(shape(59, 0), shape(59, 1)), Scalar(0,255,0));
+    cv::line(image, cv::Point2f(shape(60, 0), shape(60, 1)), cv::Point2f(shape(67, 0), shape(67, 1)), Scalar(0,255,0));
     cv::imshow("show image", image);
     cv::waitKey(0);
 }
@@ -50,9 +55,14 @@ void DrawPredictedImageContinue(cv::Mat image, cv::Mat_<float>& ishape){
     Mat_<float> shape = reConvertShape(ishape);
     for (int i = 0; i < shape.rows; i++){
         cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, Scalar(255,255,255));
-        if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!= 48 && i!=68 && i!=69)
+        if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!= 60 && i!=68 && i!=69)
             cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), Scalar(0,255,0));
     }
+    cv::line(image, cv::Point2f(shape(36, 0), shape(36, 1)), cv::Point2f(shape(41, 0), shape(41, 1)), Scalar(0,255,0));
+    cv::line(image, cv::Point2f(shape(42, 0), shape(42, 1)), cv::Point2f(shape(47, 0), shape(47, 1)), Scalar(0,255,0));
+    cv::line(image, cv::Point2f(shape(30, 0), shape(30, 1)), cv::Point2f(shape(35, 0), shape(35, 1)), Scalar(0,255,0));
+    cv::line(image, cv::Point2f(shape(48, 0), shape(48, 1)), cv::Point2f(shape(59, 0), shape(59, 1)), Scalar(0,255,0));
+    cv::line(image, cv::Point2f(shape(60, 0), shape(60, 1)), cv::Point2f(shape(67, 0), shape(67, 1)), Scalar(0,255,0));
     cv::imshow("show image", image);
     char c = cv::waitKey( 10);
     
@@ -259,7 +269,7 @@ void TestVideo(const char* ModelName){
 //        rg.regressors_[i].params_ = rg.params_;
 //    }
     
-//    rg.params_.predict_regressor_stages_ = 5;
+    //rg.params_.predict_regressor_stages_ = 5;
     std::string fn_haar = "/Users/xujiajun/developer/dataset/haarcascade_frontalface_alt2.xml";
     cv::CascadeClassifier haar_cascade;
     bool yes = haar_cascade.load(fn_haar);
@@ -384,7 +394,7 @@ void TestVideo(const char* ModelName){
         else{ //用新的方法
             gettimeofday(&t1, NULL);
             std::vector<cv::Mat_<float>> shapes;
-            std::vector<cv::Rect> rects = rg.detectMultiScale(image, shapes, 1.1, 2, 0|CASCADE_FLAG_TRACK_MODE, 200);
+            std::vector<cv::Rect> rects = rg.detectMultiScale(image, shapes, 1.1, 2, 0, 150);
             gettimeofday(&t2, NULL);
             //            last_shape = res.clone(); lastShaped = true;
             cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " faces:" << rects.size() <<  endl;
@@ -560,6 +570,7 @@ void Train(const char* ModelName){
     	...
     	1000.jpg
     */
+    NUM_LANDMARKS = 68;
     
 	int pos_num = LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names, neg_file_names);
 	params.mean_shape_ = GetMeanShape(ground_truth_shapes, ground_truth_faces, bboxes);
@@ -577,9 +588,9 @@ void Train(const char* ModelName){
 //        DrawPredictedImage(images[i], ground_truth_shapes[i]);
 //    }
     
-    params.local_features_num_ = 2400;
-	params.landmarks_num_per_face_ = 68;
-    params.regressor_stages_ = 5;
+    params.local_features_num_ = 4800;
+	params.landmarks_num_per_face_ = NUM_LANDMARKS;
+    params.regressor_stages_ = 6;
 //    params.local_radius_by_stage_.push_back(0.6);
 //    params.local_radius_by_stage_.push_back(0.5);
 	params.local_radius_by_stage_.push_back(0.45);
@@ -598,17 +609,17 @@ void Train(const char* ModelName){
 //    params.local_radius_by_stage_.push_back(0.05);
 //    params.local_radius_by_stage_.push_back(0.03);
     
+    params.detect_factor_by_stage_.push_back(0.9);
+    params.detect_factor_by_stage_.push_back(0.8);
+    params.detect_factor_by_stage_.push_back(0.7);
+    params.detect_factor_by_stage_.push_back(0.6);
     params.detect_factor_by_stage_.push_back(0.8);
     params.detect_factor_by_stage_.push_back(0.5);
-    params.detect_factor_by_stage_.push_back(0.5);
-    params.detect_factor_by_stage_.push_back(0.5);
-    params.detect_factor_by_stage_.push_back(0.5);
-    params.detect_factor_by_stage_.push_back(0.3);
     params.detect_factor_by_stage_.push_back(0.4);
     params.detect_factor_by_stage_.push_back(0.2);
     
-    params.tree_depth_ = 5;
-    params.trees_num_per_forest_ = 6;
+    params.tree_depth_ = 4;
+    params.trees_num_per_forest_ = 9;
     params.initial_guess_ = 2;
 
 //    params.group_num_ = 6;

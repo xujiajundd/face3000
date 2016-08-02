@@ -733,7 +733,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
                                     candidates[c].shape = res;
                                     candidates[c].neighbors++;
                                     candidates[c].rotation = rotation;
-                                    if ( candidates[c].neighbors > 3 ) goto _destfor;
+                                    //if ( candidates[c].neighbors > 3 ) goto _destfor;
                                 }
                                 else{
                                     candidates[c].neighbors++;
@@ -1149,6 +1149,7 @@ void CascadeRegressor::LoadCascadeRegressor(std::string ModelName){
 		>> params_.trees_num_per_forest_
 		>> params_.initial_guess_;
 
+    NUM_LANDMARKS = params_.landmarks_num_per_face_;
 	std::vector<float> local_radius_by_stage;
 	local_radius_by_stage.resize(params_.regressor_stages_);
 	for (int i = 0; i < params_.regressor_stages_; i++){

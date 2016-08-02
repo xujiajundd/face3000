@@ -16,6 +16,9 @@
 
 #define MAXFINDTIMES 16*256*256*256
 
+#define DETECT_ADD_DEPTH 0
+
+extern int NUM_LANDMARKS;
 extern int debug_on_;
 
 //std::mutex m;

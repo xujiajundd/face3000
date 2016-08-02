@@ -16,6 +16,7 @@
 
 dlib::frontal_face_detector fdetector = dlib::get_frontal_face_detector();;
 
+int NUM_LANDMARKS = 29;
 int debug_on_ = 0;
 
 
@@ -26,6 +27,11 @@ void DrawImage(cv::Mat_<uchar> image, cv::Mat_<float>& ishape){
         if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
             cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), cv::Scalar(0,255,0));
     }
+    cv::line(image, cv::Point2f(shape(36, 0), shape(36, 1)), cv::Point2f(shape(41, 0), shape(41, 1)), cv::Scalar(0,255,0));
+    cv::line(image, cv::Point2f(shape(42, 0), shape(42, 1)), cv::Point2f(shape(47, 0), shape(47, 1)), cv::Scalar(0,255,0));
+    cv::line(image, cv::Point2f(shape(30, 0), shape(30, 1)), cv::Point2f(shape(35, 0), shape(35, 1)), cv::Scalar(0,255,0));
+    cv::line(image, cv::Point2f(shape(48, 0), shape(48, 1)), cv::Point2f(shape(59, 0), shape(59, 1)), cv::Scalar(0,255,0));
+    cv::line(image, cv::Point2f(shape(60, 0), shape(60, 1)), cv::Point2f(shape(67, 0), shape(67, 1)), cv::Scalar(0,255,0));
     cv::imshow("show image", image);
     cv::waitKey(0);
 }
@@ -169,12 +175,22 @@ cv::Mat_<float> LoadGroundTruthShape(const char* name){
 }
 
 cv::Mat_<float> convertShape(cv::Mat_<float> shape){
-    cv::Mat_<float> result(68,2);
+    cv::Mat_<float> result(NUM_LANDMARKS,2);
 //    int table[] = {17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,0,16,1,15,2,14,3,13,4,12,5,11,6,10,7,9,8};
     int table[] = {0,16,1,15,2,14,3,13,4,12,5,11,6,10,7,9,8,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67};
-    for ( int i=0; i<68; i++){
-        result(i,0) = shape(table[i],0);
-        result(i,1) = shape(table[i],1);
+    int table29[] = {36,37,38,39,40,41,42,43,44,45,46,47,27,30,31,33,35,48,50,52,54,56,58,18,19,20,23,24,25};
+    
+    if ( NUM_LANDMARKS == 68 ){
+        for ( int i=0; i<68; i++){
+            result(i,0) = shape(table[i],0);
+            result(i,1) = shape(table[i],1);
+        }
+    }
+    else if ( NUM_LANDMARKS == 29){
+        for ( int i=0; i<29; i++){
+            result(i,0) = shape(table29[i],0);
+            result(i,1) = shape(table29[i],1);
+        }
     }
     return result;
 }
@@ -183,9 +199,52 @@ cv::Mat_<float> reConvertShape(cv::Mat_<float> shape){
     cv::Mat_<float> result(68,2);
 //    int table[] = {17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,0,16,1,15,2,14,3,13,4,12,5,11,6,10,7,9,8};
     int table[] = {0,16,1,15,2,14,3,13,4,12,5,11,6,10,7,9,8,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67};
-    for ( int i=0; i<68; i++){
-        result(table[i],0) = shape(i,0);
-        result(table[i],1) = shape(i,1);
+    int table29[] = {36,37,38,39,40,41,42,43,44,45,46,47,27,30,31,33,35,48,50,52,54,56,58,18,19,20,23,24,25};
+    if ( NUM_LANDMARKS == 68 ){
+        for ( int i=0; i<68; i++){
+            result(table[i],0) = shape(i,0);
+            result(table[i],1) = shape(i,1);
+        }
+    }
+    else if ( NUM_LANDMARKS == 29 ){
+        for ( int i=0; i<29; i++){
+            result(table29[i],0) = shape(i,0);
+            result(table29[i],1) = shape(i,1);
+        }
+        for ( int i=0; i<18; i++ ){
+            result(i,0) = shape(23,0);
+            result(i,1) = shape(23,1);
+        }
+        result(21,0) = shape(25,0);
+        result(21,1) = shape(25,1);
+        result(22,0) = shape(26,0);
+        result(22,1) = shape(26,1);
+        result(26,0) = shape(28,0);
+        result(26,1) = shape(28,1);
+        result(28,0) = shape(12,0);
+        result(28,1) = shape(12,1);
+        result(29,0) = shape(12,0);
+        result(29,1) = shape(12,1);
+        result(32,0) = shape(15,0);
+        result(32,1) = shape(15,1);
+        result(34,0) = shape(15,0);
+        result(34,1) = shape(15,1);
+        result(49,0) = shape(17,0);
+        result(49,1) = shape(17,1);
+        result(51,0) = shape(18,0);
+        result(51,1) = shape(18,1);
+        result(53,0) = shape(19,0);
+        result(53,1) = shape(19,1);
+        result(55,0) = shape(20,0);
+        result(55,1) = shape(20,1);
+        result(57,0) = shape(21,0);
+        result(57,1) = shape(21,1);
+        result(59,0) = shape(22,0);
+        result(59,1) = shape(22,1);
+        for ( int i=60; i<68; i++ ){
+            result(i,0) = 0;
+            result(i,1) = 0;
+        }
     }
     return result;
 }
@@ -553,7 +612,7 @@ float CalculateError(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predi
         temp = ground_truth_shape.rowRange(36, 41)-ground_truth_shape.rowRange(42, 47);
     }
     else{
-        temp = ground_truth_shape.rowRange(0, 1)-ground_truth_shape.rowRange(1, 2);
+        temp = ground_truth_shape.rowRange(0, 5)-ground_truth_shape.rowRange(6, 11);
     }
 //    temp = ground_truth_shape.rowRange(0, 7)-ground_truth_shape.rowRange(9, 16); //add by xujj
     float x =mean(temp.col(0))[0];
@@ -572,7 +631,7 @@ float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& pred
         temp = ground_truth_shape.rowRange(36, 41)-ground_truth_shape.rowRange(42, 47);
     }
     else{
-        temp = ground_truth_shape.rowRange(0, 1)-ground_truth_shape.rowRange(1, 2);
+        temp = ground_truth_shape.rowRange(0, 5)-ground_truth_shape.rowRange(6, 11);
     }
     //    temp = ground_truth_shape.rowRange(0, 7)-ground_truth_shape.rowRange(9, 16); //add by xujj
     float x =mean(temp.col(0))[0];
@@ -619,6 +678,11 @@ void DrawPredictImage(cv::Mat_<uchar> &image, cv::Mat_<float>& ishape){
         if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
             cv::line(temp_image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), cv::Scalar(0,255,0));
     }
+    cv::line(temp_image, cv::Point2f(shape(36, 0), shape(36, 1)), cv::Point2f(shape(41, 0), shape(41, 1)), cv::Scalar(0,255,0));
+    cv::line(temp_image, cv::Point2f(shape(42, 0), shape(42, 1)), cv::Point2f(shape(47, 0), shape(47, 1)), cv::Scalar(0,255,0));
+    cv::line(temp_image, cv::Point2f(shape(30, 0), shape(30, 1)), cv::Point2f(shape(35, 0), shape(35, 1)), cv::Scalar(0,255,0));
+    cv::line(temp_image, cv::Point2f(shape(48, 0), shape(48, 1)), cv::Point2f(shape(59, 0), shape(59, 1)), cv::Scalar(0,255,0));
+    cv::line(temp_image, cv::Point2f(shape(60, 0), shape(60, 1)), cv::Point2f(shape(67, 0), shape(67, 1)), cv::Scalar(0,255,0));
     cv::imshow("show image", temp_image);
     cv::waitKey(0);
 }
