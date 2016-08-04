@@ -394,7 +394,7 @@ void TestVideo(const char* ModelName){
         else{ //用新的方法
             gettimeofday(&t1, NULL);
             std::vector<cv::Mat_<float>> shapes;
-            std::vector<cv::Rect> rects = rg.detectMultiScale(image, shapes, 1.1, 2, 0, 150);
+            std::vector<cv::Rect> rects = rg.detectMultiScale(image, shapes, 1.1, 2, 0|CASCADE_FLAG_TRACK_MODE, 150);
             gettimeofday(&t2, NULL);
             //            last_shape = res.clone(); lastShaped = true;
             cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " faces:" << rects.size() <<  endl;
@@ -590,7 +590,7 @@ void Train(const char* ModelName){
     
     params.local_features_num_ = 4800;
 	params.landmarks_num_per_face_ = NUM_LANDMARKS;
-    params.regressor_stages_ = 5;
+    params.regressor_stages_ = 6;
 //    params.local_radius_by_stage_.push_back(0.6);
 //    params.local_radius_by_stage_.push_back(0.5);
 	params.local_radius_by_stage_.push_back(0.45);
@@ -609,17 +609,17 @@ void Train(const char* ModelName){
 //    params.local_radius_by_stage_.push_back(0.05);
 //    params.local_radius_by_stage_.push_back(0.03);
     
+    params.detect_factor_by_stage_.push_back(0.9);
     params.detect_factor_by_stage_.push_back(0.8);
     params.detect_factor_by_stage_.push_back(0.7);
+    params.detect_factor_by_stage_.push_back(0.8);
     params.detect_factor_by_stage_.push_back(0.6);
-    params.detect_factor_by_stage_.push_back(0.5);
-    params.detect_factor_by_stage_.push_back(0.4);
     params.detect_factor_by_stage_.push_back(0.5);
     params.detect_factor_by_stage_.push_back(0.4);
     params.detect_factor_by_stage_.push_back(0.2);
     
-    params.tree_depth_ = 5;
-    params.trees_num_per_forest_ = 6;
+    params.tree_depth_ = 4;
+    params.trees_num_per_forest_ = 9;
     params.initial_guess_ = 2;
 
 //    params.group_num_ = 6;

@@ -639,7 +639,7 @@ int annotate_main(const char *path)
     std::cout << std::endl;
 
 
-    const char *ModelName = "model_t5d5n8i2";
+    const char *ModelName = "model_t6d4n9i2";
     annotation.face_detector.LoadCascadeRegressor(ModelName);
 
     std::string current_dir = "";
@@ -828,7 +828,7 @@ int annotate_main(const char *path)
 
 int annotate_filter(const char *path)
 {
-    const char *ModelName = "model_t5d5n8i2";
+    const char *ModelName = "model_t6d4n9i2";
     annotation.face_detector.LoadCascadeRegressor(ModelName);
 
     std::vector<std::string> lists;
