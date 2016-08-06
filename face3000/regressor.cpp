@@ -203,7 +203,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 			augmented_current_shapes[j] = ReProjection(augmented_current_shapes[j], augmented_bboxes[j]);
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
                 float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
-                if ( e * (3+i) > 0.75){
+                if ( e * (2+i) > 1.0){
                     //表示本阶段alignment的结果比较差，取消作为正例
                     find_times[j] = MAXFINDTIMES+8;
                     augmented_ground_truth_faces[j] = -1;
@@ -655,7 +655,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
 
     if ( track_mode ){
         //跟踪模式，首先是时间与上次帧在100ms之内，然后，计算defaultshape和框。
-        if ((current_time.tv_sec*1000000 - previousFrameTime.tv_sec*1000000 + current_time.tv_usec - previousFrameTime.tv_usec) > 300000 || previousFrameShapes.size() == 0){
+        if ((current_time.tv_sec*1000000 - previousFrameTime.tv_sec*1000000 + current_time.tv_usec - previousFrameTime.tv_usec) > 200000 || previousFrameShapes.size() == 0){
             //没有有效的上次识别
             if ( current_time.tv_sec - previousScanTime.tv_sec > 1 ){
                 //做一次全局扫描
