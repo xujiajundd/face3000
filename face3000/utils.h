@@ -83,6 +83,9 @@ cv::Mat_<float> ProjectShape(const cv::Mat_<float>& shape, const BoundingBox& bb
 cv::Mat_<float> ReProjection(const cv::Mat_<float>& shape, const BoundingBox& bbox);
 cv::Mat_<float> GetMeanShape(const std::vector<cv::Mat_<float> >& all_shapes, std::vector<int>& ground_truth_faces,
 	const std::vector<BoundingBox>& all_bboxes);
+void getSimilarityTransformAcc(const cv::Mat_<float>& shape_to,
+                               const cv::Mat_<float>& shape_from,
+                               cv::Mat_<float>& rotation, float& scale);
 void getSimilarityTransform(const cv::Mat_<float>& shape_to,
 	const cv::Mat_<float>& shape_from,
 	cv::Mat_<float>& rotation, float& scale);

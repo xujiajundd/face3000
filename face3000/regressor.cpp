@@ -505,7 +505,7 @@ cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
 //        struct timeval t1, t2;
 //        gettimeofday(&t1, NULL);
         //这个耗时百分之一毫秒左右，
-		getSimilarityTransform(ProjectShape(current_shape, bbox), params_.mean_shape_, rotation, scale);
+		getSimilarityTransformAcc(/*ProjectShape(current_shape, bbox)*/current_shape, params_.mean_shape_, rotation, scale);
 //        gettimeofday(&t2, NULL);
 //        std::cout << "transform: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << std::endl;
 		cv::Mat_<float> shape_increaments = regressors_[i].Predict(image, current_shape, bbox, rotation, scale, score, is_face, lastThreshold);
@@ -513,10 +513,10 @@ cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
             //std::cout << "检测不是face!!!!!!!!!!!!!!!!!!!!!!"<< std::endl;
             return current_shape;
         }
-        current_shape = shape_increaments + ProjectShape(current_shape, bbox);
-		current_shape = ReProjection(current_shape, bbox);
+        current_shape = shape_increaments + /*ProjectShape(current_shape, bbox)*/current_shape;
+		//current_shape = ReProjection(current_shape, bbox);
 	}
-    cv::Mat_<float> res = current_shape;
+    cv::Mat_<float> res = ReProjection(current_shape, bbox); //current_shape;
     
     //add by xujj, 做一个小幅抖动滤波，这个在detect时无效了。。。//TODO：可放到检测合并结束的时候再做
 //    if ( antiJitter == 1 && params_.landmarks_num_per_face_ == 68 ){
@@ -720,7 +720,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
                     box.start_y = j;
                     box.center_y = box.start_y + box.height/2.0;
                     int is_face = 1;
-                    cv::Mat_<float> current_shape = ReProjection(default_shape, box);
+                    cv::Mat_<float> current_shape = default_shape.clone(); //ReProjection(default_shape, box);
                     float score = 0;
                     cv::Mat_<float> rotation(2,2,0.0);
                     cv::Mat_<float> res = Predict(image, current_shape, box, is_face, score, rotation);
@@ -849,6 +849,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
 
     int ind = 0;
     float ss = scale * bbox.width / 2.0; //add by xujj
+    cv::Mat_<float> current_shape_re = ReProjection(current_shape, bbox);
     for (int j = 0; j < params_.landmarks_num_per_face_; ++j)
     {
         for (int k = 0; k < params_.trees_num_per_forest_; ++k)
@@ -866,8 +867,8 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
                 delta_x = ss * delta_x; //scale*delta_x*bbox.width / 2.0;
                 delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
-                int real_x = delta_x + current_shape(pos.lmark1, 0);
-                int real_y = delta_y + current_shape(pos.lmark1, 1);
+                int real_x = delta_x + current_shape_re(pos.lmark1, 0);
+                int real_y = delta_y + current_shape_re(pos.lmark1, 1);
                 if ( real_x < 0 || real_y < 0 || real_x >= image.cols || real_y >= image.rows ){
                     outBound++;
                 }
@@ -879,8 +880,8 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
                 delta_x = ss * delta_x; //scale*delta_x*bbox.width / 2.0;
                 delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
-                real_x = delta_x + current_shape(pos.lmark2, 0);
-                real_y = delta_y + current_shape(pos.lmark2, 1);
+                real_x = delta_x + current_shape_re(pos.lmark2, 0);
+                real_y = delta_y + current_shape_re(pos.lmark2, 1);
                 if ( real_x < 0 || real_y < 0 || real_x >= image.cols || real_y >= image.rows ){
                     outBound++;
                 }

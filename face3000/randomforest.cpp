@@ -1102,7 +1102,7 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<uchar>& i
 RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std::vector<cv::Mat_<float> >& regression_targets, CascadeRegressor *casRegressor, int true_pos_num){
 	stage_ = stage;
     param_ = param;
-	local_features_num_ = 200 + param.local_features_num_ / ( stage_ + 1 );
+    local_features_num_ = param.local_features_num_; // 200 + param.local_features_num_ / ( stage_ + 1 );
 	landmark_index_ = landmark_index;
     landmark_num_ = param.landmarks_num_per_face_;
 	tree_depth_ = param.tree_depth_;

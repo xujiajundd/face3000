@@ -73,6 +73,77 @@ cv::Mat_<float> GetMeanShape(const std::vector<cv::Mat_<float> >& all_shapes, st
 	return mean_shape;
 }
 
+void getSimilarityTransformAcc(const cv::Mat_<float>& shape_to,
+                            const cv::Mat_<float>& shape_from,
+                            cv::Mat_<float>& rotation, float& scale){
+    //int table[] = {0,1,6,7,16,17,21,22,26,27,31,33,35,36,39,42,45,48,51,54,57};
+    int table[] = {0,1,6,7,16,17,26,27,33,36,45,48,54};
+    cv::Mat_<float> from(13, 2);
+    cv::Mat_<float> to(13,2);
+    for ( int i=0; i<13; i++ ){
+        from(i,0) = shape_from(table[i], 0);
+        from(i,1) = shape_from(table[i], 1);
+        to(i,0) = shape_to(table[i], 0);
+        to(i,1) = shape_to(table[i], 1);
+    }
+    
+    rotation = cv::Mat(2, 2, 0.0);
+    scale = 0;
+    
+    // center the data
+    float center_x_1 = 0.0;
+    float center_y_1 = 0.0;
+    float center_x_2 = 0.0;
+    float center_y_2 = 0.0;
+    for (int i = 0; i < to.rows; i++){
+        center_x_1 += to(i, 0);
+        center_y_1 += to(i, 1);
+        center_x_2 += from(i, 0);
+        center_y_2 += from(i, 1);
+    }
+    center_x_1 /= to.rows;
+    center_y_1 /= to.rows;
+    center_x_2 /= from.rows;
+    center_y_2 /= from.rows;
+    
+    cv::Mat_<float> temp1 = to;
+    cv::Mat_<float> temp2 = from;
+    for (int i = 0; i < to.rows; i++){
+        temp1(i, 0) -= center_x_1;
+        temp1(i, 1) -= center_y_1;
+        temp2(i, 0) -= center_x_2;
+        temp2(i, 1) -= center_y_2;
+    }
+    
+    
+    cv::Mat_<float> covariance1, covariance2;
+    cv::Mat_<float> mean1, mean2;
+    // calculate covariance matrix
+    cv::calcCovarMatrix(temp1, covariance1, mean1, cv::COVAR_COLS, CV_32F); //CV_COVAR_COLS
+    cv::calcCovarMatrix(temp2, covariance2, mean2, cv::COVAR_COLS, CV_32F);
+    
+    float s1 = sqrt(norm(covariance1));
+    float s2 = sqrt(norm(covariance2));
+    scale = s1 / s2;
+    temp1 = 1.0 / s1 * temp1;
+    temp2 = 1.0 / s2 * temp2;
+    
+    float num = 0.0;
+    float den = 0.0;
+    for (int i = 0; i < to.rows; i++){
+        num = num + temp1(i, 1) * temp2(i, 0) - temp1(i, 0) * temp2(i, 1);
+        den = den + temp1(i, 0) * temp2(i, 0) + temp1(i, 1) * temp2(i, 1);
+    }
+    
+    float norm = sqrt(num*num + den*den);
+    float sin_theta = num / norm;
+    float cos_theta = den / norm;
+    rotation(0, 0) = cos_theta;
+    rotation(0, 1) = -sin_theta;
+    rotation(1, 0) = sin_theta;
+    rotation(1, 1) = cos_theta;
+}
+
 // get the rotation and scale parameters by transferring shape_from to shape_to, shape_to = M*shape_from
 void getSimilarityTransform(const cv::Mat_<float>& shape_to,
 	const cv::Mat_<float>& shape_from,
