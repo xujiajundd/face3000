@@ -675,15 +675,15 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
         else{
             for ( int i=0; i < previousFrameShapes.size(); i++){
                 BoundingBox sbox = CalculateBoundingBox(previousFrameShapes[i]);
-                minSizes.push_back(sbox.width*0.8);
-                maxSizes.push_back(sbox.width*1.2);
+                minSizes.push_back(sbox.width*0.9);
+                maxSizes.push_back(sbox.width*1.1);
                 cv::Rect sRect;
-                sRect.x = sbox.start_x - sbox.width/2.0;
-                sRect.y = sbox.start_y - sbox.height/2.0;
-                sRect.width = 2 * sbox.width;
-                sRect.height = 2 * sbox.height;
-                if ( sRect.x < -image.cols/2 ) sRect.x = -image.cols/2;
-                if ( sRect.y < -image.rows/2 ) sRect.y = -image.rows/2;
+                sRect.x = sbox.start_x - sbox.width/4.0;
+                sRect.y = sbox.start_y - sbox.height/4.0;
+                sRect.width = 1.5 * sbox.width;
+                sRect.height = 1.5 * sbox.height;
+                if ( sRect.x < -sbox.width/2 ) sRect.x = -sbox.width/2;
+                if ( sRect.y < -sbox.height/2 ) sRect.y = - sbox.height/2;
                 if ( sRect.x + sRect.width >  image.cols + sbox.width/2 ) sRect.width = image.cols + sbox.width /2 - sRect.x;
                 if ( sRect.y + sRect.height > image.rows + sbox.height/2 ) sRect.height = image.rows + sbox.height/2 - sRect.y;
                 searchRects.push_back(sRect);
@@ -703,6 +703,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
     }
     //TODO:可以根据返回的score或者stage，改变shuffle及scale的尺度？不同尺度下，也可以利用改信息？
     int scan_count=0;
+    //struct timeval t1, t2;
     for( int s=0; s<searchRects.size(); s++ ){
         cv::Rect sRect = searchRects[s];
         currentSize = maxSizes[s];
@@ -714,6 +715,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
                 box.start_x = i;
                 box.center_x = box.start_x + box.width/2.0;
                 for ( int j=sRect.y; j<=sRect.y+sRect.height-currentSize; j+=currentSize*shuffle){
+                    //gettimeofday(&t1, NULL);
                     scan_count++;
                     box.start_y = j;
                     box.center_y = box.start_y + box.height/2.0;
@@ -722,6 +724,8 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
                     float score = 0;
                     cv::Mat_<float> rotation(2,2,0.0);
                     cv::Mat_<float> res = Predict(image, current_shape, box, is_face, score, rotation);
+                    //gettimeofday(&t2, NULL);
+                    //std::cout << is_face << " time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " score:" <<  std::endl;
                     if ( is_face == 1){
                         faceFound++;
                         bool has_overlap = false;
@@ -733,7 +737,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
                                     candidates[c].shape = res;
                                     candidates[c].neighbors++;
                                     candidates[c].rotation = rotation;
-                                    //if ( candidates[c].neighbors > 3 ) goto _destfor;
+                                    //if ( candidates[c].neighbors > 6 ) goto _destfor;
                                 }
                                 else{
                                     candidates[c].neighbors++;
