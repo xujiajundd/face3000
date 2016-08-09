@@ -52,6 +52,14 @@ void DrawPredictedImage(cv::Mat_<uchar> image, cv::Mat_<float>& ishape){
 }
 
 void DrawPredictedImageContinue(cv::Mat image, cv::Mat_<float>& ishape){
+    if ( ishape.rows <= 5 ){
+        for (int i = 0; i < ishape.rows; i++){
+            cv::circle(image, cv::Point2f(ishape(i, 0), ishape(i, 1)), 5, Scalar(255,255,255));
+        }
+        cv::imshow("show image", image);
+        char c = cv::waitKey( 10);
+        return;
+    }
     Mat_<float> shape = reConvertShape(ishape);
     for (int i = 0; i < shape.rows; i++){
         cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, Scalar(255,255,255));
