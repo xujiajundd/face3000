@@ -250,7 +250,6 @@ cv::Mat_<float> convertShape(cv::Mat_<float> shape){
 //    int table[] = {17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,0,16,1,15,2,14,3,13,4,12,5,11,6,10,7,9,8};
     int table[] = {0,16,1,15,2,14,3,13,4,12,5,11,6,10,7,9,8,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67};
     int table29[] = {36,37,38,39,40,41,42,43,44,45,46,47,27,30,31,33,35,48,50,52,54,56,58,18,19,20,23,24,25};
-    
     if ( NUM_LANDMARKS == 68 ){
         for ( int i=0; i<68; i++){
             result(i,0) = shape(table[i],0);
@@ -263,6 +262,18 @@ cv::Mat_<float> convertShape(cv::Mat_<float> shape){
             result(i,1) = shape(table29[i],1);
         }
     }
+    else if ( NUM_LANDMARKS == 5 ){
+        result(0,0) = (shape(37,0) + shape(38,0) + shape(40,0) + shape(41,0))/4;
+        result(0,1) = (shape(37,1) + shape(38,1) + shape(40,1) + shape(41,1))/4;
+        result(1,0) = (shape(43,0) + shape(44,0) + shape(46,0) + shape(47,0))/4;
+        result(1,1) = (shape(43,1) + shape(44,1) + shape(46,1) + shape(47,1))/4;
+        result(2,0) = shape(33,0);
+        result(2,1) = shape(33,1);
+        result(3,0) = shape(48,0);
+        result(3,1) = shape(48,1);
+        result(4,0) = shape(54,0);
+        result(4,1) = shape(54,1);
+    }
     return result;
 }
 
@@ -271,6 +282,7 @@ cv::Mat_<float> reConvertShape(cv::Mat_<float> shape){
 //    int table[] = {17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,0,16,1,15,2,14,3,13,4,12,5,11,6,10,7,9,8};
     int table[] = {0,16,1,15,2,14,3,13,4,12,5,11,6,10,7,9,8,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67};
     int table29[] = {36,37,38,39,40,41,42,43,44,45,46,47,27,30,31,33,35,48,50,52,54,56,58,18,19,20,23,24,25};
+    int table5[] = {37,44, 33, 48, 54};
     if ( NUM_LANDMARKS == 68 ){
         for ( int i=0; i<68; i++){
             result(table[i],0) = shape(i,0);
@@ -315,6 +327,16 @@ cv::Mat_<float> reConvertShape(cv::Mat_<float> shape){
         for ( int i=60; i<68; i++ ){
             result(i,0) = 0;
             result(i,1) = 0;
+        }
+    }
+    else if ( NUM_LANDMARKS == 5 ){
+        for ( int i=0; i<68; i++ ){
+            result(i,0) = 0;
+            result(i,1) = 0;
+        }
+        for ( int i=0; i<5; i++ ){
+            result(table5[i],0) = shape(i,0);
+            result(table5[i],1) = shape(i,1);
         }
     }
     return result;
@@ -682,8 +704,11 @@ float CalculateError(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predi
     if ( ground_truth_shape.rows >= 68 ){
         temp = ground_truth_shape.rowRange(36, 41)-ground_truth_shape.rowRange(42, 47);
     }
-    else{
+    else if ( ground_truth_shape.rows == 29 ){
         temp = ground_truth_shape.rowRange(0, 5)-ground_truth_shape.rowRange(6, 11);
+    }
+    else if ( ground_truth_shape.rows == 5 ) {
+        temp = ground_truth_shape.rowRange(0, 1)-ground_truth_shape.rowRange(1, 2);
     }
 //    temp = ground_truth_shape.rowRange(0, 7)-ground_truth_shape.rowRange(9, 16); //add by xujj
     float x =mean(temp.col(0))[0];
@@ -701,8 +726,11 @@ float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& pred
     if ( ground_truth_shape.rows >= 68 ){
         temp = ground_truth_shape.rowRange(36, 41)-ground_truth_shape.rowRange(42, 47);
     }
-    else{
+    else if ( ground_truth_shape.rows == 29 ){
         temp = ground_truth_shape.rowRange(0, 5)-ground_truth_shape.rowRange(6, 11);
+    }
+    else if ( ground_truth_shape.rows == 5 ) {
+        temp = ground_truth_shape.rowRange(0, 1)-ground_truth_shape.rowRange(1, 2);
     }
     //    temp = ground_truth_shape.rowRange(0, 7)-ground_truth_shape.rowRange(9, 16); //add by xujj
     float x =mean(temp.col(0))[0];

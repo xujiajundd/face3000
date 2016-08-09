@@ -505,7 +505,7 @@ cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
 //        struct timeval t1, t2;
 //        gettimeofday(&t1, NULL);
         //这个耗时百分之一毫秒左右，
-		getSimilarityTransformAcc(/*ProjectShape(current_shape, bbox)*/current_shape, params_.mean_shape_, rotation, scale);
+		getSimilarityTransform(/*ProjectShape(current_shape, bbox)*/current_shape, params_.mean_shape_, rotation, scale);
 //        gettimeofday(&t2, NULL);
 //        std::cout << "transform: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << std::endl;
 		cv::Mat_<float> shape_increaments = regressors_[i].Predict(image, current_shape, bbox, rotation, scale, score, is_face, lastThreshold);

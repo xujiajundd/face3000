@@ -570,7 +570,7 @@ void Train(const char* ModelName){
     	...
     	1000.jpg
     */
-    NUM_LANDMARKS = 68;
+    NUM_LANDMARKS = 5;
     
 	int pos_num = LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names, neg_file_names);
 	params.mean_shape_ = GetMeanShape(ground_truth_shapes, ground_truth_faces, bboxes);
@@ -588,7 +588,7 @@ void Train(const char* ModelName){
 //        DrawPredictedImage(images[i], ground_truth_shapes[i]);
 //    }
     
-    params.local_features_num_ = 3600;
+    params.local_features_num_ = 1000;
 	params.landmarks_num_per_face_ = NUM_LANDMARKS;
     params.regressor_stages_ = 6;
 //    params.local_radius_by_stage_.push_back(0.6);
@@ -613,8 +613,8 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.7);
     params.detect_factor_by_stage_.push_back(0.6);
     params.detect_factor_by_stage_.push_back(0.5);
-    params.detect_factor_by_stage_.push_back(0.4);
-    params.detect_factor_by_stage_.push_back(0.3);
+    params.detect_factor_by_stage_.push_back(0.5);
+    params.detect_factor_by_stage_.push_back(0.5);
     params.detect_factor_by_stage_.push_back(0.4);
     params.detect_factor_by_stage_.push_back(0.2);
     
