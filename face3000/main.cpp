@@ -680,78 +680,110 @@ void Train(const char* ModelName){
 //
 
 void Hello(){
-    
-    float total_r_pos_weight, total_r_weight, entropy_rc;
-    total_r_pos_weight = 0.1052417682134123412341234123412341234123412341234;
-    total_r_weight = total_r_pos_weight;
-    float entropy_tmp = total_r_pos_weight / ( total_r_weight + FLT_MIN );
-    if ( (entropy_tmp-0.0) < FLT_EPSILON){
-        entropy_rc = 0.0;
-    }
-    else{
-        entropy_rc = - ((entropy_tmp + FLT_MIN) * log(entropy_tmp + FLT_MIN)/log(2.0) + ( 1 - entropy_tmp + FLT_MIN) * log(1-entropy_tmp + FLT_MIN)/log(2.0));
-        entropy_rc = log(1.0-(123456789.123456789/(123456789.123456789+FLT_MIN)));
-    }
-    
-    
-    int modellen = 2000;
-    int stride = 16;
-    int dim = 68;
-    float x[modellen][dim], y[dim];
-    for ( int i=0; i<dim; i++ ){
-        for (int j=0; j<modellen; j++ ){
-            x[j][i] = i*j;
-            y[i] = 0;
-        }
-    }
-    int rn = 10000;
-    float sum;
-    
     struct timeval t1, t2;
+    int length = 100000;
+    short sss[length];
+    int   iii[length];
+    float fff[length];
+    double ddd[length];
+    short ssum=0;
+    int isum=0;
+    float fsum=0;
+    double dsum=0;
+    for  ( int i=0; i<length; i++ ){
+        sss[i] = (short)i;
+        iii[i] = i;
+        fff[i] = (float)i;
+        ddd[i] = (double)i;
+    }
+    
     gettimeofday(&t1, NULL);
-    for ( int r=0; r<rn; r++){
-        for ( int i=0; i<dim; i++){
-            for (int j=0; j<modellen; j+= stride ){
-                y[i] += x[j][i];
-            }
-        }
+    for ( int i=0; i<length; i++ ){
+        ssum += sss[i];
     }
     gettimeofday(&t2, NULL);
-    sum = 0;
-    for ( int i=0; i<dim; i++){
-        sum += y[i];
-    }
-    cout << sum << endl;
-    cout << "time1: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
-
-
-    float xx[modellen][dim], yy[dim];
-    for (int j=0; j<modellen; j++){
-        for ( int i=0; i<dim; i++ ){
-            xx[j][i] = i*j;
-            yy[i] = 0;
-        }
-    }
-
-    float ssum;
-
+    cout << "time1: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " sum:" << ssum << endl;
+    
     gettimeofday(&t1, NULL);
-
-    for ( int r=0; r<rn; r++){
-        for (int j=0; j<modellen; j+=stride){
-            for ( int i=0; i<dim; i++){
-                yy[i] += xx[j][i];
-            }
-        }
+    for ( int i=0; i<length; i++ ){
+        isum += iii[i];
     }
     gettimeofday(&t2, NULL);
-    ssum = 0;
-
-    for ( int i=0; i<dim; i++){
-        ssum += yy[i];
+    cout << "time2: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " sum:" << isum << endl;
+    
+    gettimeofday(&t1, NULL);
+    for ( int i=0; i<length; i++ ){
+        fsum += fff[i];
     }
-    cout << ssum << endl;
-    cout << "time2: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
+    gettimeofday(&t2, NULL);
+    cout << "time3: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " sum:" << fsum << endl;
+    
+    gettimeofday(&t1, NULL);
+    for ( int i=0; i<length; i++ ){
+        dsum += ddd[i];
+    }
+    gettimeofday(&t2, NULL);
+    cout << "time4: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " sum:" << dsum << endl;
+    
+    
+//    int modellen = 2000;
+//    int stride = 16;
+//    int dim = 68;
+//    float x[modellen][dim], y[dim];
+//    for ( int i=0; i<dim; i++ ){
+//        for (int j=0; j<modellen; j++ ){
+//            x[j][i] = i*j;
+//            y[i] = 0;
+//        }
+//    }
+//    int rn = 10000;
+//    float sum;
+//    
+//
+//    gettimeofday(&t1, NULL);
+//    for ( int r=0; r<rn; r++){
+//        for ( int i=0; i<dim; i++){
+//            for (int j=0; j<modellen; j+= stride ){
+//                y[i] += x[j][i];
+//            }
+//        }
+//    }
+//    gettimeofday(&t2, NULL);
+//    sum = 0;
+//    for ( int i=0; i<dim; i++){
+//        sum += y[i];
+//    }
+//    cout << sum << endl;
+//    cout << "time1: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
+//
+//
+//    float xx[modellen][dim], yy[dim];
+//    for (int j=0; j<modellen; j++){
+//        for ( int i=0; i<dim; i++ ){
+//            xx[j][i] = i*j;
+//            yy[i] = 0;
+//        }
+//    }
+//
+//    float ssum;
+//
+//    gettimeofday(&t1, NULL);
+//
+//    for ( int r=0; r<rn; r++){
+//        for (int j=0; j<modellen; j+=stride){
+//            for ( int i=0; i<dim; i++){
+//                yy[i] += xx[j][i];
+//            }
+//        }
+//    }
+//    gettimeofday(&t2, NULL);
+//    ssum = 0;
+//
+//    for ( int i=0; i<dim; i++){
+//        ssum += yy[i];
+//    }
+//    cout << ssum << endl;
+//    cout << "time2: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
 }
 
 
