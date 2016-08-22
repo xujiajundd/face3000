@@ -923,8 +923,8 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 //        df = detect_factor_ + 0.1;
 //    }
     for ( int i=0; i<vars.size(); i++){
-        double tmpvar = ( vars[i] - minvar ) / (maxvar - minvar + FLT_MIN);
-        double tmpent = ( entropys[i] - minent ) / (maxent - minent + FLT_MIN);
+        double tmpvar = ( vars[i] - minvar ) / (maxvar - minvar + DBL_MIN);
+        double tmpent = ( entropys[i] - minent ) / (maxent - minent + DBL_MIN);
         double tmpsum = (1.0 - df) * tmpvar + df * tmpent; //这个可以根据stage用不同的系数，TODO:要不要根据depth也调整？
         if ( tmpsum < summin ){
             summin = tmpsum;
