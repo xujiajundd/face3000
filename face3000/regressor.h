@@ -3,6 +3,7 @@
 
 #include "utils.h"
 #include "randomforest.h"
+#include <Accelerate/Accelerate.h>
 
 class CascadeRegressor;
 
@@ -71,7 +72,7 @@ public:
 	std::vector<cv::Mat_<float> > ground_truth_shapes_;
 	std::vector<BoundingBox> bboxes_;
 	std::vector<Regressor> regressors_;
-//    cv::Mat_<float> lastRes;
+    cv::Mat_<float> lastRes;
     struct timeval previousFrameTime;
     struct timeval previousScanTime;
     std::vector<cv::Mat_<float>> previousFrameRotations;

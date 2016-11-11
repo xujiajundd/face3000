@@ -111,4 +111,7 @@ BoundingBox GetBoundingBox(cv::Mat_<float>& shape, int width, int height);
 cv::Mat_<float> convertShape(cv::Mat_<float> shape);
 cv::Mat_<float> reConvertShape(cv::Mat_<float> shape);
 
+int symmetricPoint(int p);
+int adjointPoint(int p);
+
 #endif

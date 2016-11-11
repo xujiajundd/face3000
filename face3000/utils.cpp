@@ -245,6 +245,61 @@ cv::Mat_<float> LoadGroundTruthShape(const char* name){
 	return shape;
 }
 
+int symmetricPoint(int p){
+    int sp;
+    if ( p <= 16){
+        sp = 16 - p;
+    }
+    if ( p >=17 && p <= 26 ){
+        sp = 17 + 26 - p;
+    }
+    if ( p >= 27 && p <= 30 ){
+        sp = p;
+
+    }
+    if ( p >= 31 && p <= 35 ){
+        sp = 31 + 35 - p;
+    }
+    if ( p >= 36 && p <= 39 ){
+        sp = 36 + 45 - p;
+    }
+    if ( p >= 40 && p <= 41 ){
+        sp = 40 + 47 - p;
+    }
+    if ( p >= 42 && p <= 45 ){
+        sp = 36 + 45 - p;
+    }
+    if ( p >= 46 && p <= 47 ){
+        sp = 40+47-p;
+    }
+    if ( p >= 48 && p <= 54 ){
+        sp = 48+54-p;
+    }
+    if ( p >= 55 && p<= 59 ){
+        sp = 55+59-p;
+    }
+    if ( p >= 60 && p <= 64 ){
+        sp = 60+64-p;
+    }
+    if ( p >= 65 && p <= 67 ){
+        sp = 65+67-p;
+    }
+    return sp;
+}
+
+int adjointPoint(int p){
+    int sp;
+    if ( p == 16 ) sp = 0;
+    else if ( p == 26 ) sp = 17;
+    else if ( p == 35 ) sp = 30;
+    else if ( p == 41 ) sp = 46;
+    else if ( p == 47 ) sp = 40;
+    else if ( p == 59 ) sp = 48;
+    else if ( p == 67 ) sp = 60;
+    else sp = p+1;
+    return sp;
+}
+
 cv::Mat_<float> convertShape(cv::Mat_<float> shape){
     cv::Mat_<float> result(NUM_LANDMARKS,2);
 //    int table[] = {17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,0,16,1,15,2,14,3,13,4,12,5,11,6,10,7,9,8};

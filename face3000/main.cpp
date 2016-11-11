@@ -91,7 +91,7 @@ void Test(const char* ModelName){
     struct timeval t1, t2;
     gettimeofday(&t1, NULL);
 	for (int i = 0; i < images.size(); i++){
-		cv::Mat_<float> current_shape = ReProjection(cas_load.params_.mean_shape_, bboxes[i]);
+        cv::Mat_<float> current_shape = cas_load.params_.mean_shape_.clone(); //ReProjection(cas_load.params_.mean_shape_, bboxes[i]);
         //struct timeval t1, t2;
         //gettimeofday(&t1, NULL);
         int is_face = 1;
@@ -138,7 +138,7 @@ void Test(const char* ModelName){
                     box.center_x = box.start_x + box.width/2.0;
                     box.center_y = box.start_y + box.width/2.0;
                     int is_face = 1;
-                    cv::Mat_<float> current_shape = ReProjection(cas_load.params_.mean_shape_, box);
+                    cv::Mat_<float> current_shape = cas_load.params_.mean_shape_.clone(); //ReProjection(cas_load.params_.mean_shape_, box);
                     float score = 0;
                     cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, box, is_face, score);
                     if ( is_face == 1){
@@ -187,7 +187,7 @@ void Test2(const char* ModelName){
     struct timeval t1, t2;
     gettimeofday(&t1, NULL);
     for (int i = 0; i < images.size(); i++){
-        cv::Mat_<float> current_shape = ReProjection(cas_load.params_.mean_shape_, bboxes[i]);
+        cv::Mat_<float> current_shape = cas_load.params_.mean_shape_.clone(); //ReProjection(cas_load.params_.mean_shape_, bboxes[i]);
         //struct timeval t1, t2;
         //gettimeofday(&t1, NULL);
         int is_face = 1;
@@ -233,7 +233,7 @@ void Test2(const char* ModelName){
                     box.center_x = box.start_x + box.width/2.0;
                     box.center_y = box.start_y + box.width/2.0;
                     int is_face = 1;
-                    cv::Mat_<float> current_shape = ReProjection(cas_load.params_.mean_shape_, box);
+                    cv::Mat_<float> current_shape = cas_load.params_.mean_shape_.clone();// ReProjection(cas_load.params_.mean_shape_, box);
                     float score = 0;
                     cv::Mat_<float> res = cas_load.Predict(images[i], current_shape, box, is_face, score);
                     if ( is_face == 1){
@@ -271,7 +271,7 @@ void Test2(const char* ModelName){
 void TestVideo(const char* ModelName){
     CascadeRegressor rg;
     rg.LoadCascadeRegressor(ModelName);
-    rg.antiJitter = -1;
+    rg.antiJitter = 1;
 //    rg.params_.predict_group_.erase(0);
 //    for (int i = 0; i < rg.params_.regressor_stages_; i++){
 //        rg.regressors_[i].params_ = rg.params_;
@@ -402,7 +402,7 @@ void TestVideo(const char* ModelName){
         else{ //用新的方法
             gettimeofday(&t1, NULL);
             std::vector<cv::Mat_<float>> shapes;
-            std::vector<cv::Rect> rects = rg.detectMultiScale(image, shapes, 1.1, 2, 0, 150);
+            std::vector<cv::Rect> rects = rg.detectMultiScale(image, shapes, 1.1, 2, 0|CASCADE_FLAG_TRACK_MODE, 150);
             gettimeofday(&t2, NULL);
             //            last_shape = res.clone(); lastShaped = true;
             cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " faces:" << rects.size() <<  endl;
@@ -596,9 +596,9 @@ void Train(const char* ModelName){
 //        DrawPredictedImage(images[i], ground_truth_shapes[i]);
 //    }
     
-    params.local_features_num_ = 3600;
+    params.local_features_num_ = 4800;
 	params.landmarks_num_per_face_ = NUM_LANDMARKS;
-    params.regressor_stages_ = 6;
+    params.regressor_stages_ = 5;
 //    params.local_radius_by_stage_.push_back(0.6);
 //    params.local_radius_by_stage_.push_back(0.5);
 	params.local_radius_by_stage_.push_back(0.45);
@@ -617,17 +617,17 @@ void Train(const char* ModelName){
 //    params.local_radius_by_stage_.push_back(0.05);
 //    params.local_radius_by_stage_.push_back(0.03);
     
+    params.detect_factor_by_stage_.push_back(0.6);
+    params.detect_factor_by_stage_.push_back(0.5);
+    params.detect_factor_by_stage_.push_back(0.5);
+    params.detect_factor_by_stage_.push_back(0.5);
     params.detect_factor_by_stage_.push_back(0.5);
     params.detect_factor_by_stage_.push_back(0.6);
-    params.detect_factor_by_stage_.push_back(0.7);
-    params.detect_factor_by_stage_.push_back(0.8);
-    params.detect_factor_by_stage_.push_back(0.8);
-    params.detect_factor_by_stage_.push_back(0.9);
     params.detect_factor_by_stage_.push_back(0.4);
     params.detect_factor_by_stage_.push_back(0.2);
     
-    params.tree_depth_ = 4;
-    params.trees_num_per_forest_ = 9;
+    params.tree_depth_ = 3;
+    params.trees_num_per_forest_ = 8;
     params.initial_guess_ = 2;
 
 //    params.group_num_ = 6;

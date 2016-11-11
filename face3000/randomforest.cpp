@@ -152,17 +152,30 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
             //TODO，这个地方可以试多个策略：1）自己，2）自己和随机一个，3）随机两个
             //TODO，在前2个stage，用3，第三stage用2，后续stage，用1？如何？
             int landmark1, landmark2;
-            if ( true || stage_ == 0 || n % (stage_ + 1) == 0 /*&& landmark_index_ < 50*/ ){
+            if ( stage_ == 0  /*&& landmark_index_ < 50*/ ){
                 landmark1 = (int)rd.uniform(0, landmark_num_);
                 landmark2 = (int)rd.uniform(0, landmark_num_);
             }
-//            else if ( stage_ == 1 /*&& landmark_index_ < 50*/ ){
-//                landmark1 = landmark_index_;
-//                landmark2 = (int)rd.uniform(0, landmark_num_);
-//            }
-            else{
+            else if (  n % (stage_ + 3) == 0 ){
                 landmark1 = landmark_index_;
                 landmark2 = landmark_index_;
+            }
+            else if ( n % (stage_ + 3) == 1 ){
+                landmark1 = landmark_index_;
+                landmark2 = (int)rd.uniform(0, landmark_num_);
+            }
+            else {
+                landmark1 = landmark_index_;
+                landmark2 = adjointPoint(landmark1);
+//                int sss = 5 - stage_;
+//                if ( sss < 2 ) sss = 2;
+//                if ( n % sss == 0 ){
+//                    landmark2 = symmetricPoint(landmark1);
+//                }
+//                else{
+//                    landmark2 = landmark_index_ + 1;
+//                    if (landmark2 >= landmark_num_ ) landmark2 = 0;
+//                }
             }
             local_position_[n] = FeatureLocations(landmark1, landmark2, a, b);
         }
@@ -174,7 +187,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 
             cv::Mat_<float> rotation = rotations[n];
             float scale = scales[n];
-
+            int gauss = (int) augmented_bboxes[n].width / 200;
+            gauss = std::min(2, gauss);
             for (int j = 0; j < local_features_num_; j++){
                 FeatureLocations pos = local_position_[j];
                 float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
@@ -183,10 +197,10 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 delta_y = scale*delta_y*augmented_bboxes[n].height / 2.0;
                 int real_x = delta_x + augmented_current_shapes[n](pos.lmark1, 0);
                 int real_y = delta_y + augmented_current_shapes[n](pos.lmark1, 1);
-                real_x = std::max(0, std::min(real_x, images[augmented_images_index[n]].cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, images[augmented_images_index[n]].rows - 1)); // which rows
-                //int tmp = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-1, real_x) + images[augmented_images_index[n]](real_y+1, real_x) + images[augmented_images_index[n]](real_y, real_x-1) +images[augmented_images_index[n]](real_y, real_x+1)) / 6 ; //real_y at first
-                int tmp = images[augmented_images_index[n]](real_y, real_x);
+                real_x = std::max(gauss, std::min(real_x, images[augmented_images_index[n]].cols - 1 - gauss)); // which cols
+                real_y = std::max(gauss, std::min(real_y, images[augmented_images_index[n]].rows - 1 - gauss)); // which rows
+                int tmp = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-gauss, real_x) + images[augmented_images_index[n]](real_y+gauss, real_x) + images[augmented_images_index[n]](real_y, real_x-gauss) +images[augmented_images_index[n]](real_y, real_x+gauss)) / 6 ; //real_y at first
+                //int tmp = images[augmented_images_index[n]](real_y, real_x);
                 
                 delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
                 delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
@@ -194,10 +208,10 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 delta_y = scale*delta_y*augmented_bboxes[n].height / 2.0;
                 real_x = delta_x + augmented_current_shapes[n](pos.lmark2, 0);
                 real_y = delta_y + augmented_current_shapes[n](pos.lmark2, 1);
-                real_x = std::max(0, std::min(real_x, images[augmented_images_index[n]].cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, images[augmented_images_index[n]].rows - 1)); // which rows
-                //int tmp2 = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-1, real_x) + images[augmented_images_index[n]](real_y+1, real_x) + images[augmented_images_index[n]](real_y, real_x-1) +images[augmented_images_index[n]](real_y, real_x+1)) / 6 ;
-                int tmp2 = images[augmented_images_index[n]](real_y, real_x);
+                real_x = std::max(gauss, std::min(real_x, images[augmented_images_index[n]].cols - 1 - gauss)); // which cols
+                real_y = std::max(gauss, std::min(real_y, images[augmented_images_index[n]].rows - 1 - gauss)); // which rows
+                int tmp2 = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-gauss, real_x) + images[augmented_images_index[n]](real_y+gauss, real_x) + images[augmented_images_index[n]](real_y, real_x-gauss) +images[augmented_images_index[n]](real_y, real_x+gauss)) / 6 ;
+                //int tmp2 = images[augmented_images_index[n]](real_y, real_x);
                 if ( i % 2 == 0 ){
                     pixel_differences(j, n) = abs(tmp - tmp2);
                 }
@@ -213,7 +227,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         for(int k=0;k<current_weight.size();++k)
         {
             current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
-            if ( current_weight[k] > 90000000000000000000.0 && find_times[k] < MAXFINDTIMES){ //试验一下去掉这个的效果
+            if ( current_weight[k] > 90000000000.0 && find_times[k] < MAXFINDTIMES){ //试验一下去掉这个的效果
                 find_times[k] = MAXFINDTIMES+8;
                 if ( augmented_ground_truth_faces[k] == 1 ){
                     drop_pos_count++;
@@ -509,8 +523,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         
                                         float delta_start = sqrtf(powf((new_box.start_x - pos_box.start_x), 2.0) + powf((new_box.start_y - pos_box.start_y), 2.0));
                                         float delta_end = sqrtf(powf((new_box.start_x + new_box.width - pos_box.start_x - pos_box.width), 2.0) + powf((new_box.start_y + new_box.height - pos_box.start_y - pos_box.height), 2.0));
-                                        if ( delta_start < 0.12 * pos_box.width && delta_end < 0.12 * pos_box.width ) continue; //判断与正例的位置接近则不采用
-                                        if ( (delta_start + delta_end) < 0.2 * pos_box.width  ) continue;
+                                        if ( delta_start < 0.25 * pos_box.width && delta_end < 0.25 * pos_box.width ) continue; //判断与正例的位置接近则不采用
+                                        if ( (delta_start + delta_end) < 0.5 * pos_box.width  ) continue;
                                         
 //                                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[p], augmented_bboxes[p]);
 //                                        augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
@@ -1023,6 +1037,8 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<uchar>& image,
 	const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale, float& score){
 	Node* node = trees_[tree_index];
+    int gauss = (int) bbox.width / 200;
+    gauss = std::min(2, gauss);
 	while (!node->is_leaf_){
 		FeatureLocations& pos = node->feature_locations_;
 		float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
@@ -1031,10 +1047,10 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<uchar>& i
 		delta_y = scale*delta_y*bbox.height / 2.0;
 		int real_x = delta_x + current_shape(pos.lmark1, 0);
 		int real_y = delta_y + current_shape(pos.lmark1, 1);
-		real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-		real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-		//int tmp = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ; //real_y at first
-        int tmp = image(real_y, real_x);
+		real_x = std::max(gauss, std::min(real_x, image.cols - 1 - gauss)); // which cols
+		real_y = std::max(gauss, std::min(real_y, image.rows - 1 - gauss)); // which rows
+		int tmp = (int)(2*image(real_y, real_x) + image(real_y-gauss, real_x) + image(real_y+gauss, real_x) + image(real_y, real_x-gauss) +image(real_y, real_x+gauss)) / 6 ; //real_y at first
+        //int tmp = image(real_y, real_x);
         
 		delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
 		delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
@@ -1042,10 +1058,10 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<uchar>& i
 		delta_y = scale*delta_y*bbox.height / 2.0;
 		real_x = delta_x + current_shape(pos.lmark2, 0);
 		real_y = delta_y + current_shape(pos.lmark2, 1);
-		real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-		real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-        //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
-		int tmp2 = image(real_y, real_x);
+		real_x = std::max(gauss, std::min(real_x, image.cols - 1 - gauss)); // which cols
+		real_y = std::max(gauss, std::min(real_y, image.rows - 1 - gauss)); // which rows
+        int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-gauss, real_x) + image(real_y+gauss, real_x) + image(real_y, real_x-gauss) +image(real_y, real_x+gauss)) / 6 ;
+		//int tmp2 = image(real_y, real_x);
         if ( tree_index % 2 == 0 ){
             if ( abs(tmp - tmp2) < node->threshold_){
                 node = node->left_child_;// go left
@@ -1103,6 +1119,7 @@ RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std
 	stage_ = stage;
     param_ = param;
     local_features_num_ = param.local_features_num_; // 200 + param.local_features_num_ / ( stage_ + 1 );
+    if ( stage == 0 ) local_features_num_ = 2 * param.local_features_num_;
 	landmark_index_ = landmark_index;
     landmark_num_ = param.landmarks_num_per_face_;
 	tree_depth_ = param.tree_depth_;

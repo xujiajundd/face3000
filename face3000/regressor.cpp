@@ -12,7 +12,7 @@
 
 
 CascadeRegressor::CascadeRegressor(){
-//    lastRes = cv::Mat_<float>(68,2,0.0);
+    lastRes = cv::Mat_<float>(68,2,0.0);
     previousScanTime.tv_sec = 0;
     previousScanTime.tv_usec = 0;
     previousFrameTime.tv_sec = 0;
@@ -203,7 +203,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 			augmented_current_shapes[j] = ReProjection(augmented_current_shapes[j], augmented_bboxes[j]);
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
                 float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
-                if ( e * (3+i) > 1.5){
+                if ( e * (2+i) > 0.8){
                     //表示本阶段alignment的结果比较差，取消作为正例
                     find_times[j] = MAXFINDTIMES+8;
                     augmented_ground_truth_faces[j] = -1;
@@ -216,7 +216,22 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                 count++;
             }
 		}
-
+        std::cout << std::endl;
+        for (int j = 0; j < shape_increaments.size(); j++){
+            if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
+                float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
+                if ( e  >  2 * error/count){
+                    //表示本阶段alignment的结果比较差，取消作为正例
+                    find_times[j] = MAXFINDTIMES+8;
+                    augmented_ground_truth_faces[j] = -1;
+                    std::cout << "Alignment error:" << e << " for:"<< j << " image index:" << augmented_images_index[j] << std::endl;
+                    if ( debug_on_ ){
+                        DrawPredictImage(images[augmented_images_index[j]], augmented_current_shapes[j]);
+                    }
+                }
+            }
+        }
+        
         gettimeofday(&t1, NULL);
         std::cout << std::endl;
         std::cout << "regression error: " <<  error << ": " << error/count << " time:" << t1.tv_sec << std::endl;
@@ -313,6 +328,8 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
         const float scale = scales_[i];
         const cv::Mat_<uchar>& image = images[augmented_images_index[i]];
         const BoundingBox& bbox = augmented_bboxes[i];
+        int gauss = (int)bbox.width / 200;
+        gauss = std::min(2, gauss);
         const cv::Mat_<float>& current_shape = augmented_current_shapes[i];
         for (int j = 0; j < params_.landmarks_num_per_face_; ++j){
             for (int k = 0; k < params_.trees_num_per_forest_; ++k){
@@ -330,10 +347,10 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
                     delta_y = scale*delta_y*bbox.height / 2.0;
                     int real_x = delta_x + current_shape(pos.lmark1, 0);
                     int real_y = delta_y + current_shape(pos.lmark1, 1);
-                    real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                    real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows//////
-                    // int tmp = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ; //real_y at first
-                    int tmp = image(real_y, real_x);
+                    real_x = std::max(gauss, std::min(real_x, image.cols - 1 - gauss)); // which cols
+                    real_y = std::max(gauss, std::min(real_y, image.rows - 1 - gauss)); // which rows//////
+                    int tmp = (int)(2*image(real_y, real_x) + image(real_y-gauss, real_x) + image(real_y+gauss, real_x) + image(real_y, real_x-gauss) +image(real_y, real_x+gauss)) / 6 ; //real_y at first
+                    //int tmp = image(real_y, real_x);
                     
                     delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
                     delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
@@ -341,10 +358,10 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
                     delta_y = scale*delta_y*bbox.height / 2.0;
                     real_x = delta_x + current_shape(pos.lmark2, 0);
                     real_y = delta_y + current_shape(pos.lmark2, 1);
-                    real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                    real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                    //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
-                    int tmp2 = image(real_y, real_x);
+                    real_x = std::max(gauss, std::min(real_x, image.cols - 1 - gauss)); // which cols
+                    real_y = std::max(gauss, std::min(real_y, image.rows - 1 - gauss)); // which rows
+                    int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-gauss, real_x) + image(real_y+gauss, real_x) + image(real_y, real_x-gauss) +image(real_y, real_x+gauss)) / 6 ;
+                    //int tmp2 = image(real_y, real_x);
 
                     if ( k % 2 == 0 ){
                         if (abs(tmp-tmp2) < node->threshold_){
@@ -518,19 +535,6 @@ cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
 	}
     cv::Mat_<float> res = ReProjection(current_shape, bbox); //current_shape;
     
-    //add by xujj, 做一个小幅抖动滤波，这个在detect时无效了。。。//TODO：可放到检测合并结束的时候再做
-//    if ( antiJitter == 1 && params_.landmarks_num_per_face_ == 68 ){
-//        for ( int j=0; j<68; j++){
-//            float alphax = fabs(res(j,0)-lastRes(j,0)) / 10.0;
-//            float alphay = fabs(res(j,1)-lastRes(j,1)) / 10.0;
-//            if (alphax > 1.0 ) alphax = 1.0;
-//            if (alphay > 1.0 ) alphay = 1.0;
-//            
-//            lastRes(j,0) = ((1.0-alphax)*lastRes(j,0) + alphax*res(j,0));
-//            lastRes(j,1) = ((1.0-alphay)*lastRes(j,1) + alphay*res(j,1));
-//        }
-//        return lastRes;
-//    }
     rot = rotation;
 	return res;
 }
@@ -689,7 +693,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
                 searchRects.push_back(sRect);
                 cv::Mat_<float> rot;
                 cv::transpose(previousFrameRotations[i], rot);
-                default_shape =  params_.mean_shape_ * rot;
+                default_shape = params_.mean_shape_ * rot;
             }
         }
     }
@@ -737,7 +741,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
                                     candidates[c].shape = res;
                                     candidates[c].neighbors++;
                                     candidates[c].rotation = rotation;
-                                    //if ( candidates[c].neighbors > 6 ) goto _destfor;
+                                    if ( candidates[c].neighbors > 10 ) goto _destfor;
                                 }
                                 else{
                                     candidates[c].neighbors++;
@@ -797,6 +801,27 @@ _destfor:
         gettimeofday(&previousScanTime, NULL);
 //    std::cout<<"count:"<<scan_count<<std::endl;
 //    std::cout<<"count:"<<scan_count<<" face found:"<<faceFound<< std::endl;
+    
+    else{
+//    add by xujj, 做一个小幅抖动滤波，这个在detect时无效了。。。//TODO：可放到检测合并结束的时候再做
+//        cv::Mat_<float> res = shapes[0];
+//        if ( antiJitter == 1 && params_.landmarks_num_per_face_ == 68 ){
+//            float alphax=0, alphay=0;
+//            for ( int j=17; j<68; j++){
+//                alphax += fabs(res(j,0)-lastRes(j,0)) / 10.0;
+//                alphay += fabs(res(j,1)-lastRes(j,1)) / 10.0;
+//            }
+//            alphax /= 53;
+//            alphay /= 53;
+//            if (alphax > 1.0 ) alphax = 1.0;
+//            if (alphay > 1.0 ) alphay = 1.0;
+//            for ( int j=0; j<68; j++){
+//                lastRes(j,0) = ((1.0-alphax)*lastRes(j,0) + alphax*res(j,0));
+//                lastRes(j,1) = ((1.0-alphay)*lastRes(j,1) + alphay*res(j,1));
+//            }
+//            shapes[0] = lastRes;
+//        }
+    }
     return faces;
 }
 
@@ -849,6 +874,9 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
 
     int ind = 0;
     float ss = scale * bbox.width / 2.0; //add by xujj
+    int gauss = (int) bbox.width / 200;
+    gauss = std::min(2, gauss);
+    
     cv::Mat_<float> current_shape_re = ReProjection(current_shape, bbox);
     for (int j = 0; j < params_.landmarks_num_per_face_; ++j)
     {
@@ -872,10 +900,10 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 if ( real_x < 0 || real_y < 0 || real_x >= image.cols || real_y >= image.rows ){
                     outBound++;
                 }
-                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                //int tmp = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ; //real_y at first
-                int tmp = image(real_y, real_x);
+                real_x = std::max(gauss, std::min(real_x, image.cols - 1 - gauss)); // which cols
+                real_y = std::max(gauss, std::min(real_y, image.rows - 1 - gauss)); // which rows
+                int tmp = (int)(2*image(real_y, real_x) + image(real_y-gauss, real_x) + image(real_y+gauss, real_x) + image(real_y, real_x-gauss) +image(real_y, real_x+gauss)) / 6 ; //real_y at first
+                //int tmp = image(real_y, real_x);
                 delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
                 delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
                 delta_x = ss * delta_x; //scale*delta_x*bbox.width / 2.0;
@@ -885,10 +913,10 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 if ( real_x < 0 || real_y < 0 || real_x >= image.cols || real_y >= image.rows ){
                     outBound++;
                 }
-                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
-                int tmp2 = image(real_y, real_x);
+                real_x = std::max(gauss, std::min(real_x, image.cols - 1 - gauss)); // which cols
+                real_y = std::max(gauss, std::min(real_y, image.rows - 1 - gauss)); // which rows
+                int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-gauss, real_x) + image(real_y+gauss, real_x) + image(real_y, real_x-gauss) +image(real_y, real_x+gauss)) / 6 ;
+                //int tmp2 = image(real_y, real_x);
                 if ( k % 2 == 0 ){
                     if ( abs(tmp - tmp2 ) < node->threshold_){
                         node = node->left_child_;// go left
@@ -957,6 +985,8 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
     }
     int ind = 0;
     float ss = scale * bbox.width / 2.0; //add by xujj
+    int gauss = (int) bbox.width / 200;
+    gauss = std::min(2, gauss);
     for (int j = 0; j < params_.landmarks_num_per_face_; ++j)
     {
         for (int k = 0; k < params_.trees_num_per_forest_; ++k)
@@ -975,10 +1005,10 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
                 delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
                 int real_x = delta_x + current_shape(pos.lmark1, 0);
                 int real_y = delta_y + current_shape(pos.lmark1, 1);
-                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                //int tmp = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ; //real_y at first
-                int tmp = image(real_y, real_x);
+                real_x = std::max(gauss, std::min(real_x, image.cols - 1 - gauss)); // which cols
+                real_y = std::max(gauss, std::min(real_y, image.rows - 1 - gauss)); // which rows
+                int tmp = (int)(2*image(real_y, real_x) + image(real_y-gauss, real_x) + image(real_y+gauss, real_x) + image(real_y, real_x-gauss) +image(real_y, real_x+gauss)) / 6 ; //real_y at first
+                //int tmp = image(real_y, real_x);
                 
                 delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
                 delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
@@ -986,10 +1016,10 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
                 delta_y = ss * delta_y; //scale*delta_y*bbox.height / 2.0;
                 real_x = delta_x + current_shape(pos.lmark2, 0);
                 real_y = delta_y + current_shape(pos.lmark2, 1);
-                real_x = std::max(0, std::min(real_x, image.cols - 1)); // which cols
-                real_y = std::max(0, std::min(real_y, image.rows - 1)); // which rows
-                //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-1, real_x) + image(real_y+1, real_x) + image(real_y, real_x-1) +image(real_y, real_x+1)) / 6 ;
-                int tmp2 = image(real_y, real_x);
+                real_x = std::max(gauss, std::min(real_x, image.cols - 1 - gauss)); // which cols
+                real_y = std::max(gauss, std::min(real_y, image.rows - 1 - gauss)); // which rows
+                int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-gauss, real_x) + image(real_y+gauss, real_x) + image(real_y, real_x-gauss) +image(real_y, real_x+gauss)) / 6 ;
+                //int tmp2 = image(real_y, real_x);
                 if ( k % 2 == 0 ){
                     if ( abs(tmp-tmp2) < node->threshold_){
                         node = node->left_child_;// go left
@@ -1076,10 +1106,10 @@ cv::Mat_<float> Regressor::Predict(cv::Mat_<uchar>& image,
     
     for(; (idx=lx->index)!=-1 && idx < linear_model_x_[0]->nr_feature; lx++){
         idx--;
-//        cblas_saxpy(2*params_.landmarks_num_per_face_, 1.0, &modreg[idx][0], 1, sum, 1); //用这个速度跟后面的循环差不多
-        for (int i = 0; i < 2*params_.landmarks_num_per_face_; i++){
-            sum[i] += modreg[idx][i];
-        }
+        cblas_saxpy(2*params_.landmarks_num_per_face_, 1.0, &modreg[idx][0], 1, sum, 1); //用这个速度跟后面的循环差不多
+//        for (int i = 0; i < 2*params_.landmarks_num_per_face_; i++){
+//            sum[i] += modreg[idx][i];
+//        }
     }
     for ( int i=0; i<params_.landmarks_num_per_face_; i++){
         predict_result(i,0) = sum[2*i];
