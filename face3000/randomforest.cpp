@@ -936,6 +936,8 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 //    else if ( landmark_index_ < 17 ){
 //        df = detect_factor_ + 0.1;
 //    }
+    if ( stage_ == 0 && landmark_index_ < 10 ) df = 0.9;
+    
     for ( int i=0; i<vars.size(); i++){
         double tmpvar = ( vars[i] - minvar ) / (maxvar - minvar + DBL_MIN);
         double tmpent = ( entropys[i] - minent ) / (maxent - minent + DBL_MIN);
@@ -1119,7 +1121,12 @@ RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std
 	stage_ = stage;
     param_ = param;
     local_features_num_ = param.local_features_num_; // 200 + param.local_features_num_ / ( stage_ + 1 );
-    if ( stage == 0 ) local_features_num_ = 2 * param.local_features_num_;
+    if ( stage == 0 ){
+        local_features_num_ = 3 * param.local_features_num_;
+    }
+    else{
+
+    }
 	landmark_index_ = landmark_index;
     landmark_num_ = param.landmarks_num_per_face_;
 	tree_depth_ = param.tree_depth_;
