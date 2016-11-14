@@ -220,7 +220,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
         for (int j = 0; j < shape_increaments.size(); j++){
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
                 float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
-                if ( e  >  2 * error/count){
+                if ( e  >  1.6 * error/count){
                     //表示本阶段alignment的结果比较差，取消作为正例
                     find_times[j] = MAXFINDTIMES+8;
                     augmented_ground_truth_faces[j] = -1;
@@ -874,7 +874,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
 
     int ind = 0;
     float ss = scale * bbox.width / 2.0; //add by xujj
-    int gauss = (int) bbox.width / 200;
+    int gauss = 0; //(int) bbox.width / 200;
     gauss = std::min(2, gauss);
     
     cv::Mat_<float> current_shape_re = ReProjection(current_shape, bbox);
@@ -902,8 +902,8 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 }
                 real_x = std::max(gauss, std::min(real_x, image.cols - 1 - gauss)); // which cols
                 real_y = std::max(gauss, std::min(real_y, image.rows - 1 - gauss)); // which rows
-                int tmp = (int)(2*image(real_y, real_x) + image(real_y-gauss, real_x) + image(real_y+gauss, real_x) + image(real_y, real_x-gauss) +image(real_y, real_x+gauss)) / 6 ; //real_y at first
-                //int tmp = image(real_y, real_x);
+                //int tmp = (int)(2*image(real_y, real_x) + image(real_y-gauss, real_x) + image(real_y+gauss, real_x) + image(real_y, real_x-gauss) +image(real_y, real_x+gauss)) / 6 ; //real_y at first
+                int tmp = image(real_y, real_x);
                 delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
                 delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
                 delta_x = ss * delta_x; //scale*delta_x*bbox.width / 2.0;
@@ -915,8 +915,8 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 }
                 real_x = std::max(gauss, std::min(real_x, image.cols - 1 - gauss)); // which cols
                 real_y = std::max(gauss, std::min(real_y, image.rows - 1 - gauss)); // which rows
-                int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-gauss, real_x) + image(real_y+gauss, real_x) + image(real_y, real_x-gauss) +image(real_y, real_x+gauss)) / 6 ;
-                //int tmp2 = image(real_y, real_x);
+                //int tmp2 = (int)(2*image(real_y, real_x) + image(real_y-gauss, real_x) + image(real_y+gauss, real_x) + image(real_y, real_x-gauss) +image(real_y, real_x+gauss)) / 6 ;
+                int tmp2 = image(real_y, real_x);
                 if ( k % 2 == 0 ){
                     if ( abs(tmp - tmp2 ) < node->threshold_){
                         node = node->left_child_;// go left

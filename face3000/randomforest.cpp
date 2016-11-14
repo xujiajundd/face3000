@@ -523,8 +523,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         
                                         float delta_start = sqrtf(powf((new_box.start_x - pos_box.start_x), 2.0) + powf((new_box.start_y - pos_box.start_y), 2.0));
                                         float delta_end = sqrtf(powf((new_box.start_x + new_box.width - pos_box.start_x - pos_box.width), 2.0) + powf((new_box.start_y + new_box.height - pos_box.start_y - pos_box.height), 2.0));
-                                        if ( delta_start < 0.25 * pos_box.width && delta_end < 0.25 * pos_box.width ) continue; //判断与正例的位置接近则不采用
-                                        if ( (delta_start + delta_end) < 0.5 * pos_box.width  ) continue;
+                                        if ( delta_start < 0.2 * pos_box.width && delta_end < 0.2 * pos_box.width ) continue; //判断与正例的位置接近则不采用
+                                        if ( (delta_start + delta_end) < 0.3 * pos_box.width  ) continue;
                                         
 //                                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[p], augmented_bboxes[p]);
 //                                        augmented_ground_truth_shapes[idx] = ReProjection(temp1, new_box);
@@ -585,7 +585,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                             }
                                             
                                             
-                                            if ( ( error >= 0.4 || ( error > (0.2 && + (5-stage_)*0.05 ) ) )/* && tmp_fi < 45.0 */ ){
+                                            if ( ( error >= 0.3 || ( error > (0.2 && + (5-stage_)*0.04 ) ) )/* && tmp_fi < 45.0 */ ){
                                                 faceFound = true;
                                                 if ( tmp_fi > 0 ) tmp_fi /= 5.0;
                                                 current_fi[idx] = tmp_fi;
@@ -936,7 +936,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 //    else if ( landmark_index_ < 17 ){
 //        df = detect_factor_ + 0.1;
 //    }
-    if ( stage_ == 0 && landmark_index_ < 10 ) df = 0.9;
+    if ( stage_ == 0 && landmark_index_ < 10 ) df = 0.8;
     
     for ( int i=0; i<vars.size(); i++){
         double tmpvar = ( vars[i] - minvar ) / (maxvar - minvar + DBL_MIN);
