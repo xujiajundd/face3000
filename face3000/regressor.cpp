@@ -875,7 +875,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
     int ind = 0;
     float ss = scale * bbox.width / 2.0; //add by xujj
     int gauss = 0; //(int) bbox.width / 200;
-    gauss = std::min(2, gauss);
+    //gauss = std::min(2, gauss);
     
     cv::Mat_<float> current_shape_re = ReProjection(current_shape, bbox);
     for (int j = 0; j < params_.landmarks_num_per_face_; ++j)
@@ -934,7 +934,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                     }
                 }
             }
-            if ( outBound > 6 ) {
+            if ( outBound > 2 * (params_.tree_depth_ - 1) ) {
                 if ( k == 0 ){
                     if ( j == 0 ){
                         score += rd_forests_[j].trees_[k]->score_ - lastThreshold;

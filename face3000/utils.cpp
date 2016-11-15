@@ -295,7 +295,13 @@ int adjointPoint(int p){
     else if ( p == 41 ) sp = 46;
     else if ( p == 47 ) sp = 40;
     else if ( p == 59 ) sp = 48;
-    else if ( p == 67 ) sp = 60;
+//    else if ( p == 67 ) sp = 60;
+    else if ( p == 61 ) sp = 67;
+    else if ( p == 62 ) sp = 66;
+    else if ( p == 63 ) sp = 65;
+    else if ( p == 65 ) sp = 56;
+    else if ( p == 66 ) sp = 57;
+    else if ( p == 67 ) sp = 58;
     else sp = p+1;
     return sp;
 }
