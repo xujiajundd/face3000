@@ -156,22 +156,22 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 landmark1 = (int)rd.uniform(0, landmark_num_);
                 landmark2 = (int)rd.uniform(0, landmark_num_);
             }
-            else{
-                landmark1 = landmark_index_;
-                landmark2 = (int)rd.uniform(0, landmark_num_);
-            }
-//            else if (  n % (stage_ + 3) == 0 ){
-//                landmark1 = landmark_index_;
-//                landmark2 = landmark_index_;
-//            }
-//            else if ( n % (stage_ + 3) == 1 ){
+//            else{
 //                landmark1 = landmark_index_;
 //                landmark2 = (int)rd.uniform(0, landmark_num_);
 //            }
-//            else {
-//                landmark1 = landmark_index_;
-//                landmark2 = adjointPoint(landmark1);
-//            }
+            else if (  n % (stage_ + 3) == 0 ){
+                landmark1 = landmark_index_;
+                landmark2 = landmark_index_;
+            }
+            else if ( n % (stage_ + 3) == 1 ){
+                landmark1 = landmark_index_;
+                landmark2 = (int)rd.uniform(0, landmark_num_);
+            }
+            else {
+                landmark1 = landmark_index_;
+                landmark2 = adjointPoint(landmark1);
+            }
             local_position_[n] = FeatureLocations(landmark1, landmark2, a, b);
         }
         //std::cout << "get pixel differences" << std::endl;

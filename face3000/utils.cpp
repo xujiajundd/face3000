@@ -289,7 +289,9 @@ int symmetricPoint(int p){
 
 int adjointPoint(int p){
     int sp;
-    if ( p == 16 ) sp = 0;
+    if ( p < 15 ) sp = p + 2;
+    else if ( p == 15 ) sp = 16;
+    else if ( p == 16 ) sp = 15;
     else if ( p == 26 ) sp = 17;
     else if ( p == 35 ) sp = 30;
     else if ( p == 41 ) sp = 46;
