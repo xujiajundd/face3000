@@ -490,10 +490,10 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             
                             BoundingBox pos_box = augmented_bboxes[p*(param_.initial_guess_+1)]; //这个地方坑死了。。。
                             BoundingBox search_box;
-                            search_box.start_x = pos_box.start_x - 0.8 * pos_box.width;
-                            search_box.start_y = pos_box.start_y - 0.8 * pos_box.height;
-                            search_box.width = 2.6 * pos_box.width;
-                            search_box.height = 2.6 * pos_box.height;
+                            search_box.start_x = pos_box.start_x - 1.0 * pos_box.width;
+                            search_box.start_y = pos_box.start_y - 1.0 * pos_box.height;
+                            search_box.width = 3.0 * pos_box.width;
+                            search_box.height = 3.0 * pos_box.height;
                             if ( search_box.start_x < 0 ) search_box.start_x = 0;
                             if ( search_box.start_y < 0 ) search_box.start_y = 0;
                             if (( search_box.start_x + search_box.width ) > cols ) search_box.width = cols - search_box.start_x;

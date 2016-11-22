@@ -277,7 +277,7 @@ void TestVideo(const char* ModelName){
 //        rg.regressors_[i].params_ = rg.params_;
 //    }
     
-//    rg.params_.predict_regressor_stages_ = 4;
+    rg.params_.predict_regressor_stages_ = 4;
     std::string fn_haar = "/Users/xujiajun/developer/dataset/haarcascade_frontalface_alt2.xml";
     cv::CascadeClassifier haar_cascade;
     bool yes = haar_cascade.load(fn_haar);
@@ -598,7 +598,7 @@ void Train(const char* ModelName){
     
     params.local_features_num_ = 8000;
 	params.landmarks_num_per_face_ = NUM_LANDMARKS;
-    params.regressor_stages_ = 5;
+    params.regressor_stages_ = 4;
 //    params.local_radius_by_stage_.push_back(0.6);
 //    params.local_radius_by_stage_.push_back(0.5);
 	params.local_radius_by_stage_.push_back(0.45);
