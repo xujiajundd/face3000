@@ -220,7 +220,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
         for (int j = 0; j < shape_increaments.size(); j++){
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
                 float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
-                if ( e  >  1.8 * error/count){
+                if ( e  >  1.6 * error/count){
                     //表示本阶段alignment的结果比较差，取消作为正例
                     find_times[j] = MAXFINDTIMES+8;
                     augmented_ground_truth_faces[j] = -1;
