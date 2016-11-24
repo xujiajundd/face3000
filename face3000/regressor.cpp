@@ -745,7 +745,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
                                 else{
                                     candidates[c].neighbors++;
                                 }
-                                if ( candidates[c].neighbors > 15 ) goto _destfor;
+                                if ( candidates[c].neighbors > 10 ) goto _destfor;
                                 //这个结果处理完
                                 has_overlap = true;
                                 break;

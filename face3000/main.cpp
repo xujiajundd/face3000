@@ -734,6 +734,36 @@ void Hello(){
     cout << "time4: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " sum:" << dsum << endl;
     
     
+    cv::Mat_<uchar> img = cv::imread("/Users/xujiajun/developer/face3000/face3000/tang.jpg", 0);
+    int cols = img.cols;
+    int rows = img.rows;
+    uchar *idata = img.data;
+    int step = img.step;
+    short sum;
+    sum = 0;
+    gettimeofday(&t1, NULL);
+    for ( int i=0; i<rows; i++ ){
+        for ( int j=0; j<cols; j++){
+            sum += img(i,j);
+        }
+    }
+    
+    gettimeofday(&t2, NULL);
+    cout << "sum of image mat: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " sum:" << sum << endl;
+    
+    sum = 0;
+    gettimeofday(&t1, NULL);
+    for ( int i=0; i<rows; i++ ){
+        int p = i*cols;
+        uchar *pt = idata + p;
+        for ( int j=0; j<cols; j++){
+            sum += *(pt + j);
+        }
+    }
+    
+    gettimeofday(&t2, NULL);
+    cout << "sum of image pointer: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " sum:" << sum << endl;
+    
 //    int modellen = 2000;
 //    int stride = 16;
 //    int dim = 68;

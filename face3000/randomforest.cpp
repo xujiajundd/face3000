@@ -156,22 +156,22 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                 landmark1 = (int)rd.uniform(0, landmark_num_);
                 landmark2 = (int)rd.uniform(0, landmark_num_);
             }
-//            else{
-//                landmark1 = landmark_index_;
-//                landmark2 = (int)rd.uniform(0, landmark_num_);
-//            }
-            else if (  n % (stage_ + 3) == 0 ){
-                landmark1 = landmark_index_;
-                landmark2 = landmark_index_;
-            }
-            else if ( n % (stage_ + 3) == 1 ){
+            else{
                 landmark1 = landmark_index_;
                 landmark2 = (int)rd.uniform(0, landmark_num_);
             }
-            else {
-                landmark1 = landmark_index_;
-                landmark2 = adjointPoint(landmark1);
-            }
+//            else if (  n % (stage_ + 3) == 0 ){
+//                landmark1 = landmark_index_;
+//                landmark2 = landmark_index_;
+//            }
+//            else if ( n % (stage_ + 3) == 1 ){
+//                landmark1 = landmark_index_;
+//                landmark2 = (int)rd.uniform(0, landmark_num_);
+//            }
+//            else {
+//                landmark1 = landmark_index_;
+//                landmark2 = adjointPoint(landmark1);
+//            }
             local_position_[n] = FeatureLocations(landmark1, landmark2, a, b);
         }
         //std::cout << "get pixel differences" << std::endl;
@@ -222,15 +222,15 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         for(int k=0;k<current_weight.size();++k)
         {
             current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
-            if ( current_weight[k] > 90000000000.0 && find_times[k] < MAXFINDTIMES){ //试验一下去掉这个的效果
-                find_times[k] = MAXFINDTIMES+8;
+            if ( current_weight[k] > 100000000.0 && find_times[k] < MAXFINDTIMES){ //试验一下去掉这个的效果
+//                find_times[k] = MAXFINDTIMES+8;
                 if ( augmented_ground_truth_faces[k] == 1 ){
                     drop_pos_count++;
                 }
                 else{
                     drop_neg_count++;
                 }
-                augmented_ground_truth_faces[k] = -1;
+//                augmented_ground_truth_faces[k] = -1;
                 if ( debug_on_ ){
                     DrawPredictImage(images[augmented_images_index[k]], augmented_current_shapes[k]);
                     std::cout << "fi:" << current_fi[k] << std::endl;
@@ -346,18 +346,21 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 //        int maxFindRepeat = 2;
         
         for ( int n=0; n<fiSort.size(); ++n){
-            if ( fiSort[n].first < root->score_ ){
+            int idx = fiSort[n].second;
+            current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
+            if ( fiSort[n].first < root->score_ || ( current_weight[idx] > 100000000 && augmented_ground_truth_faces[idx] == -1)){
                 deleteNumber++;
             }
-            else{
-                break;
-            }
+//            else{
+//                break;
+//            }
         }
         //TODO：后面有else break这个要去掉就可能可以并行来
 //#pragma omp parallel for
         for ( int n=0; n<deleteNumber; ++n){
-            if ( fiSort[n].first < root->score_ ){
-                int idx = fiSort[n].second;
+            int idx = fiSort[n].second;
+            if ( fiSort[n].first < root->score_ || ( current_weight[idx] > 100000000 && augmented_ground_truth_faces[idx] == -1)){
+//                int idx = fiSort[n].second;
                 bool faceFound = false;
                 
                 //接下来开始挖掘hard neg example
@@ -490,10 +493,10 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             
                             BoundingBox pos_box = augmented_bboxes[p*(param_.initial_guess_+1)]; //这个地方坑死了。。。
                             BoundingBox search_box;
-                            search_box.start_x = pos_box.start_x - 1.0 * pos_box.width;
-                            search_box.start_y = pos_box.start_y - 1.0 * pos_box.height;
-                            search_box.width = 3.0 * pos_box.width;
-                            search_box.height = 3.0 * pos_box.height;
+                            search_box.start_x = pos_box.start_x - 0.9 * pos_box.width;
+                            search_box.start_y = pos_box.start_y - 0.9 * pos_box.height;
+                            search_box.width = 2.8 * pos_box.width;
+                            search_box.height = 2.8 * pos_box.height;
                             if ( search_box.start_x < 0 ) search_box.start_x = 0;
                             if ( search_box.start_y < 0 ) search_box.start_y = 0;
                             if (( search_box.start_x + search_box.width ) > cols ) search_box.width = cols - search_box.start_x;
@@ -582,7 +585,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                             
                                             if ( ( error >= 0.3 || ( error > (0.2 && + (5-stage_)*0.04 ) ) )/* && tmp_fi < 45.0 */ ){
                                                 faceFound = true;
-                                                if ( tmp_fi > 0 ) tmp_fi /= 5.0;
+//                                                if ( tmp_fi > 0 ) tmp_fi /= 5.0;
                                                 current_fi[idx] = tmp_fi;
                                                 current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
 //                                                augmented_current_shapes[idx] = shape;

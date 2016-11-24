@@ -83,11 +83,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "annotate /Users/xujiajun/developer/dataset/xujj/neg-a"
+            argument = "hello"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "train model_t5d3n8i2"
+            argument = "video model_t5d3n8i2"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
