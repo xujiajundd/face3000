@@ -357,7 +357,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         }
         //TODO：后面有else break这个要去掉就可能可以并行来
 //#pragma omp parallel for
-        for ( int n=0; n<deleteNumber; ++n){
+        for ( int n=0; n<fiSort.size(); ++n){
             int idx = fiSort[n].second;
             if ( fiSort[n].first < root->score_ || ( current_weight[idx] > 100000000 && augmented_ground_truth_faces[idx] == -1)){
 //                int idx = fiSort[n].second;

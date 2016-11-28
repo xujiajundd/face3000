@@ -711,6 +711,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
     for( int s=0; s<searchRects.size(); s++ ){
         cv::Rect sRect = searchRects[s];
         currentSize = maxSizes[s];
+        int firstSize = 0;
         while ( currentSize >= minSizes[s] && currentSize <= maxSizes[s]){
             BoundingBox box;
             box.width = currentSize;
@@ -733,9 +734,10 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
                     if ( is_face == 1){
                         faceFound++;
                         bool has_overlap = false;
+                        if ( firstSize == 0 ) firstSize = currentSize;
                         for ( int c=0; c<candidates.size(); c++){
                             if ( box_overlap(box, candidates[c].box)){ //TODO:这个算法这样有漏洞的
-                                if ( score > candidates[c].score){
+                                if ( score > candidates[c].score || candidates[c].box.width == firstSize ){
                                     candidates[c].score = score;
                                     candidates[c].box = box;
                                     candidates[c].shape = res;
@@ -803,13 +805,13 @@ _destfor:
 //    std::cout<<"count:"<<scan_count<<" face found:"<<faceFound<< std::endl;
     
     else{
-//    add by xujj, 做一个小幅抖动滤波，这个在detect时无效了。。。//TODO：可放到检测合并结束的时候再做
+////    add by xujj, 做一个小幅抖动滤波，这个在detect时无效了。。。//TODO：可放到检测合并结束的时候再做
 //        cv::Mat_<float> res = shapes[0];
 //        if ( antiJitter == 1 && params_.landmarks_num_per_face_ == 68 ){
 //            float alphax=0, alphay=0;
 //            for ( int j=17; j<68; j++){
-//                alphax += fabs(res(j,0)-lastRes(j,0)) / 10.0;
-//                alphay += fabs(res(j,1)-lastRes(j,1)) / 10.0;
+//                alphax += fabs(res(j,0)-lastRes(j,0)) / 6.0;
+//                alphay += fabs(res(j,1)-lastRes(j,1)) / 6.0;
 //            }
 //            alphax /= 53;
 //            alphay /= 53;
