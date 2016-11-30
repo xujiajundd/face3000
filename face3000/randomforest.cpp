@@ -346,21 +346,18 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 //        int maxFindRepeat = 2;
         
         for ( int n=0; n<fiSort.size(); ++n){
-            int idx = fiSort[n].second;
-            current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
-            if ( fiSort[n].first < root->score_ || ( current_weight[idx] > 1000000 && augmented_ground_truth_faces[idx] == -1)){
+            if ( fiSort[n].first < root->score_ ){
                 deleteNumber++;
             }
-//            else{
-//                break;
-//            }
+            else{
+                break;
+            }
         }
         //TODO：后面有else break这个要去掉就可能可以并行来
 //#pragma omp parallel for
-        for ( int n=0; n<fiSort.size(); ++n){
-            int idx = fiSort[n].second;
-            if ( fiSort[n].first < root->score_ || ( current_weight[idx] > 1000000 && augmented_ground_truth_faces[idx] == -1)){
-//                int idx = fiSort[n].second;
+        for ( int n=0; n<deleteNumber; ++n){
+            if ( fiSort[n].first < root->score_ ){
+                int idx = fiSort[n].second;
                 bool faceFound = false;
                 
                 //接下来开始挖掘hard neg example
@@ -412,7 +409,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         if ( tmp_isface){
                                             current_fi[idx] = tmp_fi;
                                             current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
-                                            if ( current_weight[idx] > 1000000 ) continue;
+                                            if ( current_weight[idx] > 10000000 ) continue;
                                             faceFound = true;
                                             //augmented_current_shapes[idx] = shape;
                                             //augmented_bboxes[idx]=new_box;
@@ -588,7 +585,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 //                                                if ( tmp_fi > 0 ) tmp_fi /= 5.0;
                                                 current_fi[idx] = tmp_fi;
                                                 current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
-                                                if ( current_weight[idx] > 1000000 ) continue;
+                                                if ( current_weight[idx] > 10000000 ) continue;
                                                 faceFound = true;
 //                                                augmented_current_shapes[idx] = shape;
 //                                                augmented_bboxes[idx]=new_box;
