@@ -222,15 +222,15 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         for(int k=0;k<current_weight.size();++k)
         {
             current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
-            if ( current_weight[k] > 100000000.0 && find_times[k] < MAXFINDTIMES){ //试验一下去掉这个的效果
-//                find_times[k] = MAXFINDTIMES+8;
+            if ( current_weight[k] > 10000000000.0 && find_times[k] < MAXFINDTIMES){ //试验一下去掉这个的效果
+                find_times[k] = MAXFINDTIMES+8;
                 if ( augmented_ground_truth_faces[k] == 1 ){
                     drop_pos_count++;
                 }
                 else{
                     drop_neg_count++;
                 }
-//                augmented_ground_truth_faces[k] = -1;
+                augmented_ground_truth_faces[k] = -1;
                 if ( debug_on_ ){
                     DrawPredictImage(images[augmented_images_index[k]], augmented_current_shapes[k]);
                     std::cout << "fi:" << current_fi[k] << std::endl;
@@ -348,7 +348,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         for ( int n=0; n<fiSort.size(); ++n){
             int idx = fiSort[n].second;
             current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
-            if ( fiSort[n].first < root->score_ || ( current_weight[idx] > 100000000 && augmented_ground_truth_faces[idx] == -1)){
+            if ( fiSort[n].first < root->score_ || ( current_weight[idx] > 1000000 && augmented_ground_truth_faces[idx] == -1)){
                 deleteNumber++;
             }
 //            else{
@@ -359,7 +359,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 //#pragma omp parallel for
         for ( int n=0; n<fiSort.size(); ++n){
             int idx = fiSort[n].second;
-            if ( fiSort[n].first < root->score_ || ( current_weight[idx] > 100000000 && augmented_ground_truth_faces[idx] == -1)){
+            if ( fiSort[n].first < root->score_ || ( current_weight[idx] > 1000000 && augmented_ground_truth_faces[idx] == -1)){
 //                int idx = fiSort[n].second;
                 bool faceFound = false;
                 
@@ -410,9 +410,10 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         casRegressor_->NegMinePredict(images[augmented_images_index[idx]],
                                                                       augmented_current_shapes[idx], new_box, tmp_isface, tmp_fi, stage_, landmark_index_, i);
                                         if ( tmp_isface){
-                                            faceFound = true;
                                             current_fi[idx] = tmp_fi;
                                             current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
+                                            if ( current_weight[idx] > 1000000 ) continue;
+                                            faceFound = true;
                                             //augmented_current_shapes[idx] = shape;
                                             //augmented_bboxes[idx]=new_box;
                                             find_times[idx] = 256*256*256*orient + 256*256*ss + 256*sx + sy;
@@ -584,10 +585,11 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                             
                                             
                                             if ( ( error >= 0.3 || ( error > (0.2 && + (5-stage_)*0.04 ) ) )/* && tmp_fi < 45.0 */ ){
-                                                faceFound = true;
 //                                                if ( tmp_fi > 0 ) tmp_fi /= 5.0;
                                                 current_fi[idx] = tmp_fi;
                                                 current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
+                                                if ( current_weight[idx] > 1000000 ) continue;
+                                                faceFound = true;
 //                                                augmented_current_shapes[idx] = shape;
 //                                                augmented_bboxes[idx]=new_box;
                                                 find_times[idx] = 256*256*256*4 + 256*256*ss + 256*sx + sy;

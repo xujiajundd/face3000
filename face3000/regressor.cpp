@@ -679,8 +679,8 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
         else{
             for ( int i=0; i < previousFrameShapes.size(); i++){
                 BoundingBox sbox = CalculateBoundingBox(previousFrameShapes[i]);
-                minSizes.push_back(sbox.width*0.9);
-                maxSizes.push_back(sbox.width*1.1);
+                minSizes.push_back(sbox.width*0.95);
+                maxSizes.push_back(sbox.width*1.05);
                 cv::Rect sRect;
                 sRect.x = sbox.start_x - sbox.width/4.0;
                 sRect.y = sbox.start_y - sbox.height/4.0;
@@ -718,12 +718,12 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
             box.height = currentSize;
             for ( int i=sRect.x; i<=sRect.x+sRect.width-currentSize; i+= currentSize*shuffle){
                 box.start_x = i;
-                box.center_x = box.start_x + box.width/2.0;
+                box.center_x = box.start_x + box.width * 0.5;
                 for ( int j=sRect.y; j<=sRect.y+sRect.height-currentSize; j+=currentSize*shuffle){
                     //gettimeofday(&t1, NULL);
                     scan_count++;
                     box.start_y = j;
-                    box.center_y = box.start_y + box.height/2.0;
+                    box.center_y = box.start_y + box.height * 0.5;
                     int is_face = 1;
                     cv::Mat_<float> current_shape = default_shape.clone(); //ReProjection(default_shape, box);
                     float score = 0;
@@ -734,7 +734,7 @@ std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
                     if ( is_face == 1){
                         faceFound++;
                         bool has_overlap = false;
-                        if ( firstSize == 0 ) firstSize = currentSize;
+                        if ( firstSize == 0 && !track_mode) firstSize = currentSize;
                         for ( int c=0; c<candidates.size(); c++){
                             if ( box_overlap(box, candidates[c].box)){ //TODO:这个算法这样有漏洞的
                                 if ( score > candidates[c].score || candidates[c].box.width == firstSize ){
