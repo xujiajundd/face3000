@@ -94,27 +94,30 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                 augmented_ground_truth_faces.push_back(ground_truth_faces[i]);
                 augmented_bboxes.push_back(ibox);
                 cv::Mat_<float> temp; // = ground_truth_shapes_[index];
-//                temp = ProjectShape(temp, bboxes_[index]);
-//                temp = ReProjection(temp, ibox);
-                do {
-                    index = random_generator.uniform(0, pos_num);
-                    while ( index == i ){
-                        index = random_generator.uniform(0, pos_num);
-                    }
-//                    do {
+////                temp = ProjectShape(temp, bboxes_[index]);
+////                temp = ReProjection(temp, ibox);
+//                do {
+//                    index = random_generator.uniform(0, pos_num);
+//                    while ( index == i ){
 //                        index = random_generator.uniform(0, pos_num);
-//                    }while(index == i);
-                    temp = ground_truth_shapes_[index];
-                    temp = ProjectShape(temp, bboxes_[index]);
-                    temp = ReProjection(temp, ibox);
-                    if ( debug_on_){
-                        if ( CalculateError(ground_truth_shapes[i], temp) > 0.5 ){
-                            DrawPredictImage(images[i], ground_truth_shapes[i]);
-                            DrawPredictImage(images[i], temp);
-                        }
-                    }
-                } while ( CalculateError(ground_truth_shapes[i], temp) > 0.5 ); //这个地方可能会死循环的
-                augmented_current_shapes.push_back(temp);
+//                    }
+////                    do {
+////                        index = random_generator.uniform(0, pos_num);
+////                    }while(index == i);
+//                    temp = ground_truth_shapes_[index];
+//                    temp = ProjectShape(temp, bboxes_[index]);
+//                    temp = ReProjection(temp, ibox);
+//                    if ( debug_on_){
+//                        if ( CalculateError(ground_truth_shapes[i], temp) > 0.5 ){
+//                            DrawPredictImage(images[i], ground_truth_shapes[i]);
+//                            DrawPredictImage(images[i], temp);
+//                        }
+//                    }
+//                } while ( CalculateError(ground_truth_shapes[i], temp) > 0.5 ); //这个地方可能会死循环的
+                cv::Mat_<float> rotation;
+                float scale;
+                getSimilarityTransform(params_.mean_shape_, ProjectShape(ground_truth_shapes_[index], bboxes_[index]), rotation, scale);
+                augmented_current_shapes.push_back(ReProjection(params_.mean_shape_ * rotation, ibox));
                 current_fi.push_back(0);
                 current_weight.push_back(1);
                 find_times.push_back(0);
