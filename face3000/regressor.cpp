@@ -223,7 +223,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
         for (int j = 0; j < shape_increaments.size(); j++){
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
                 float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
-                if ( e  >  1.8 * error/count){
+                if ( e  >  2.5 * error/count){
                     //表示本阶段alignment的结果比较差，取消作为正例
                     find_times[j] = MAXFINDTIMES+8;
                     augmented_ground_truth_faces[j] = -1;
@@ -338,11 +338,11 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
             for (int k = 0; k < params_.trees_num_per_forest_; ++k){
                 Node* node = rd_forests_[j].trees_[k];
                 while (!node->is_leaf_){
-                    if ( node->is_leaf_a ){
-                        global_binary_features[i][ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k, images[augmented_images_index[i]], augmented_bboxes[i], augmented_current_shapes[i], rotations_[i], scales_[i]);
-                        global_binary_features[i][ind].value = 1.0;
-                        ind++;
-                    }
+//                    if ( node->is_leaf_a ){
+//                        global_binary_features[i][ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k, images[augmented_images_index[i]], augmented_bboxes[i], augmented_current_shapes[i], rotations_[i], scales_[i]);
+//                        global_binary_features[i][ind].value = 1.0;
+//                        ind++;
+//                    }
                     FeatureLocations& pos = node->feature_locations_;
                     float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
                     float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
@@ -383,11 +383,11 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
                         }
                     }
                 }
-                if ( node->is_leaf_a ){
+//                if ( node->is_leaf_a ){
                     global_binary_features[i][ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k, images[augmented_images_index[i]], augmented_bboxes[i], augmented_current_shapes[i], rotations_[i], scales_[i]);
                     global_binary_features[i][ind].value = 1.0;
                     ind++;
-                }
+//                }
                 //std::cout << global_binary_features[i][ind].index << " ";
             }
             index += rd_forests_[j].all_leaf_nodes_;
@@ -890,11 +890,11 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
             int outBound = 0;
             Node* node = rd_forests_[j].trees_[k];
             while (!node->is_leaf_){
-                if ( node->is_leaf_a ){
-                    tmp_binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
-                    tmp_binary_features[ind].value = 1.0;
-                    ind++;
-                }
+//                if ( node->is_leaf_a ){
+//                    tmp_binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
+//                    tmp_binary_features[ind].value = 1.0;
+//                    ind++;
+//                }
                 FeatureLocations& pos = node->feature_locations_;
                 float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
                 float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
@@ -963,11 +963,11 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
             //int ind = j*params_.trees_num_per_forest_ + k;
             //int ind = feature_node_index[j] + k;
             //binary_features[ind].index = leaf_index_count[j] + node->leaf_identity;
-            if ( node->is_leaf_a ){
+//            if ( node->is_leaf_a ){
                 tmp_binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
                 tmp_binary_features[ind].value = 1.0;
                 ind++;
-            }
+//            }
             //std::cout << binary_features[ind].index << " ";
         }
 
@@ -998,11 +998,11 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
         {
             Node* node = rd_forests_[j].trees_[k];
             while (!node->is_leaf_){
-                if ( node->is_leaf_a ){
-                    tmp_binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
-                    tmp_binary_features[ind].value = 1.0;
-                    ind++;
-                }
+//                if ( node->is_leaf_a ){
+//                    tmp_binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
+//                    tmp_binary_features[ind].value = 1.0;
+//                    ind++;
+//                }
                 FeatureLocations& pos = node->feature_locations_;
                 float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
                 float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
@@ -1052,11 +1052,11 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
             //int ind = j*params_.trees_num_per_forest_ + k;
             //int ind = feature_node_index[j] + k;
             //binary_features[ind].index = leaf_index_count[j] + node->leaf_identity;
-            if ( node->is_leaf_a ){
+//            if ( node->is_leaf_a ){
                 tmp_binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
                 tmp_binary_features[ind].value = 1.0;
                 ind++;
-            }
+//            }
             //std::cout << binary_features[ind].index << " ";
             if ( stage == currentStage && landmark == j && tree == k){
                 is_face = 1;
@@ -1180,7 +1180,7 @@ cv::Mat_<float> Regressor::NegMinePredict(cv::Mat_<uchar>& image,
 
 void CascadeRegressor::LoadCascadeRegressor(std::string ModelName){
 	std::ifstream fin;
-    fin.open((ModelName + "_params.txt").c_str(), std::fstream::in);
+    fin.open((ModelName + "p.dat").c_str(), std::fstream::in);
 	params_ = Parameters();
 	fin >> params_.local_features_num_
 		>> params_.landmarks_num_per_face_
@@ -1219,7 +1219,7 @@ void CascadeRegressor::LoadCascadeRegressor(std::string ModelName){
 
 void CascadeRegressor::SaveCascadeRegressor(std::string ModelName){
 	std::ofstream fout;
-    fout.open((ModelName + "_params.txt").c_str(), std::fstream::out);
+    fout.open((ModelName + "p.dat").c_str(), std::fstream::out);
 	fout << params_.local_features_num_ << " "
 		<< params_.landmarks_num_per_face_ << " "
 		<< params_.regressor_stages_ << " "
@@ -1246,8 +1246,8 @@ void CascadeRegressor::SaveCascadeRegressor(std::string ModelName){
 
 
 void Regressor::LoadRegressor(std::string ModelName, int stage){
-	char buffer[50];
-    sprintf(buffer, "%s_%d_regressor.txt", ModelName.c_str(), stage);
+	char buffer[250];
+    sprintf(buffer, "%s%df.dat", ModelName.c_str(), stage);
 	std::ifstream fin;
 	fin.open(buffer, std::fstream::in);
 	int rd_size, linear_size;
@@ -1259,12 +1259,12 @@ void Regressor::LoadRegressor(std::string ModelName, int stage){
 	linear_model_x_.clear();
 	linear_model_y_.clear();
 	for (int i = 0; i < linear_size; i++){
-        sprintf(buffer, "%s_%d/%d_linear_x.txt", ModelName.c_str(), stage_, i);
+        sprintf(buffer, "%s%d/%dx.dat", ModelName.c_str(), stage_, i);
         fin.close();
         fin.open(buffer, std::fstream::in);
 		linear_model_x_.push_back(load_model_bin(fin));
         fin.close();
-        sprintf(buffer, "%s_%d/%d_linear_y.txt", ModelName.c_str(), stage_, i);
+        sprintf(buffer, "%s%d/%dy.dat", ModelName.c_str(), stage_, i);
         fin.open(buffer, std::fstream::in);
 		linear_model_y_.push_back(load_model_bin(fin));
         fin.close();
@@ -1299,10 +1299,10 @@ void Regressor::LoadRegressor(std::string ModelName, int stage){
 //}
 
 void Regressor::SaveRegressor(std::string ModelName, int stage){
-	char buffer[50];
+	char buffer[250];
 	//strcpy(buffer, ModelName.c_str());
 	assert(stage == stage_);
-    sprintf(buffer, "%s_%d_regressor.txt", ModelName.c_str(), stage);
+    sprintf(buffer, "%s%df.dat", ModelName.c_str(), stage);
 
 	std::ofstream fout;
 	fout.open(buffer, std::fstream::out);
@@ -1316,7 +1316,7 @@ void Regressor::SaveRegressor(std::string ModelName, int stage){
 
     for (
          int i = 0; i < linear_model_x_.size(); i++){
-        sprintf(buffer, "%s_%d", ModelName.c_str(), stage_);
+        sprintf(buffer, "%s%d", ModelName.c_str(), stage_);
 //#ifdef _WIN32 // can be used under 32 and 64 bits
 //        _mkdir(buffer);
 //#elif __linux__
@@ -1326,12 +1326,12 @@ void Regressor::SaveRegressor(std::string ModelName, int stage){
         }
 //#endif
 		//_mkdir(buffer);
-        sprintf(buffer, "%s_%d/%d_linear_x.txt", ModelName.c_str(), stage_, i);
+        sprintf(buffer, "%s%d/%dx.dat", ModelName.c_str(), stage_, i);
         fout.close();
         fout.open(buffer, std::fstream::out);
 		save_model_bin(fout, linear_model_x_[i]);
         fout.close();
-        sprintf(buffer, "%s_%d/%d_linear_y.txt", ModelName.c_str(), stage_, i);
+        sprintf(buffer, "%s%d/%dy.dat", ModelName.c_str(), stage_, i);
         fout.open(buffer, std::fstream::out);
 		save_model_bin(fout, linear_model_y_[i]);
         fout.close();

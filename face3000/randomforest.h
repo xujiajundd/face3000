@@ -12,7 +12,7 @@ public:
 	Node* right_child_;
 //	int samples_;
 	bool is_leaf_;
-    bool is_leaf_a;
+//    bool is_leaf_a;
 	int depth_; // recording current depth
 	float threshold_;
 //	bool thre_changed_;
