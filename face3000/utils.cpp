@@ -36,6 +36,61 @@ void DrawImage(cv::Mat_<uchar> image, cv::Mat_<float>& ishape){
     cv::waitKey(0);
 }
 
+void DrawImageNoShow(cv::Mat image, cv::Mat_<float>& ishape){
+    cv::Mat_<float> shape = reConvertShape(ishape);
+    for (int i = 0; i < shape.rows; i++){
+        cv::circle(image, cv::Point2f(shape(i, 1), shape(i, 0)), 2, cv::Scalar(255,255,255));
+        if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
+            cv::line(image, cv::Point2f(shape(i-1, 1), shape(i-1, 0)), cv::Point2f(shape(i, 1), shape(i, 0)), cv::Scalar(255,255,0));
+    }
+    cv::line(image, cv::Point2f(shape(36, 1), shape(36, 0)), cv::Point2f(shape(41, 1), shape(41, 0)), cv::Scalar(255,255,255));
+    cv::line(image, cv::Point2f(shape(42, 1), shape(42, 0)), cv::Point2f(shape(47, 1), shape(47, 0)), cv::Scalar(255,255,255));
+    cv::line(image, cv::Point2f(shape(30, 1), shape(30, 0)), cv::Point2f(shape(35, 1), shape(35, 0)), cv::Scalar(255,255,255));
+    cv::line(image, cv::Point2f(shape(48, 1), shape(48, 0)), cv::Point2f(shape(59, 1), shape(59, 0)), cv::Scalar(255,255,255));
+    cv::line(image, cv::Point2f(shape(60, 1), shape(60, 0)), cv::Point2f(shape(67, 1), shape(67, 0)), cv::Scalar(255,255,255));
+}
+
+void DrawImageNoShowOrientation(cv::Mat image, cv::Mat_<float>& ishape, int orient){
+    cv::Mat_<float> shape = reConvertShape(ishape);
+    if ( orient == CASCADE_ORIENT_TOP_LEFT){
+        for (int i = 0; i < shape.rows; i++){
+            cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 2, cv::Scalar(255,255,255));
+            if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
+                cv::line(image, cv::Point2f(shape(i-1, 0), shape(i-1, 1)), cv::Point2f(shape(i, 0), shape(i, 1)), cv::Scalar(255,255,0));
+        }
+        cv::line(image, cv::Point2f(shape(36, 0), shape(36, 1)), cv::Point2f(shape(41, 0), shape(41, 1)), cv::Scalar(255,255,255));
+        cv::line(image, cv::Point2f(shape(42, 0), shape(42, 1)), cv::Point2f(shape(47, 0), shape(47, 1)), cv::Scalar(255,255,255));
+        cv::line(image, cv::Point2f(shape(30, 0), shape(30, 1)), cv::Point2f(shape(35, 0), shape(35, 1)), cv::Scalar(255,255,255));
+        cv::line(image, cv::Point2f(shape(48, 0), shape(48, 1)), cv::Point2f(shape(59, 0), shape(59, 1)), cv::Scalar(255,255,255));
+        cv::line(image, cv::Point2f(shape(60, 0), shape(60, 1)), cv::Point2f(shape(67, 0), shape(67, 1)), cv::Scalar(255,255,255));
+    }
+    else if ( orient == CASCADE_ORIENT_TOP_RIGHT ){
+        for (int i = 0; i < shape.rows; i++){
+            cv::circle(image, cv::Point2f(shape(i, 1), shape(i, 0)), 2, cv::Scalar(255,255,255));
+            if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
+                cv::line(image, cv::Point2f(shape(i-1, 1), shape(i-1, 0)), cv::Point2f(shape(i, 1), shape(i, 0)), cv::Scalar(255,255,0));
+        }
+        cv::line(image, cv::Point2f(shape(36, 1), shape(36, 0)), cv::Point2f(shape(41, 1), shape(41, 0)), cv::Scalar(255,255,255));
+        cv::line(image, cv::Point2f(shape(42, 1), shape(42, 0)), cv::Point2f(shape(47, 1), shape(47, 0)), cv::Scalar(255,255,255));
+        cv::line(image, cv::Point2f(shape(30, 1), shape(30, 0)), cv::Point2f(shape(35, 1), shape(35, 0)), cv::Scalar(255,255,255));
+        cv::line(image, cv::Point2f(shape(48, 1), shape(48, 0)), cv::Point2f(shape(59, 1), shape(59, 0)), cv::Scalar(255,255,255));
+        cv::line(image, cv::Point2f(shape(60, 1), shape(60, 0)), cv::Point2f(shape(67, 1), shape(67, 0)), cv::Scalar(255,255,255));
+    }
+    else if ( orient == CASCADE_ORIENT_BOTTOM_LEFT ){
+        int w = image.cols;
+        for (int i = 0; i < shape.rows; i++){
+            cv::circle(image, cv::Point2f(w - shape(i, 1), shape(i, 0)), 2, cv::Scalar(255,255,255));
+            if ( i > 0 && i != 17 && i != 22 && i != 27 && i!= 36 && i != 42 && i!= 48 && i!=68 && i!=69)
+                cv::line(image, cv::Point2f(w - shape(i-1, 1), shape(i-1, 0)), cv::Point2f(w - shape(i, 1), shape(i, 0)), cv::Scalar(255,255,0));
+        }
+        cv::line(image, cv::Point2f(w - shape(36, 1), shape(36, 0)), cv::Point2f(w - shape(41, 1), shape(41, 0)), cv::Scalar(255,255,255));
+        cv::line(image, cv::Point2f(w - shape(42, 1), shape(42, 0)), cv::Point2f(w - shape(47, 1), shape(47, 0)), cv::Scalar(255,255,255));
+        cv::line(image, cv::Point2f(w - shape(30, 1), shape(30, 0)), cv::Point2f(w - shape(35, 1), shape(35, 0)), cv::Scalar(255,255,255));
+        cv::line(image, cv::Point2f(w - shape(48, 1), shape(48, 0)), cv::Point2f(w - shape(59, 1), shape(59, 0)), cv::Scalar(255,255,255));
+        cv::line(image, cv::Point2f(w - shape(60, 1), shape(60, 0)), cv::Point2f(w - shape(67, 1), shape(67, 0)), cv::Scalar(255,255,255));
+    }
+}
+
 
 cv::Mat_<float> ProjectShape(const cv::Mat_<float>& shape, const BoundingBox& bbox){
 	cv::Mat_<float> results(shape.rows, 2);
@@ -475,6 +530,20 @@ BoundingBox CalculateBoundingBox(cv::Mat_<float>& shape){
     bbx.center_y = bbx.start_y + bbx.height/2.0;
     return bbx;
 }
+
+
+BoundingBox CalculateBoundingBoxRotation(cv::Mat_<float>& shape, cv::Mat_<float>& rotation){
+    BoundingBox bbx = CalculateBoundingBox(shape);
+    float factor = 1.0 - std::abs(std::abs(rotation(0,0)) - std::abs(rotation(1,0)));
+    factor = 0.05 * factor;
+    factor = factor * bbx.width;
+    bbx.start_x += factor;
+    bbx.start_y += factor;
+    bbx.width -= 2*factor;
+    bbx.height -= 2*factor;
+    return bbx;
+}
+
 
 int LoadImages(std::vector<cv::Mat_<uchar> >& images,
 	std::vector<cv::Mat_<float> >& ground_truth_shapes,

@@ -15,6 +15,7 @@ public:
     std::vector<struct model*> linear_model_x_;
     std::vector<struct model*> linear_model_y_;
     float **modreg;
+    int cameraOrient;
 
     struct feature_node* tmp_binary_features;
 
@@ -45,6 +46,8 @@ public:
         const int pos_num,
         CascadeRegressor *casRegressor);
     struct feature_node* GetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold);
+    struct feature_node* GetGlobalBinaryFeaturesOld(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold);
+    
     struct feature_node* NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, int stage, int currentStage, int landmark, int tree, bool& stop);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape,
 		BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold);
@@ -56,6 +59,8 @@ public:
     // struct feature_node* GetGlobalBinaryFeaturesThread(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale);
     struct feature_node* GetGlobalBinaryFeaturesMP(cv::Mat_<uchar>& image,
         cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale);
+    void GetGlobalBinaryFeaturesShort(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold, feature_node_short * fnode);
+    cv::Mat_<float> PredictShort( cv::Mat_<float>& current_shape, feature_node_short* fnode, cv::Mat_<float>& rotation, float scale );
     // void GetFeaThread();
 };
 
@@ -63,6 +68,12 @@ enum
 {
     CASCADE_FLAG_BIGGEST_ONLY = 1,
     CASCADE_FLAG_TRACK_MODE = 2  //跟踪模式，根据上次的检测结果在周围检索
+};
+
+enum{
+    CASCADE_PRIORITY_PERFORMANCE = 1,
+    CASCADE_PRIORITY_NORMAL = 2,
+    CASCADE_PRIORITY_ACCURACY = 3
 };
 
 class CascadeRegressor {
@@ -78,8 +89,21 @@ public:
     std::vector<cv::Mat_<float>> previousFrameRotations;
     std::vector<cv::Mat_<float>> previousFrameShapes;
     int antiJitter;
+    bool isLoaded;
+    cv::Mat_<float> previousFrameShape;
+    cv::Mat_<float> previousFrameRotation;
+    int trimNum;
+    float trimFactor;
+    float scaleFactor;
+    int flags;
+    int defaultMinSize;
+    float shuffle;
+    int searchPriority;
+    int cameraOrient;
+    struct feature_node_short **f_nodes;
 public:
 	CascadeRegressor();
+    ~CascadeRegressor();
 	void Train(std::vector<cv::Mat_<uchar> >& images,
 		std::vector<cv::Mat_<float> >& ground_truth_shapes,
         std::vector<int> ground_truth_faces,
@@ -96,6 +120,8 @@ public:
     std::vector<cv::Rect> detectMultiScale(cv::Mat_<uchar>& image,
                                                              std::vector<cv::Mat_<float>>& shapes, float scaleFactor, int minNeighbors=2, int flags=0,
                                                              int minSize=100 );
+    void unload();
+    bool detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat_<float>& shape);
 };
 
 #endif

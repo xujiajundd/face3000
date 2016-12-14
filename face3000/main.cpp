@@ -277,7 +277,7 @@ void TestVideo(const char* ModelName){
 //        rg.regressors_[i].params_ = rg.params_;
 //    }
     
-//    rg.params_.predict_regressor_stages_ = 4;
+    rg.params_.predict_regressor_stages_ = 4;
     std::string fn_haar = "/Users/xujiajun/developer/dataset/haarcascade_frontalface_alt2.xml";
     cv::CascadeClassifier haar_cascade;
     bool yes = haar_cascade.load(fn_haar);
@@ -400,21 +400,32 @@ void TestVideo(const char* ModelName){
     //        imshow(WindowName, image);
         }
         else{ //用新的方法
+//            gettimeofday(&t1, NULL);
+//            std::vector<cv::Mat_<float>> shapes;
+//            std::vector<cv::Rect> rects = rg.detectMultiScale(image, shapes, 1.1, 2, 0|CASCADE_FLAG_TRACK_MODE, 150);
+//            gettimeofday(&t2, NULL);
+//            //            last_shape = res.clone(); lastShaped = true;
+//            cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " faces:" << rects.size() <<  endl;
+//            if ( rects.size() == 0 ) continue;
+//            //            for ( int d=0; d<rg.params_.predict_regressor_stages_; d++){
+//            //                cout << rg.stage_delta_[d] << " ";
+//            //                cv::line(frame, Point2f(20*d+20, 450), Point2f(20*d+20, 450 - 200000*rg.stage_delta_[d]), (255));
+//            //            }
+//            //            cout << endl;
+//            for ( int c=0; c<rects.size(); c++){
+//                cv::rectangle(frame, rects[c], (255), 1);
+//                DrawPredictedImageContinue(frame, shapes[c]);
+//            }
             gettimeofday(&t1, NULL);
-            std::vector<cv::Mat_<float>> shapes;
-            std::vector<cv::Rect> rects = rg.detectMultiScale(image, shapes, 1.1, 2, 0|CASCADE_FLAG_TRACK_MODE, 150);
+            cv::Mat_<float> shape;
+            cv::Rect rect;
+            bool ret = rg.detectOne(image, rect, shape);
             gettimeofday(&t2, NULL);
-            //            last_shape = res.clone(); lastShaped = true;
-            cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " faces:" << rects.size() <<  endl;
-            if ( rects.size() == 0 ) continue;
-            //            for ( int d=0; d<rg.params_.predict_regressor_stages_; d++){
-            //                cout << rg.stage_delta_[d] << " ";
-            //                cv::line(frame, Point2f(20*d+20, 450), Point2f(20*d+20, 450 - 200000*rg.stage_delta_[d]), (255));
-            //            }
-            //            cout << endl;
-            for ( int c=0; c<rects.size(); c++){
-                cv::rectangle(frame, rects[c], (255), 1);
-                DrawPredictedImageContinue(frame, shapes[c]);
+            cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " faces:" << ret <<  endl;
+            cv::rectangle(frame, rect, (255), 1);
+            if ( ret ){
+//                DrawImageNoShowOrientation(frame, shape, CASCADE_ORIENT_TOP_LEFT);
+                DrawPredictedImageContinue(frame, shape);
             }
         }
     }

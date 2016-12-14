@@ -19,6 +19,25 @@ CascadeRegressor::CascadeRegressor(){
     previousFrameTime.tv_usec = 0;
     previousFrameRotations.clear();
     previousFrameShapes.clear();
+    std::cout << "CascadeRegressor created" << std::endl;
+    isLoaded = false;
+    trimNum = 40;
+    trimFactor = 0.5;
+    scaleFactor = 1.15;
+    flags = 0 | CASCADE_FLAG_TRACK_MODE;
+    defaultMinSize = 150;
+    shuffle = 0.25;
+    searchPriority = CASCADE_PRIORITY_NORMAL;
+    cameraOrient = CASCADE_ORIENT_TOP_LEFT;
+    f_nodes = new feature_node_short*[2*trimNum];
+    for ( int i=0; i<2*trimNum; i++ ){
+        f_nodes[i] = NULL;
+    }
+}
+
+CascadeRegressor::~CascadeRegressor(){
+    std::cout << "~CascadeRegressor()" << std::endl;
+    unload();
 }
 
 void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
@@ -116,8 +135,13 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 //                } while ( CalculateError(ground_truth_shapes[i], temp) > 0.5 ); //这个地方可能会死循环的
                 cv::Mat_<float> rotation;
                 float scale;
-                getSimilarityTransform(params_.mean_shape_, ProjectShape(ground_truth_shapes_[index], bboxes_[index]), rotation, scale);
-                augmented_current_shapes.push_back(ReProjection(params_.mean_shape_ * rotation, ibox));
+                do {
+                    index = random_generator.uniform(0, pos_num);
+                    getSimilarityTransform(params_.mean_shape_, ProjectShape(ground_truth_shapes_[index], bboxes_[index]), rotation, scale);
+                    temp = ReProjection(params_.mean_shape_ * rotation, ibox);
+                } while ( CalculateError(ground_truth_shapes[i], temp) > 0.5 );
+//                getSimilarityTransform(params_.mean_shape_, ProjectShape(ground_truth_shapes_[index], bboxes_[index]), rotation, scale);
+                augmented_current_shapes.push_back(temp);
                 current_fi.push_back(0);
                 current_weight.push_back(1);
                 find_times.push_back(0);
@@ -617,6 +641,402 @@ bool box_overlap(BoundingBox box1, BoundingBox box2){
     return false;
 }
 
+
+bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat_<float>& shape){
+    int track_mode = flags & CASCADE_FLAG_TRACK_MODE;
+    bool tracking;
+    struct timeval current_time;
+    gettimeofday(&current_time, NULL);
+    int maxSize;
+    int minSize = defaultMinSize;
+    cv::Rect searchRect;
+    cv::Mat_<float> default_shape;
+    BoundingBox sbox;
+    int priority = searchPriority;
+    int stepX = 2;
+    if ( priority == CASCADE_PRIORITY_PERFORMANCE ){
+        stepX = 1;
+    }
+    else if (priority == CASCADE_PRIORITY_ACCURACY ){
+        stepX = 2;
+    }
+    
+    for (int i = 0; i < params_.predict_regressor_stages_; i++){
+        regressors_[i].cameraOrient = cameraOrient;
+    }
+    
+    int irows, icols;
+    switch (cameraOrient) {
+        case CASCADE_ORIENT_TOP_LEFT:
+            irows = image.rows;
+            icols = image.cols;
+            break;
+        case CASCADE_ORIENT_TOP_RIGHT:
+            irows = image.cols;
+            icols = image.rows;
+            break;
+        case CASCADE_ORIENT_BOTTOM_LEFT:
+            irows = image.cols;
+            icols = image.rows;
+            break;
+        default:
+            irows = image.rows;
+            icols = image.cols;
+            break;
+    }
+    
+    static uint full_scans = 0;
+    if ( track_mode ){
+        //跟踪模式，首先是时间与上次帧在200ms之内，然后，计算defaultshape和框。
+        if (((current_time.tv_sec - previousFrameTime.tv_sec)*(long long)1000000 + current_time.tv_usec - previousFrameTime.tv_usec) > (long long)200000 ){
+            //没有有效的上次识别
+            if (((current_time.tv_sec - previousScanTime.tv_sec)*(long long)1000000 + current_time.tv_usec - previousScanTime.tv_usec ) > (long long)200000 ){
+                //做一次全局扫描
+                maxSize = 0.9 * std::min(icols, irows);
+                searchRect.x = 0; searchRect.y = 0; searchRect.width = icols; searchRect.height = irows;
+                float rpi;
+                if ( full_scans % 2 != 0 ){
+                    rpi = 0;
+                }
+                else{
+                    rpi = (( full_scans / 2 ) % 5 + 1 ) * 0.3333333 * M_PI;
+                }
+                full_scans++;
+                cv::Mat_<float> rot(2, 2);
+                rot(0, 0) = cosf(rpi);
+                rot(1, 0) = sinf(rpi);
+                rot(0, 1) = -sinf(rpi);
+                rot(1, 1) = cosf(rpi);
+                default_shape = params_.mean_shape_ * rot;
+                gettimeofday(&previousScanTime, NULL);
+                tracking = false;
+            }
+            else{
+                //这次轮空即可
+                //std::cout << "current_time " << current_time.tv_sec << " " << current_time.tv_usec << " " << previousScanTime.tv_sec <<  std::endl;
+                return false;
+            }
+        }
+        else{
+            sbox = CalculateBoundingBoxRotation(lastRes, previousFrameRotation);//CalculateBoundingBox(lastRes);
+            minSize = sbox.width;
+            maxSize = sbox.width;
+            searchRect.x = sbox.start_x;
+            searchRect.y = sbox.start_y;
+            searchRect.width = sbox.width;
+            searchRect.height = sbox.height;
+            if ( searchRect.x < -sbox.width * 0.4 ) searchRect.x = -sbox.width * 0.4;
+            if ( searchRect.y < -sbox.height * 0.4 ) searchRect.y = - sbox.height * 0.4;
+            if ( searchRect.x + searchRect.width >  icols + sbox.width * 0.4 ) searchRect.width = icols + sbox.width * 0.4 - searchRect.x;
+            if ( searchRect.y + searchRect.height > irows + sbox.height * 0.4 ) searchRect.height = irows + sbox.height * 0.4 - searchRect.y;
+            cv::Mat_<float> rot;
+            cv::transpose(previousFrameRotation, rot);
+            default_shape = params_.mean_shape_ * rot;
+            tracking = true;
+        }
+    }
+    else{
+        maxSize = 0.9 * std::min(icols, irows);
+        searchRect.x = 0; searchRect.y = 0; searchRect.width = icols; searchRect.height = irows;
+        default_shape = params_.mean_shape_;
+        tracking = false;
+    }
+    
+    struct candidate{
+        float score;
+        BoundingBox box;
+        cv::Mat_<float> shape;
+        cv::Mat_<float> rotation;
+        float scale;
+        float lastThreshold;
+        int is_face;
+                float ss[5];
+                int no;
+                int size;
+        struct feature_node_short *fnode;
+    };
+    int candCount = 0;
+    std::vector<struct candidate> candidates;
+    candidates.reserve(2*trimNum);
+    candidates.clear();
+    cv::Mat_<float> initRotation;
+    float initScale;
+    getSimilarityTransformAcc(default_shape, params_.mean_shape_, initRotation, initScale); //这句其实也可能可以省去
+    int currentSize = maxSize;
+    int scan_count=0;
+    
+    float minScore = 9999999.0;
+    float maxScore = -9999999.0;
+    
+    while ( currentSize >= minSize && currentSize <= maxSize){
+        BoundingBox box;
+        box.width = currentSize;
+        box.height = currentSize;
+        for ( int i=searchRect.x; i<=searchRect.x+searchRect.width-currentSize; i+= currentSize*shuffle){
+            box.start_x = i;
+            box.center_x = box.start_x + box.width * 0.5;
+            for ( int j=searchRect.y; j<=searchRect.y+searchRect.height-currentSize; j+=currentSize*shuffle){
+                scan_count++;
+                box.start_y = j;
+                box.center_y = box.start_y + box.height * 0.5;
+                int is_face = 1;
+                float score = 0;
+                float scale = initScale;
+                float lastThreshold = -1.0;
+                
+//                cv::Mat_<float> shape_increaments = regressors_[0].Predict(image, default_shape, box, initRotation, scale, score, is_face, lastThreshold);
+                if ( f_nodes[candCount] == NULL){
+                    f_nodes[candCount] = new struct feature_node_short[params_.trees_num_per_forest_*params_.landmarks_num_per_face_ +1];
+                }
+                struct feature_node_short *fnode = f_nodes[candCount];
+                int cc = candCount;
+                regressors_[0].GetGlobalBinaryFeaturesShort(image, default_shape, box, initRotation, scale, score, is_face, lastThreshold, fnode);
+                if ( is_face != 1){
+                    continue;
+                }
+                candCount++;
+                int foundNear = 0;
+                int notFoundCount = 0;
+                if ( !tracking ) stepX = 1; //非跟踪模式不做精细搜索
+                for ( int dx = -stepX; dx <=stepX; dx++ ){
+                    for (int dy = -1; dy <= 1; dy++){
+                        scan_count++;
+                        BoundingBox boxNear = box;
+                        boxNear.start_x = box.start_x + dx * currentSize * (5 - stepX ) * 0.025;
+                        boxNear.start_y = box.start_y + dy * currentSize * 0.08;
+                        boxNear.center_x = boxNear.start_x + boxNear.height * 0.5;
+                        boxNear.center_y = boxNear.start_y + boxNear.height * 0.5;
+                        if (dx == 0 && dy == 0 ) {
+                            boxNear.start_x = box.start_x - currentSize * 0.05;
+                            boxNear.start_y = box.start_y - currentSize * 0.05;
+                            boxNear.width = box.width + currentSize * 0.1;
+                            boxNear.height = box.height + currentSize * 0.1;
+                            boxNear.center_x = boxNear.start_x + boxNear.height * 0.5;
+                            boxNear.center_y = boxNear.start_y + boxNear.height * 0.5;
+                        }
+                        int is_face = 1;
+                        float score = 0;
+                        float scale = initScale;
+                        float lastThreshold = -1.0;
+                        
+//                        cv::Mat_<float> shape_increaments = regressors_[0].Predict(image, default_shape, boxNear, initRotation, scale, score, is_face, lastThreshold);
+                        
+                        if ( f_nodes[candCount] == NULL){
+                            f_nodes[candCount] = new struct feature_node_short[params_.trees_num_per_forest_*params_.landmarks_num_per_face_ +1];
+                        }
+                        struct feature_node_short *fnode = f_nodes[candCount];
+                        int cc = candCount;
+                        regressors_[0].GetGlobalBinaryFeaturesShort(image, default_shape, boxNear, initRotation, scale, score, is_face, lastThreshold, fnode);
+                        if ( is_face != 1){
+                            notFoundCount++;
+                            if ( notFoundCount > 2*(2*stepX+1) && !tracking ) goto _label_search_near; //如果找不到的个数已经超过三分之二，余下的没必要找了。
+                            continue;
+                        }
+                        candCount++;
+                        foundNear++;
+//                        cv::Mat_<float> result_shape = shape_increaments + default_shape;
+                        struct candidate cand;
+//                        cand.shape = result_shape;
+                        cand.box = boxNear;
+                        cand.rotation = initRotation;
+                        cand.scale = scale;
+                        cand.score = score;
+                        cand.is_face = is_face;
+                        cand.lastThreshold = lastThreshold;
+                                                cand.no = cc;
+                                                cand.ss[0] = score;
+                                                cand.size = currentSize;
+                        cand.fnode = fnode;
+                        candidates.push_back(cand);
+                        if ( cand.score > maxScore ) maxScore = cand.score;
+                        if ( cand.score < minScore ) minScore = cand.score;
+                    }
+                }
+            _label_search_near:
+                if ( foundNear < 1 || (foundNear < (2*stepX+1) && !tracking)){
+                    for ( int p=0; p<foundNear; p++)
+                        candidates.pop_back(); //这么搞max，min有可能会不对的
+                }
+                else {
+//                    cv::Mat_<float> result_shape = shape_increaments + default_shape;
+                    struct candidate cand;
+//                    cand.shape = result_shape;
+                    cand.box = box;
+                    cand.rotation = initRotation;
+                    cand.scale = scale;
+                    cand.score = score;
+                    cand.is_face = is_face;
+                    cand.lastThreshold = lastThreshold;
+                                        cand.no = cc;
+                                        cand.ss[0] = score;
+                                        cand.size = currentSize;
+                    cand.fnode = fnode;
+                    candidates.push_back(cand);
+                    if ( cand.score > maxScore ) maxScore = cand.score;
+                    if ( cand.score < minScore ) minScore = cand.score;
+                }
+                //如果个数超trim，则退出搜索
+                if ( candidates.size() > trimNum ){
+                    goto _label_search_1;
+                }
+            }
+        }
+        currentSize /= scaleFactor;
+    }
+    
+_label_search_1:
+
+        std::cout << std::endl;
+        std::cout << "***************scan:" << scan_count << " candidates:" << candidates.size() << std::endl;
+        for ( int j = 0; j<candidates.size(); j++){
+            struct candidate& cand = candidates[j];
+            std::cout << cand.no <<"   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << std::endl;
+        }
+    
+    if ( candidates.size() < 3 || (candidates.size() < 5 && !tracking) ){ //第一没有足够neighbor可能是误识别
+        return false;
+    }
+    
+    //处理candidates，删除排名靠后的。
+    std::vector<struct candidate>::iterator it;
+    int h = (int)candidates.size() - trimNum + trimNum/10;
+    if ( h < 0 || tracking ) h = 0;
+    for ( it = candidates.begin(); it != candidates.end();){
+        struct candidate& cand = *it;
+        if ( h-- > 0){
+            it = candidates.erase(it);
+        }
+        else if ( cand.score < ((1.0-trimFactor)*minScore + trimFactor*maxScore)  ){
+            it = candidates.erase(it);
+        }
+        else{
+            ++it;
+        }
+    }
+        std::cout << "trimmed:" << scan_count << " candidates:" << candidates.size() << std::endl;
+    
+    for ( int i = 0; i<candidates.size(); i++){
+        struct candidate& cand = candidates[i];
+        cand.shape = regressors_[0].PredictShort(default_shape, cand.fnode, cand.rotation, cand.scale);
+    }
+    
+    //后续stages
+    for (int i = 1; i < params_.predict_regressor_stages_; i++){
+        minScore = 9999999.0;
+        maxScore = -9999999.0;
+        for ( int j = 0; j < candidates.size(); j++ ){
+            struct candidate& cand = candidates[j];
+            getSimilarityTransformAcc(cand.shape, params_.mean_shape_, cand.rotation, cand.scale);
+//            cv::Mat_<float> shape_increaments = regressors_[i].Predict(image, cand.shape, cand.box, cand.rotation, cand.scale, cand.score, cand.is_face, cand.lastThreshold);
+             regressors_[i].GetGlobalBinaryFeaturesShort(image, cand.shape, cand.box, cand.rotation, cand.scale, cand.score, cand.is_face, cand.lastThreshold, cand.fnode);
+            //            std::cout << "result:"<< cand.is_face << " " << cand.score << std::endl;
+            if ( cand.is_face != 1){
+                //这个candidate被删除掉
+                continue;
+            }
+//            cand.shape = shape_increaments + cand.shape;
+                        cand.ss[i] = cand.score;
+            if ( cand.score > maxScore ) maxScore = cand.score;
+            if ( cand.score < minScore ) minScore = cand.score;
+        }
+        
+        //剔除非人脸
+        for ( it = candidates.begin(); it != candidates.end();){
+            struct candidate& cand = *it;
+            if ( cand.is_face != 1 ){
+                it = candidates.erase(it);
+            }
+            else{
+                ++it;
+            }
+        }
+        if ( candidates.size() < ( params_.predict_regressor_stages_ - i - 1) ){ //中间阶段没有neighbor也可能是误识别
+            return false;
+        }
+        //处理candidates，删除排名靠后的
+        std::vector<struct candidate>::iterator it;
+        for ( it = candidates.begin(); it != candidates.end();){
+            struct candidate& cand = *it;
+            if ( cand.score < ((1.0-trimFactor)*minScore + trimFactor*maxScore ) ){
+                it = candidates.erase(it);
+            }
+            else{
+                ++it;
+            }
+        }
+        
+        //计算shape
+        for ( int j = 0; j<candidates.size(); j++){
+            struct candidate& cand = candidates[j];
+            cand.shape = regressors_[i].PredictShort(cand.shape, cand.fnode, cand.rotation, cand.scale);
+        }
+        
+        //log
+                std::cout << std::endl;
+                std::cout << "candidates:" << candidates.size() << std::endl;
+                for ( int j = 0; j<candidates.size(); j++){
+                    struct candidate& cand = candidates[j];
+                    std::cout << cand.no << "   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << std::endl;
+                }
+    }
+    
+    if ( candidates.size() == 0 ){
+        return false;
+    }
+    else{
+        struct candidate& cand = candidates[0];
+        for ( int i=1; i<candidates.size(); i++){
+            if ( candidates[i].score > cand.score ){
+                cand = candidates[i];
+            }
+        }
+        shape = ReProjection(cand.shape, cand.box);
+        previousFrameRotation = cand.rotation;
+        gettimeofday(&previousFrameTime, NULL);
+        
+        //    add by xujj, 做一个小幅抖动滤波，这个在detect时无效了。。。
+        antiJitter = 0;
+        cv::Mat_<float> res = shape;
+        if ( antiJitter == 1 && params_.landmarks_num_per_face_ == 68 ){
+            float jitterScope = cand.box.width / 30;
+            if ( jitterScope > 10.0 ) jitterScope = 10.0;
+            if ( jitterScope < 1.0 ) jitterScope = 1.0;
+            float alphax=0, alphay=0;
+            for ( int j=17; j<54; j++){
+                alphax += fabs(res(j,0)-lastRes(j,0)) / jitterScope;
+                alphay += fabs(res(j,1)-lastRes(j,1)) / jitterScope;
+            }
+            alphax /= 39;
+            alphay /= 39;
+            if (alphax > 1.0 ) alphax = 1.0;
+            if (alphay > 1.0 ) alphay = 1.0;
+            float alphax2 = 2.5 * alphax;
+            float alphay2 = 2.5 * alphay;
+            if ( alphax2 > 1.0 ) alphax2 = 1.0;
+            if ( alphay2 > 1.0 ) alphay2 = 1.0;
+            for ( int j=0; j<68; j++){
+                if ( (j >= 12 && j <= 16) || (j >= 55 && j <= 59)  || (j >= 65 && j <= 67) ){
+                    shape(j,0) = ((1.0-alphax2)*lastRes(j,0) + alphax2*res(j,0));
+                    shape(j,1) = ((1.0-alphay2)*lastRes(j,1) + alphay2*res(j,1));
+                    
+                }
+                else{
+                    shape(j,0) = ((1.0-alphax)*lastRes(j,0) + alphax*res(j,0));
+                    shape(j,1) = ((1.0-alphay)*lastRes(j,1) + alphay*res(j,1));
+                }
+            }
+        }
+        
+        lastRes = shape;
+        rect.x = cand.box.start_x;
+        rect.y = cand.box.start_y;
+        rect.width = cand.box.width;
+        rect.height = cand.box.height;
+        return true;
+    }
+}
+
+
 std::vector<cv::Rect> CascadeRegressor::detectMultiScale(cv::Mat_<uchar>& image,
                                                          std::vector<cv::Mat_<float>>& shapes, float scaleFactor, int minNeighbors, int flags,
                                                          int minSize){
@@ -866,11 +1286,422 @@ Regressor::~Regressor(){
     if ( tmp_binary_features != NULL ){
         delete[] tmp_binary_features;
     }
+    for ( int i = 0; i < linear_model_x_[0]->nr_feature; i++){
+        delete[] modreg[i];
+    }
+    delete[] modreg;
+    for ( int j = 0; j<params_.landmarks_num_per_face_; j++ ){
+        free_and_destroy_model( &linear_model_x_[j] );
+        free_and_destroy_model( &linear_model_y_[j] );
+    }
+}
+
+struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
+                                                        cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold){
+    short index = 1;
+    if ( tmp_binary_features == NULL ){
+        tmp_binary_features = new feature_node[params_.trees_num_per_forest_*params_.landmarks_num_per_face_ +1];
+    }
+    
+    int ind = 0;
+    float ss = scale * bbox.width * 0.5; //add by xujj
+    cv::Mat_<float> current_shape_re = ReProjection(current_shape, bbox);
+    //    uchar *idata = image.data;
+    //    int step = image.step;
+    //    float r00 = rotation(0,0);
+    //    float r01 = rotation(0,1);
+    //    float r10 = rotation(1,0);
+    //    float r11 = rotation(1,1);
+    //    float *rp = (float *)rotation.data;
+    /* simd的代码
+     float rp1[4];
+     float rp2[4];
+     rp1[0] = rotation(0,0);
+     rp1[1] = rotation(1,0);
+     rp1[2] = rotation(0,0);
+     rp1[3] = rotation(1,0);
+     rp2[0] = rotation(0,1);
+     rp2[1] = rotation(1,1);
+     rp2[2] = rotation(0,1);
+     rp2[3] = rotation(1,1);
+     */
+    int irows, icols;
+    switch (cameraOrient) {
+        case CASCADE_ORIENT_TOP_LEFT:
+            irows = image.rows;
+            icols = image.cols;
+            break;
+        case CASCADE_ORIENT_TOP_RIGHT:
+            irows = image.cols;
+            icols = image.rows;
+            break;
+        case CASCADE_ORIENT_BOTTOM_LEFT:
+            irows = image.cols;
+            icols = image.rows;
+            break;
+        default:
+            break;
+    }
+    
+    for (short j = 0; j < params_.landmarks_num_per_face_; ++j)
+    {
+        for (short k = 0; k < params_.trees_num_per_forest_; ++k)
+        {
+            short outBound = 4;
+            short kk = k % 2;
+            Node* node = rd_forests_[j].trees_[k];
+            float scoreThreshold = node->score_;
+            while (!node->is_leaf_){
+                //                if ( node->is_leaf_a ){
+                //                    tmp_binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
+                //                    tmp_binary_features[ind].value = 1.0;
+                //                    ind++;
+                //                }
+                FeatureLocations& pos = node->feature_locations_;
+                float delta_xs = rotation(0,0)*pos.start.x + rotation(0,1)*pos.start.y;
+                float delta_ys = rotation(1,0)*pos.start.x + rotation(1,1)*pos.start.y;
+                float delta_xe = rotation(0,0)*pos.end.x + rotation(0,1)*pos.end.y;
+                float delta_ye = rotation(1,0)*pos.end.x + rotation(1,1)*pos.end.y;
+                
+                short real_xs = ss * delta_xs + current_shape_re(pos.lmark1, 0);
+                short real_ys = ss * delta_ys + current_shape_re(pos.lmark1, 1);
+                short real_xe = ss * delta_xe + current_shape_re(pos.lmark2, 0);
+                short real_ye = ss * delta_ye + current_shape_re(pos.lmark2, 1);
+                
+                /* 这部分是用simd的代码，测试貌似速度没有加快
+                 float32x4_t rot1 = vld1q_f32(rp1);
+                 float32x4_t rot2 = vld1q_f32(rp2);
+                 float p1[4], p2[4], cs[4], result[4];
+                 p1[0] = p1[1] = pos.start.x;
+                 p1[2] = p1[3] = pos.end.x;
+                 p2[0] = p2[1] = pos.start.y;
+                 p2[2] = p2[3] = pos.end.y;
+                 cs[0] = current_shape_re(pos.lmark1, 0);
+                 cs[1] = current_shape_re(pos.lmark1, 1);
+                 cs[2] = current_shape_re(pos.lmark2, 0);
+                 cs[3] = current_shape_re(pos.lmark2, 1);
+                 float32x4_t pos1 = vld1q_f32(p1);
+                 float32x4_t pos2 = vld1q_f32(p2);
+                 float32x4_t shape = vld1q_f32(cs);
+                 float32x4_t delta = vaddq_f32(vmulq_f32(rot1, pos1), vmulq_f32(rot2, pos2));
+                 delta = vmulq_n_f32(delta, ss);
+                 delta = vaddq_f32(delta, shape);
+                 vst1q_f32(result, delta);
+                 
+                 int real_xs = result[0];
+                 int real_ys = result[1];
+                 int real_xe = result[2];
+                 int real_ye = result[3];
+                 */
+                
+                if ( real_xs < 0 || real_ys < 0 || real_xs >= icols|| real_ys >= irows ){
+                    outBound--;
+                    if ( real_xs < 0 ){
+                        real_xs = 0;
+                    }
+                    else if ( real_xs >= icols ){
+                        real_xs = icols - 1;
+                    }
+                    if ( real_ys < 0 ){
+                        real_ys = 0;
+                    }
+                    else if ( real_ys >= irows ){
+                        real_ys = irows - 1;
+                    }
+                }
+                
+                if ( real_xe < 0 || real_ye < 0 || real_xe >= icols || real_ye >= irows ){
+                    outBound--;
+                    if ( real_xe < 0 ){
+                        real_xe = 0;
+                    }
+                    else if ( real_xe >= icols ){
+                        real_xe = icols - 1;
+                    }
+                    if ( real_ye < 0 ){
+                        real_ye = 0;
+                    }
+                    else if ( real_ye >= irows ){
+                        real_ye = irows - 1;
+                    }
+                }
+                
+                int tmp, tmp2;
+                if ( cameraOrient == CASCADE_ORIENT_TOP_RIGHT ){
+                    tmp = image(real_xs, real_ys);
+                    tmp2 = image(real_xe, real_ye);
+                }
+                else if ( cameraOrient == CASCADE_ORIENT_TOP_LEFT ){
+                    tmp = image(real_ys, real_xs);
+                    tmp2 = image(real_ye, real_xe);
+                }
+                
+                else if ( cameraOrient == CASCADE_ORIENT_BOTTOM_LEFT ){
+                    tmp = image( real_xs, image.cols - real_ys );
+                    tmp2 = image( real_xe, image.cols - real_ye );
+                }
+                
+                
+                if ( kk ){
+                    if ( (tmp - tmp2 ) < node->threshold_){
+                        node = node->left_child_;// go left
+                    }
+                    else{
+                        node = node->right_child_;// go right
+                    }
+                }
+                else{
+                    if ( abs(tmp - tmp2 ) < node->threshold_){
+                        node = node->left_child_;// go left
+                    }
+                    else{
+                        node = node->right_child_;// go right
+                    }
+                }
+            }
+            if ( outBound < 0 ) {
+                if ( k == 0 ){
+                    if ( j == 0 ){
+                        score += rd_forests_[j].trees_[k]->score_ - lastThreshold;
+                    }
+                    else{
+                        score += rd_forests_[j].trees_[k]->score_ - rd_forests_[j-1].trees_[params_.trees_num_per_forest_-1]->score_;
+                    }
+                }
+                else{
+                    score += rd_forests_[j].trees_[k]->score_ - rd_forests_[j].trees_[k-1]->score_;
+                }
+            }
+            else{
+                score += node->score_;
+            }
+            if ( score < scoreThreshold ){
+                is_face = - stage_;
+                //std::cout <<"stage:"<<stage_ << "lmark=" << j << " tree=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
+                return tmp_binary_features;
+            }
+            
+            //            if ( node->is_leaf_a ){
+            tmp_binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
+            //                tmp_binary_features[ind].value = 1.0;
+            ind++;
+            //            }
+            //std::cout << binary_features[ind].index << " ";
+        }
+        
+        index += rd_forests_[j].all_leaf_nodes_;
+    }
+    
+    tmp_binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].index = -1;
+    //    tmp_binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].value = -1.0;
+    lastThreshold = rd_forests_[params_.landmarks_num_per_face_-1].trees_[params_.trees_num_per_forest_-1]->score_;
+    return tmp_binary_features;
 }
 
 
-struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
-    cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold){
+void Regressor::GetGlobalBinaryFeaturesShort(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold, feature_node_short* fnode){
+    short index = 1;
+//    if ( tmp_binary_features == NULL ){
+//        tmp_binary_features = new feature_node[params_.trees_num_per_forest_*params_.landmarks_num_per_face_ +1];
+//    }
+    
+    int ind = 0;
+    float ss = scale * bbox.width * 0.5; //add by xujj
+    cv::Mat_<float> current_shape_re = ReProjection(current_shape, bbox);
+    //    uchar *idata = image.data;
+    //    int step = image.step;
+    //    float r00 = rotation(0,0);
+    //    float r01 = rotation(0,1);
+    //    float r10 = rotation(1,0);
+    //    float r11 = rotation(1,1);
+    //    float *rp = (float *)rotation.data;
+    /* simd的代码
+     float rp1[4];
+     float rp2[4];
+     rp1[0] = rotation(0,0);
+     rp1[1] = rotation(1,0);
+     rp1[2] = rotation(0,0);
+     rp1[3] = rotation(1,0);
+     rp2[0] = rotation(0,1);
+     rp2[1] = rotation(1,1);
+     rp2[2] = rotation(0,1);
+     rp2[3] = rotation(1,1);
+     */
+    int irows, icols;
+    switch (cameraOrient) {
+        case CASCADE_ORIENT_TOP_LEFT:
+            irows = image.rows;
+            icols = image.cols;
+            break;
+        case CASCADE_ORIENT_TOP_RIGHT:
+            irows = image.cols;
+            icols = image.rows;
+            break;
+        case CASCADE_ORIENT_BOTTOM_LEFT:
+            irows = image.cols;
+            icols = image.rows;
+            break;
+        default:
+            break;
+    }
+    
+    for (short j = 0; j < params_.landmarks_num_per_face_; ++j)
+    {
+        for (short k = 0; k < params_.trees_num_per_forest_; ++k)
+        {
+            short outBound = 4;
+            short kk = k % 2;
+            Node* node = rd_forests_[j].trees_[k];
+            float scoreThreshold = node->score_;
+            while (!node->is_leaf_){
+                //                if ( node->is_leaf_a ){
+                //                    tmp_binary_features[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
+                //                    tmp_binary_features[ind].value = 1.0;
+                //                    ind++;
+                //                }
+                FeatureLocations& pos = node->feature_locations_;
+                float delta_xs = rotation(0,0)*pos.start.x + rotation(0,1)*pos.start.y;
+                float delta_ys = rotation(1,0)*pos.start.x + rotation(1,1)*pos.start.y;
+                float delta_xe = rotation(0,0)*pos.end.x + rotation(0,1)*pos.end.y;
+                float delta_ye = rotation(1,0)*pos.end.x + rotation(1,1)*pos.end.y;
+                
+                short real_xs = ss * delta_xs + current_shape_re(pos.lmark1, 0);
+                short real_ys = ss * delta_ys + current_shape_re(pos.lmark1, 1);
+                short real_xe = ss * delta_xe + current_shape_re(pos.lmark2, 0);
+                short real_ye = ss * delta_ye + current_shape_re(pos.lmark2, 1);
+                
+                /* 这部分是用simd的代码，测试貌似速度没有加快
+                 float32x4_t rot1 = vld1q_f32(rp1);
+                 float32x4_t rot2 = vld1q_f32(rp2);
+                 float p1[4], p2[4], cs[4], result[4];
+                 p1[0] = p1[1] = pos.start.x;
+                 p1[2] = p1[3] = pos.end.x;
+                 p2[0] = p2[1] = pos.start.y;
+                 p2[2] = p2[3] = pos.end.y;
+                 cs[0] = current_shape_re(pos.lmark1, 0);
+                 cs[1] = current_shape_re(pos.lmark1, 1);
+                 cs[2] = current_shape_re(pos.lmark2, 0);
+                 cs[3] = current_shape_re(pos.lmark2, 1);
+                 float32x4_t pos1 = vld1q_f32(p1);
+                 float32x4_t pos2 = vld1q_f32(p2);
+                 float32x4_t shape = vld1q_f32(cs);
+                 float32x4_t delta = vaddq_f32(vmulq_f32(rot1, pos1), vmulq_f32(rot2, pos2));
+                 delta = vmulq_n_f32(delta, ss);
+                 delta = vaddq_f32(delta, shape);
+                 vst1q_f32(result, delta);
+                 
+                 int real_xs = result[0];
+                 int real_ys = result[1];
+                 int real_xe = result[2];
+                 int real_ye = result[3];
+                 */
+                
+                if ( real_xs < 0 || real_ys < 0 || real_xs >= icols|| real_ys >= irows ){
+                    outBound--;
+                    if ( real_xs < 0 ){
+                        real_xs = 0;
+                    }
+                    else if ( real_xs >= icols ){
+                        real_xs = icols - 1;
+                    }
+                    if ( real_ys < 0 ){
+                        real_ys = 0;
+                    }
+                    else if ( real_ys >= irows ){
+                        real_ys = irows - 1;
+                    }
+                }
+                
+                if ( real_xe < 0 || real_ye < 0 || real_xe >= icols || real_ye >= irows ){
+                    outBound--;
+                    if ( real_xe < 0 ){
+                        real_xe = 0;
+                    }
+                    else if ( real_xe >= icols ){
+                        real_xe = icols - 1;
+                    }
+                    if ( real_ye < 0 ){
+                        real_ye = 0;
+                    }
+                    else if ( real_ye >= irows ){
+                        real_ye = irows - 1;
+                    }
+                }
+                
+                int tmp, tmp2;
+                if ( cameraOrient == CASCADE_ORIENT_TOP_RIGHT ){
+                    tmp = image(real_xs, real_ys);
+                    tmp2 = image(real_xe, real_ye);
+                }
+                else if ( cameraOrient == CASCADE_ORIENT_TOP_LEFT ){
+                    tmp = image(real_ys, real_xs);
+                    tmp2 = image(real_ye, real_xe);
+                }
+                
+                else if ( cameraOrient == CASCADE_ORIENT_BOTTOM_LEFT ){
+                    tmp = image( real_xs, image.cols - real_ys );
+                    tmp2 = image( real_xe, image.cols - real_ye );
+                }
+                
+                
+                if ( kk ){
+                    if ( (tmp - tmp2 ) < node->threshold_){
+                        node = node->left_child_;// go left
+                    }
+                    else{
+                        node = node->right_child_;// go right
+                    }
+                }
+                else{
+                    if ( abs(tmp - tmp2 ) < node->threshold_){
+                        node = node->left_child_;// go left
+                    }
+                    else{
+                        node = node->right_child_;// go right
+                    }
+                }
+            }
+            if ( outBound < 0 ) {
+                if ( k == 0 ){
+                    if ( j == 0 ){
+                        score += rd_forests_[j].trees_[k]->score_ - lastThreshold;
+                    }
+                    else{
+                        score += rd_forests_[j].trees_[k]->score_ - rd_forests_[j-1].trees_[params_.trees_num_per_forest_-1]->score_;
+                    }
+                }
+                else{
+                    score += rd_forests_[j].trees_[k]->score_ - rd_forests_[j].trees_[k-1]->score_;
+                }
+            }
+            else{
+                score += node->score_;
+            }
+            if ( score < scoreThreshold ){
+                is_face = - stage_;
+                //std::cout <<"stage:"<<stage_ << "lmark=" << j << " tree=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
+                return;
+            }
+            
+            //            if ( node->is_leaf_a ){
+            fnode[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
+            //                tmp_binary_features[ind].value = 1.0;
+            ind++;
+            //            }
+            //std::cout << binary_features[ind].index << " ";
+        }
+        
+        index += rd_forests_[j].all_leaf_nodes_;
+    }
+    
+    fnode[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].index = -1;
+    //    tmp_binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].value = -1.0;
+    lastThreshold = rd_forests_[params_.landmarks_num_per_face_-1].trees_[params_.trees_num_per_forest_-1]->score_;
+    return;
+}
+
+struct feature_node* Regressor::GetGlobalBinaryFeaturesOld(cv::Mat_<uchar>& image,
+                                                        cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold){
     int index = 1;
     if ( tmp_binary_features == NULL ){
 //        struct feature_node* binary_features = new feature_node[params_.trees_num_per_forest_*params_.groups_[groupNum].size()+1]; //这条性能可能可以优化
@@ -1132,6 +1963,32 @@ cv::Mat_<float> Regressor::Predict(cv::Mat_<uchar>& image,
 	return scale*predict_result*rot;
 }
 
+cv::Mat_<float> Regressor::PredictShort( cv::Mat_<float>& current_shape, feature_node_short* fnode, cv::Mat_<float>& rotation, float scale ){
+    
+    cv::Mat_<float> predict_result;
+    predict_result = cv::Mat_<float>(current_shape.rows, current_shape.cols);
+
+    int idx;
+    float sum[2*params_.landmarks_num_per_face_];
+    for ( int i=0; i<2*params_.landmarks_num_per_face_; i++) sum[i] = 0;
+    
+    for(; (idx=fnode->index)!=-1 && idx < linear_model_x_[0]->nr_feature; fnode++){
+        idx--;
+        cblas_saxpy(2*params_.landmarks_num_per_face_, 1.0, &modreg[idx][0], 1, sum, 1); //用这个速度跟后面的循环差不多
+        //        for (int i = 0; i < 2*params_.landmarks_num_per_face_; i++){
+        //            sum[i] += modreg[idx][i];
+        //        }
+    }
+    for ( int i=0; i<params_.landmarks_num_per_face_; i++){
+        predict_result(i,0) = sum[2*i];
+        predict_result(i,1) = sum[2*i+1];
+    }
+    
+    cv::Mat_<float> rot;
+    cv::transpose(rotation, rot);
+    return scale*predict_result*rot + current_shape;
+}
+
 cv::Mat_<float> Regressor::NegMinePredict(cv::Mat_<uchar>& image,
                                    cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face,  int stage, int currentStage, int landmark, int tree){
     
@@ -1244,6 +2101,14 @@ void CascadeRegressor::SaveCascadeRegressor(std::string ModelName){
 
 }
 
+void CascadeRegressor::unload(){
+    if ( isLoaded ){
+        isLoaded = false;
+        regressors_.clear();
+        previousFrameShapes.clear();
+        previousFrameRotations.clear();
+    }
+}
 
 void Regressor::LoadRegressor(std::string ModelName, int stage){
 	char buffer[250];

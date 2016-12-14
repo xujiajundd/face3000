@@ -29,6 +29,12 @@ Node::Node(Node* left, Node* right, float thres, bool leaf){
 	//offset_ = cv::Point2f(0, 0);
 }
 
+Node::~Node(){
+    //    std::cout << "~Node()" << std::endl;
+    if ( left_child_ != NULL ) delete left_child_;
+    if ( right_child_ != NULL ) delete right_child_;
+}
+
 int my_cmp(std::pair<float,int> p1, std::pair<float,int> p2)
 {
     return p1.first < p2.first;
@@ -1139,6 +1145,15 @@ RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std
 RandomForest::RandomForest(){
 	
 }
+
+RandomForest::~RandomForest(){
+    //    std::cout << "~RandomForest()" << std::endl;
+    for ( int i=0; i<trees_.size(); i++ ){
+        Node *node = trees_[i];
+        delete node;
+    }
+}
+
 
 void RandomForest::SaveRandomForest(std::ofstream& fout){
 //    fout.setf(std::ios::fixed, std::ios::floatfield);  // 设定为 fixed 模式，以小数点表示浮点数

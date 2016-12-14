@@ -21,6 +21,7 @@ public:
 	Node(Node* left, Node* right, float thres, bool leaf);
 	Node(Node* left, Node* right, float thres);
 	Node();
+    ~Node();
 };
 
 class RandomForest {
@@ -72,6 +73,7 @@ public:
     int GetBinaryFeatureIndex(int tree_index, const cv::Mat_<uchar>& image,
 	const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale, float& score);
 	RandomForest();
+    ~RandomForest();
 	RandomForest(Parameters& param, int landmark_index, int stage, std::vector<cv::Mat_<float> >& regression_targets, CascadeRegressor *casRegressor, int true_pos_num);
 	void WriteTree(Node* p, std::ofstream& fout);
 	Node* ReadTree(std::ifstream& fin);

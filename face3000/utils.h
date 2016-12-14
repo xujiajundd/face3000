@@ -21,6 +21,14 @@
 extern int NUM_LANDMARKS;
 extern int debug_on_;
 
+enum
+{
+    CASCADE_ORIENT_TOP_LEFT = 0,
+    CASCADE_ORIENT_TOP_RIGHT,
+    CASCADE_ORIENT_BOTTOM_LEFT
+};
+
+
 //std::mutex m;
 class BoundingBox {
 public:
@@ -93,6 +101,7 @@ void getSimilarityTransform(const cv::Mat_<float>& shape_to,
 //cv::Mat_<float> LoadGroundTruthShape(std::string& name);
 cv::Mat_<float> LoadGroundTruthShape(const char* name);
 BoundingBox CalculateBoundingBox(cv::Mat_<float>& shape);
+BoundingBox CalculateBoundingBoxRotation(cv::Mat_<float>& shape, cv::Mat_<float>& rotation);
 int LoadImages(std::vector<cv::Mat_<uchar> >& images, std::vector<cv::Mat_<float> >& ground_truth_shapes, std::vector<int> & ground_truth_faces,
 	std::vector<BoundingBox>& bboxes, std::string file_names, std::string neg_file_names);
 
@@ -105,7 +114,8 @@ float CalculateError(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predi
 float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predicted_shape, int stage, int landmark);
 
 void DrawPredictImage(cv::Mat_<uchar>& image, cv::Mat_<float>& shapes);
-
+void DrawImageNoShow(cv::Mat image, cv::Mat_<float>& ishape);
+void DrawImageNoShowOrientation(cv::Mat image, cv::Mat_<float>& ishape, int orient);
 BoundingBox GetBoundingBox(cv::Mat_<float>& shape, int width, int height);
 //int colorDistance(uchar p1, uchar p2);
 cv::Mat_<float> convertShape(cv::Mat_<float> shape);

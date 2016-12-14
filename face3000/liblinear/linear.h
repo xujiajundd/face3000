@@ -11,6 +11,13 @@ struct feature_node
 	int index;
 	float value;
 };
+    
+struct feature_node_short
+{
+    short index;
+};
+    
+
 
 struct problem
 {
