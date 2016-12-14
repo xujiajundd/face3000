@@ -135,11 +135,16 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 //                } while ( CalculateError(ground_truth_shapes[i], temp) > 0.5 ); //这个地方可能会死循环的
                 cv::Mat_<float> rotation;
                 float scale;
+                int tryTimes = 0;
                 do {
                     index = random_generator.uniform(0, pos_num);
                     getSimilarityTransform(params_.mean_shape_, ProjectShape(ground_truth_shapes_[index], bboxes_[index]), rotation, scale);
-                    temp = ReProjection(params_.mean_shape_ * rotation, ibox);
-                } while ( CalculateError(ground_truth_shapes[i], temp) > 0.5 );
+                    cv::Mat_<float> rot;
+                    cv::transpose(rotation, rot);
+                    temp = ReProjection(params_.mean_shape_ * rot, ibox);
+//                    DrawPredictImage(images[i], temp);
+                    tryTimes++;
+                } while ( CalculateError(ground_truth_shapes[i], temp) > 0.5 && tryTimes < 10 );
 //                getSimilarityTransform(params_.mean_shape_, ProjectShape(ground_truth_shapes_[index], bboxes_[index]), rotation, scale);
                 augmented_current_shapes.push_back(temp);
                 current_fi.push_back(0);
