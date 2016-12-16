@@ -227,6 +227,10 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 											i,
                                             pos_num,
                                             this);
+        if ( shape_increaments.empty()){ //负例用完终止
+            return;
+        }
+        
 		std::cout << "update current shapes" << std::endl;
 		float error = 0.0;
         int count = 0;
@@ -339,6 +343,14 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
             }
         }
         std::cout<< "positive example left:" << pos_examples_num << " negative example left:" << neg_examples_num << std::endl;
+        
+        if ( neg_examples_num < 64 ){ //挖掘负例已快用完，终止训练
+            rd_forests_.resize(i+1);
+            linear_model_x_.resize(0);
+            linear_model_y_.resize(0);
+            std::vector<cv::Mat_<float> > empty_result;
+            return empty_result;
+        }
 	}
 	std::cout << "Get Global Binary Features" << std::endl;
 
@@ -1348,7 +1360,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
             break;
     }
     
-    for (short j = 0; j < params_.landmarks_num_per_face_; ++j)
+    for (short j = 0; j < rd_forests_.size(); ++j)
     {
         for (short k = 0; k < params_.trees_num_per_forest_; ++k)
         {
@@ -1550,7 +1562,7 @@ void Regressor::GetGlobalBinaryFeaturesShort(cv::Mat_<uchar>& image, cv::Mat_<fl
             break;
     }
     
-    for (short j = 0; j < params_.landmarks_num_per_face_; ++j)
+    for (short j = 0; j < rd_forests_.size(); ++j)
     {
         for (short k = 0; k < params_.trees_num_per_forest_; ++k)
         {
@@ -1828,7 +1840,7 @@ struct feature_node* Regressor::NegMineGetGlobalBinaryFeatures(cv::Mat_<uchar>& 
     float ss = scale * bbox.width / 2.0; //add by xujj
     int gauss = (int) bbox.width / 200;
     gauss = std::min(2, gauss);
-    for (int j = 0; j < params_.landmarks_num_per_face_; ++j)
+    for (int j = 0; j < rd_forests_.size(); ++j)
     {
         for (int k = 0; k < params_.trees_num_per_forest_; ++k)
         {
@@ -2139,20 +2151,22 @@ void Regressor::LoadRegressor(std::string ModelName, int stage){
 		linear_model_y_.push_back(load_model_bin(fin));
         fin.close();
 	}
-    float max_linear = -9999999.0;
-    float min_linear = 9999999.0;
-    modreg = new float *[linear_model_x_[0]->nr_feature];
-    for ( int i = 0; i < linear_model_x_[0]->nr_feature; i++){
-        modreg[i] = new float[2*params_.landmarks_num_per_face_];
-        for ( int j = 0; j<params_.landmarks_num_per_face_; j++ ){
-            float *wx =linear_model_x_[j]->w; 
-            float *wy = linear_model_y_[j]->w;
-            modreg[i][2*j] = wx[i];
-            modreg[i][2*j+1] = wy[i];
-            if ( wx[i] > max_linear ) max_linear = wx[i];
-            if ( wx[i] < min_linear ) min_linear = wx[i];
-            if ( wy[i] > max_linear ) max_linear = wy[i];
-            if ( wy[i] < min_linear ) min_linear = wy[i];
+    if ( linear_size > 0 ){
+        float max_linear = -9999999.0;
+        float min_linear = 9999999.0;
+        modreg = new float *[linear_model_x_[0]->nr_feature];
+        for ( int i = 0; i < linear_model_x_[0]->nr_feature; i++){
+            modreg[i] = new float[2*params_.landmarks_num_per_face_];
+            for ( int j = 0; j<params_.landmarks_num_per_face_; j++ ){
+                float *wx =linear_model_x_[j]->w; 
+                float *wy = linear_model_y_[j]->w;
+                modreg[i][2*j] = wx[i];
+                modreg[i][2*j+1] = wy[i];
+                if ( wx[i] > max_linear ) max_linear = wx[i];
+                if ( wx[i] < min_linear ) min_linear = wx[i];
+                if ( wy[i] > max_linear ) max_linear = wy[i];
+                if ( wy[i] < min_linear ) min_linear = wy[i];
+            }
         }
     }
 //    std::cout<<"regression value max:" << max_linear << " min:" << min_linear << std::endl;
