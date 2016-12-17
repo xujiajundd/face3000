@@ -80,15 +80,15 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "annotate  /Users/xujiajun/developer/dataset/xujj/xujj-bg1"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "hello"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "train mv1214"
-            isEnabled = "NO">
+            argument = "train mvtest"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>

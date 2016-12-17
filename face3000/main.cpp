@@ -277,7 +277,7 @@ void TestVideo(const char* ModelName){
 //        rg.regressors_[i].params_ = rg.params_;
 //    }
     
-    rg.params_.predict_regressor_stages_ = 4;
+//    rg.params_.predict_regressor_stages_ = 4;
     std::string fn_haar = "/Users/xujiajun/developer/dataset/haarcascade_frontalface_alt2.xml";
     cv::CascadeClassifier haar_cascade;
     bool yes = haar_cascade.load(fn_haar);

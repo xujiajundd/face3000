@@ -135,7 +135,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                             }
                         }
                         tryTimes++;
-                    } while ( CalculateError(ground_truth_shapes[i], temp) > 0.5  && tryTimes < 10); //这个地方可能会死循环的
+                    } while ( CalculateError(ground_truth_shapes[i], temp) > 0.6  && tryTimes < 10); //这个地方可能会死循环的
                 }
                 else{
                     cv::Mat_<float> rotation;
@@ -149,7 +149,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                         temp = ReProjection(params_.mean_shape_ * rot, ibox);
     //                    DrawPredictImage(images[i], temp);
                         tryTimes++;
-                    } while ( CalculateError(ground_truth_shapes[i], temp) > 0.6 && tryTimes < 10 );
+                    } while ( CalculateError(ground_truth_shapes[i], temp) > 0.8 && tryTimes < 10 );
 //                getSimilarityTransform(params_.mean_shape_, ProjectShape(ground_truth_shapes_[index], bboxes_[index]), rotation, scale);
                 }
                 augmented_current_shapes.push_back(temp);
@@ -234,6 +234,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                                             pos_num,
                                             this);
         if ( shape_increaments.empty()){ //负例用完终止
+            params_.regressor_stages_ = i+1;
             return;
         }
         
@@ -245,7 +246,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 			augmented_current_shapes[j] = ReProjection(augmented_current_shapes[j], augmented_bboxes[j]);
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
                 float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
-                if ( e * (2+i) > 1.0){
+                if ( e * (2+i) > 1.2){
                     //表示本阶段alignment的结果比较差，取消作为正例
                     find_times[j] = MAXFINDTIMES+8;
                     augmented_ground_truth_faces[j] = -1;
@@ -262,7 +263,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
         for (int j = 0; j < shape_increaments.size(); j++){
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
                 float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
-                if ( e  >  3.0 * error/count){
+                if ( e  >  3.5 * error/count){
                     //表示本阶段alignment的结果比较差，取消作为正例
                     find_times[j] = MAXFINDTIMES+8;
                     augmented_ground_truth_faces[j] = -1;
@@ -989,18 +990,20 @@ _label_search_1:
         }
         
         //计算shape
-        for ( int j = 0; j<candidates.size(); j++){
-            struct candidate& cand = candidates[j];
-            cand.shape = regressors_[i].PredictShort(cand.shape, cand.fnode, cand.rotation, cand.scale);
+        if ( i < params_.predict_regressor_stages_ - 1 ){
+            for ( int j = 0; j<candidates.size(); j++){
+                struct candidate& cand = candidates[j];
+                cand.shape = regressors_[i].PredictShort(cand.shape, cand.fnode, cand.rotation, cand.scale);
+            }
         }
         
         //log
-                std::cout << std::endl;
-                std::cout << "candidates:" << candidates.size() << std::endl;
-                for ( int j = 0; j<candidates.size(); j++){
-                    struct candidate& cand = candidates[j];
-                    std::cout << cand.no << "   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << std::endl;
-                }
+        std::cout << std::endl;
+        std::cout << "candidates:" << candidates.size() << std::endl;
+        for ( int j = 0; j<candidates.size(); j++){
+            struct candidate& cand = candidates[j];
+            std::cout << cand.no << "   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << std::endl;
+        }
     }
     
     if ( candidates.size() == 0 ){
@@ -1300,6 +1303,7 @@ cv::Mat_<float> CascadeRegressor::NegMinePredict(cv::Mat_<uchar>& image,
 
 Regressor::Regressor(){
     tmp_binary_features = NULL;
+    modreg = NULL;
 }
 
 Regressor::Regressor(const Regressor &a){
@@ -1309,13 +1313,19 @@ Regressor::~Regressor(){
     if ( tmp_binary_features != NULL ){
         delete[] tmp_binary_features;
     }
-    for ( int i = 0; i < linear_model_x_[0]->nr_feature; i++){
-        delete[] modreg[i];
-    }
-    delete[] modreg;
-    for ( int j = 0; j<params_.landmarks_num_per_face_; j++ ){
-        free_and_destroy_model( &linear_model_x_[j] );
-        free_and_destroy_model( &linear_model_y_[j] );
+    if ( linear_model_x_.size() > 0 ){
+        for ( int i = 0; i < linear_model_x_[0]->nr_feature; i++){
+            if ( modreg != NULL ){
+                delete[] modreg[i];
+            }
+        }
+        if ( modreg != NULL ){
+            delete[] modreg;
+        }
+        for ( int j = 0; j<params_.landmarks_num_per_face_; j++ ){
+            free_and_destroy_model( &linear_model_x_[j] );
+            free_and_destroy_model( &linear_model_y_[j] );
+        }
     }
 }
 
@@ -1719,7 +1729,7 @@ void Regressor::GetGlobalBinaryFeaturesShort(cv::Mat_<uchar>& image, cv::Mat_<fl
     
     fnode[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].index = -1;
     //    tmp_binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].value = -1.0;
-    lastThreshold = rd_forests_[params_.landmarks_num_per_face_-1].trees_[params_.trees_num_per_forest_-1]->score_;
+    lastThreshold = rd_forests_[rd_forests_.size()-1].trees_[params_.trees_num_per_forest_-1]->score_;
     return;
 }
 
@@ -2191,7 +2201,7 @@ void Regressor::LoadRegressor(std::string ModelName, int stage){
 void Regressor::SaveRegressor(std::string ModelName, int stage){
 	char buffer[250];
 	//strcpy(buffer, ModelName.c_str());
-	assert(stage == stage_);
+	if (stage != stage_) return; //这种情况表示这个Regressor没有训练过
     sprintf(buffer, "%s%df.dat", ModelName.c_str(), stage);
 
 	std::ofstream fout;
