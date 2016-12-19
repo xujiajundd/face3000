@@ -113,45 +113,39 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                 augmented_ground_truth_faces.push_back(ground_truth_faces[i]);
                 augmented_bboxes.push_back(ibox);
                 cv::Mat_<float> temp; // = ground_truth_shapes_[index];
-                if ( j == 0 ){
-    //                temp = ProjectShape(temp, bboxes_[index]);
-    //                temp = ReProjection(temp, ibox);
-                    int tryTimes = 0;
-                    do {
-                        index = random_generator.uniform(0, pos_num);
-                        while ( index == i ){
-                            index = random_generator.uniform(0, pos_num);
-                        }
-    //                    do {
-    //                        index = random_generator.uniform(0, pos_num);
-    //                    }while(index == i);
-                        temp = ground_truth_shapes_[index];
-                        temp = ProjectShape(temp, bboxes_[index]);
-                        temp = ReProjection(temp, ibox);
-                        if ( debug_on_){
-                            if ( CalculateError(ground_truth_shapes[i], temp) > 0.5 ){
-                                DrawPredictImage(images[i], ground_truth_shapes[i]);
-                                DrawPredictImage(images[i], temp);
-                            }
-                        }
-                        tryTimes++;
-                    } while ( CalculateError(ground_truth_shapes[i], temp) > 0.6  && tryTimes < 10); //这个地方可能会死循环的
-                }
-                else{
-                    cv::Mat_<float> rotation;
-                    float scale;
-                    int tryTimes = 0;
-                    do {
-                        index = random_generator.uniform(0, pos_num);
-                        getSimilarityTransform(params_.mean_shape_, ProjectShape(ground_truth_shapes_[index], bboxes_[index]), rotation, scale);
-                        cv::Mat_<float> rot;
-                        cv::transpose(rotation, rot);
-                        temp = ReProjection(params_.mean_shape_ * rot, ibox);
-    //                    DrawPredictImage(images[i], temp);
-                        tryTimes++;
-                    } while ( CalculateError(ground_truth_shapes[i], temp) > 0.8 && tryTimes < 10 );
+////                temp = ProjectShape(temp, bboxes_[index]);
+////                temp = ReProjection(temp, ibox);
+//                do {
+//                    index = random_generator.uniform(0, pos_num);
+//                    while ( index == i ){
+//                        index = random_generator.uniform(0, pos_num);
+//                    }
+////                    do {
+////                        index = random_generator.uniform(0, pos_num);
+////                    }while(index == i);
+//                    temp = ground_truth_shapes_[index];
+//                    temp = ProjectShape(temp, bboxes_[index]);
+//                    temp = ReProjection(temp, ibox);
+//                    if ( debug_on_){
+//                        if ( CalculateError(ground_truth_shapes[i], temp) > 0.5 ){
+//                            DrawPredictImage(images[i], ground_truth_shapes[i]);
+//                            DrawPredictImage(images[i], temp);
+//                        }
+//                    }
+//                } while ( CalculateError(ground_truth_shapes[i], temp) > 0.5 ); //这个地方可能会死循环的
+                cv::Mat_<float> rotation;
+                float scale;
+                int tryTimes = 0;
+                do {
+                    index = random_generator.uniform(0, pos_num);
+                    getSimilarityTransform(params_.mean_shape_, ProjectShape(ground_truth_shapes_[index], bboxes_[index]), rotation, scale);
+                    cv::Mat_<float> rot;
+                    cv::transpose(rotation, rot);
+                    temp = ReProjection(params_.mean_shape_ * rot, ibox);
+//                    DrawPredictImage(images[i], temp);
+                    tryTimes++;
+                } while ( CalculateError(ground_truth_shapes[i], temp) > 0.7 && tryTimes < 10 );
 //                getSimilarityTransform(params_.mean_shape_, ProjectShape(ground_truth_shapes_[index], bboxes_[index]), rotation, scale);
-                }
                 augmented_current_shapes.push_back(temp);
                 current_fi.push_back(0);
                 current_weight.push_back(1);
@@ -263,7 +257,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
         for (int j = 0; j < shape_increaments.size(); j++){
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
                 float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
-                if ( e  >  3.5 * error/count){
+                if ( e  >  3.0 * error/count){
                     //表示本阶段alignment的结果比较差，取消作为正例
                     find_times[j] = MAXFINDTIMES+8;
                     augmented_ground_truth_faces[j] = -1;

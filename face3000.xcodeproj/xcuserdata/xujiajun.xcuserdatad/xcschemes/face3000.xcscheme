@@ -87,7 +87,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "train mvtest"
+            argument = "video mvtest"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
