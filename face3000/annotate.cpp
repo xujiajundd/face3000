@@ -68,9 +68,10 @@ public:
             std::vector<cv::Mat_<float>> shapes;
             cv::Mat_<uchar> grayImage;
             cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
-            std::vector<cv::Rect> rects = face_detector.detectMultiScale(grayImage, shapes, 1.1, 1, 0, min(image.rows,image.cols) / 5);
-            if ( rects.size() > 0 ){
-                shape = reConvertShape(shapes[0]);
+            cv::Rect rect;
+            bool ret = face_detector.detectOne(grayImage, rect, shape);
+            if ( ret > 0 ){
+                shape = reConvertShape(shape);
             }
             else{
                 //用平均脸在中间
@@ -639,7 +640,7 @@ int annotate_main(const char *path)
     std::cout << std::endl;
 
 
-    const char *ModelName = "model_t6d4n9i2";
+    const char *ModelName = "mv1217";
     annotation.face_detector.LoadCascadeRegressor(ModelName);
 
     std::string current_dir = "";
@@ -828,7 +829,7 @@ int annotate_main(const char *path)
 
 int annotate_filter(const char *path)
 {
-    const char *ModelName = "model_t6d4n9i2";
+    const char *ModelName = "mv1217";
     annotation.face_detector.LoadCascadeRegressor(ModelName);
 
     std::vector<std::string> lists;

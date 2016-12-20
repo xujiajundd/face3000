@@ -135,7 +135,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                             }
                         }
                         tryTimes++;
-                    } while ( CalculateError(ground_truth_shapes[i], temp) > 0.5  && tryTimes < 10); //这个地方可能会死循环的
+                    } while ( CalculateError(ground_truth_shapes[i], temp) > 0.45  && tryTimes < 20); //这个地方可能会死循环的
                 }
                 else{
                     cv::Mat_<float> rotation;
@@ -246,7 +246,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 			augmented_current_shapes[j] = ReProjection(augmented_current_shapes[j], augmented_bboxes[j]);
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
                 float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
-                if ( e * (2+i) > 1.0){
+                if ( e * (2+i) > 0.8){
                     //表示本阶段alignment的结果比较差，取消作为正例
                     find_times[j] = MAXFINDTIMES+8;
                     augmented_ground_truth_faces[j] = -1;
@@ -1527,7 +1527,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
     
     tmp_binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].index = -1;
     //    tmp_binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].value = -1.0;
-    lastThreshold = rd_forests_[params_.landmarks_num_per_face_-1].trees_[params_.trees_num_per_forest_-1]->score_;
+    lastThreshold = rd_forests_[rd_forests_.size()-1].trees_[params_.trees_num_per_forest_-1]->score_;
     return tmp_binary_features;
 }
 

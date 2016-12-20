@@ -79,8 +79,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "annotate  /Users/xujiajun/developer/dataset/xujj/xujj-bg1"
-            isEnabled = "NO">
+            argument = "annotate  /Users/xujiajun/developer/dataset/xujj/xujj-family"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "hello"
@@ -88,7 +88,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "video mvtest"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>
