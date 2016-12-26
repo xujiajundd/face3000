@@ -135,7 +135,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                             }
                         }
                         tryTimes++;
-                    } while ( CalculateError(ground_truth_shapes[i], temp) > 0.45  && tryTimes < 20); //这个地方可能会死循环的
+                    } while ( CalculateError(ground_truth_shapes[i], temp) > 0.6  && tryTimes < 20); //这个地方可能会死循环的
                 }
                 else{
                     cv::Mat_<float> rotation;
@@ -263,7 +263,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
         for (int j = 0; j < shape_increaments.size(); j++){
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
                 float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
-                if ( e  >  3.5 * error/count){
+                if ( e  >  2.5 * error/count){
                     //表示本阶段alignment的结果比较差，取消作为正例
                     find_times[j] = MAXFINDTIMES+8;
                     augmented_ground_truth_faces[j] = -1;
@@ -351,7 +351,7 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
         }
         std::cout<< "positive example left:" << pos_examples_num << " negative example left:" << neg_examples_num << std::endl;
         
-        if ( neg_examples_num < 64 ){ //挖掘负例已快用完，终止训练
+        if ( neg_examples_num < 4096 ){ //挖掘负例太少，终止训练
             rd_forests_.resize(i+1);
             linear_model_x_.resize(0);
             linear_model_y_.resize(0);
@@ -990,7 +990,7 @@ _label_search_1:
         }
         
         //计算shape
-        if ( i < params_.predict_regressor_stages_ - 1 ){
+        if ( regressors_[i].linear_model_x_.size() > 0 ){
             for ( int j = 0; j<candidates.size(); j++){
                 struct candidate& cand = candidates[j];
                 cand.shape = regressors_[i].PredictShort(cand.shape, cand.fnode, cand.rotation, cand.scale);
@@ -2214,8 +2214,7 @@ void Regressor::SaveRegressor(std::string ModelName, int stage){
 		rd_forests_[i].SaveRandomForest(fout);
 	}
 
-    for (
-         int i = 0; i < linear_model_x_.size(); i++){
+    for ( int i = 0; i < linear_model_x_.size(); i++){
         sprintf(buffer, "%s%d", ModelName.c_str(), stage_);
 //#ifdef _WIN32 // can be used under 32 and 64 bits
 //        _mkdir(buffer);

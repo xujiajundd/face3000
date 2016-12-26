@@ -1128,8 +1128,8 @@ RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std
     if ( stage == 0 ){
         local_features_num_ = 2 * param.local_features_num_;
     }
-    else{
-
+    else if ( stage >= 3 ){
+        local_features_num_ = param.local_features_num_ / 2;
     }
 	landmark_index_ = landmark_index;
     landmark_num_ = param.landmarks_num_per_face_;
