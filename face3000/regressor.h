@@ -113,6 +113,7 @@ public:
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& ground_truth_shape);
     cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& score);
     cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& score, cv::Mat_<float>& rot);
+    cv::Mat_<float> PredictPos(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& score, int stage);
     cv::Mat_<float> NegMinePredict(cv::Mat_<uchar>& image,
                                    cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& fi, int stage, int landmark, int tree);
 	void LoadCascadeRegressor(std::string ModelName);

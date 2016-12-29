@@ -264,12 +264,47 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
                 float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
                 if ( e  >  2.5 * error/count){
-                    //表示本阶段alignment的结果比较差，取消作为正例
+                    //表示本阶段alignment的结果比较差，取消作为正例。这个地方如何重新利用？
                     find_times[j] = MAXFINDTIMES+8;
                     augmented_ground_truth_faces[j] = -1;
                     std::cout << "Alignment error:" << e << " for:"<< j << " image index:" << augmented_images_index[j] << std::endl;
                     if ( debug_on_ ){
                         DrawPredictImage(images[augmented_images_index[j]], augmented_current_shapes[j]);
+                    }
+                }
+            }
+        }
+        
+        //那些被排除的正例，重新用不同的初始shape做一遍来挽救
+        for (int j = 0; j < shape_increaments.size(); j++){
+            if ( augmented_ground_truth_faces[j] == -1 && find_times[j] == MAXFINDTIMES+8){
+                int tryTimes = 0;
+                cv::Mat_<float> temp, rtemp;
+                do {
+                    int index = random_generator.uniform(0, pos_num);
+                    temp = ground_truth_shapes_[index];
+                    temp = ProjectShape(temp, bboxes_[index]);
+                    rtemp = ReProjection(temp, augmented_bboxes[j]);
+                    if ( debug_on_){
+                        if ( CalculateError(augmented_ground_truth_shapes[j], rtemp) > 0.5 ){
+                            DrawPredictImage(images[augmented_images_index[j]], augmented_ground_truth_shapes[j]);
+                            DrawPredictImage(images[augmented_images_index[j]], rtemp);
+                        }
+                    }
+                    tryTimes++;
+                } while ( CalculateError(augmented_ground_truth_shapes[j], rtemp) > 0.3  && tryTimes < 30); //这个地方可能会死循环的
+                int is_face = 1;
+                float score = 0.0;
+                current_fi[j] = 0;
+                current_weight[j] = 1;
+                augmented_current_shapes[j] = PredictPos(images[augmented_images_index[j]], temp, augmented_bboxes[j], is_face, score, i);
+                if ( is_face ){
+                    if ( CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]) < 2.5 * error/count ){
+                        std::cout <<"rescure image:" << j << " image index:" << augmented_images_index[j] << std::endl;
+                        find_times[j] = 0;
+                        augmented_ground_truth_faces[j] = 1;
+                        current_fi[j] = score;
+                        current_weight[j] = exp(0.0-augmented_ground_truth_faces[j]*current_fi[j]);
                     }
                 }
             }
@@ -589,6 +624,33 @@ cv::Mat_<float> CascadeRegressor::Predict(cv::Mat_<uchar>& image,
     rot = rotation;
 	return res;
 }
+
+cv::Mat_<float> CascadeRegressor::PredictPos(cv::Mat_<uchar>& image,
+                                          cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& score, int stage){
+    
+    cv::Mat_<float> rotation;
+    float scale;
+    float lastThreshold = -1.0;
+    for (int i = 0; i <= stage; i++){
+        
+        //        struct timeval t1, t2;
+        //        gettimeofday(&t1, NULL);
+        //这个耗时百分之一毫秒左右，
+        getSimilarityTransformAcc(/*ProjectShape(current_shape, bbox)*/current_shape, params_.mean_shape_, rotation, scale);
+        //        gettimeofday(&t2, NULL);
+        //        std::cout << "transform: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << std::endl;
+        cv::Mat_<float> shape_increaments = regressors_[i].Predict(image, current_shape, bbox, rotation, scale, score, is_face, lastThreshold);
+        if ( is_face != 1){
+            //std::cout << "检测不是face!!!!!!!!!!!!!!!!!!!!!!"<< std::endl;
+            return current_shape;
+        }
+        current_shape = shape_increaments + /*ProjectShape(current_shape, bbox)*/current_shape;
+        //current_shape = ReProjection(current_shape, bbox);
+    }
+    cv::Mat_<float> res = ReProjection(current_shape, bbox); //current_shape;
+    return res;
+}
+
 
 /*
  * \breif nms Non-maximum suppression

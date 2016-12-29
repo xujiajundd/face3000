@@ -229,7 +229,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
         {
             current_weight[k] = exp(0.0-augmented_ground_truth_faces[k]*current_fi[k]);
             if ( current_weight[k] > 10000000000.0 && find_times[k] < MAXFINDTIMES){ //试验一下去掉这个的效果
-                find_times[k] = MAXFINDTIMES+8;
+                find_times[k] = MAXFINDTIMES+4;
                 if ( augmented_ground_truth_faces[k] == 1 ){
                     drop_pos_count++;
                 }
