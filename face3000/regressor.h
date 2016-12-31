@@ -61,6 +61,8 @@ public:
         cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale);
     void GetGlobalBinaryFeaturesShort(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold, feature_node_short * fnode);
     cv::Mat_<float> PredictShort( cv::Mat_<float>& current_shape, feature_node_short* fnode, cv::Mat_<float>& rotation, float scale );
+    cv::Mat_<float> PredictPos(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape,
+                            BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold);
     // void GetFeaThread();
 };
 

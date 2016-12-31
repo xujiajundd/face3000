@@ -282,7 +282,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                 cv::Mat_<float> temp, rtemp;
                 do {
                     int index = random_generator.uniform(0, pos_num);
-                    temp = ground_truth_shapes_[index];
+                    temp = augmented_ground_truth_shapes[index];
                     temp = ProjectShape(temp, bboxes_[index]);
                     rtemp = ReProjection(temp, augmented_bboxes[j]);
                     if ( debug_on_){
@@ -639,7 +639,7 @@ cv::Mat_<float> CascadeRegressor::PredictPos(cv::Mat_<uchar>& image,
         getSimilarityTransformAcc(/*ProjectShape(current_shape, bbox)*/current_shape, params_.mean_shape_, rotation, scale);
         //        gettimeofday(&t2, NULL);
         //        std::cout << "transform: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << std::endl;
-        cv::Mat_<float> shape_increaments = regressors_[i].Predict(image, current_shape, bbox, rotation, scale, score, is_face, lastThreshold);
+        cv::Mat_<float> shape_increaments = regressors_[i].PredictPos(image, current_shape, bbox, rotation, scale, score, is_face, lastThreshold);
         if ( is_face != 1){
             //std::cout << "检测不是face!!!!!!!!!!!!!!!!!!!!!!"<< std::endl;
             return current_shape;
@@ -2082,6 +2082,63 @@ cv::Mat_<float> Regressor::PredictShort( cv::Mat_<float>& current_shape, feature
     cv::Mat_<float> rot;
     cv::transpose(rotation, rot);
     return scale*predict_result*rot + current_shape;
+}
+
+cv::Mat_<float> Regressor::PredictPos(cv::Mat_<uchar>& image,
+                                   cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold){
+    
+    cv::Mat_<float> predict_result;
+    feature_node* binary_features = GetGlobalBinaryFeatures(image, current_shape, bbox, rotation, scale, score, is_face, lastThreshold);
+    if ( is_face != 1 ){
+        return predict_result;
+    }
+    //    struct timeval t1, t2;
+    //    gettimeofday(&t1, NULL);
+    predict_result = cv::Mat_<float>(current_shape.rows, current_shape.cols, 0.0);
+    for (int i = 0; i < params_.landmarks_num_per_face_; i++){
+//		predict_result(i, 0) = predict(linear_model_x_[i], binary_features);
+//        predict_result(i, 1) = predict(linear_model_y_[i], binary_features);
+
+        int idx;
+        const feature_node *lx=binary_features;
+        float *wx =linear_model_x_[i]->w;
+        float *wy = linear_model_y_[i]->w;
+        for(; (idx=lx->index)!=-1 && idx < linear_model_x_[i]->nr_feature; lx++){
+            idx--;
+            predict_result(i,0) += wx[idx];
+            predict_result(i,1) += wy[idx];
+        }
+
+    }
+    
+    //performance test
+    //模型数据结构改为：m[idx][2*landmarks], idx为binary_feature的长度
+//    int idx;
+//    const feature_node *lx=binary_features;
+//    float sum[2*params_.landmarks_num_per_face_];
+//    for ( int i=0; i<2*params_.landmarks_num_per_face_; i++) sum[i] = 0;
+//    
+//    for(; (idx=lx->index)!=-1 && idx < linear_model_x_[0]->nr_feature; lx++){
+//        idx--;
+//        cblas_saxpy(2*params_.landmarks_num_per_face_, 1.0, &modreg[idx][0], 1, sum, 1); //用这个速度跟后面的循环差不多
+//        //        for (int i = 0; i < 2*params_.landmarks_num_per_face_; i++){
+//        //            sum[i] += modreg[idx][i];
+//        //        }
+//    }
+//    for ( int i=0; i<params_.landmarks_num_per_face_; i++){
+//        predict_result(i,0) = sum[2*i];
+//        predict_result(i,1) = sum[2*i+1];
+//    }
+    
+    //   gettimeofday(&t2, NULL);
+    //   std::cout << "linear " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << std::endl;
+    //   delete[] binary_features;
+    
+    cv::Mat_<float> rot;
+    cv::transpose(rotation, rot);
+    
+    //delete[] tmp_binary_features;
+    return scale*predict_result*rot;
 }
 
 cv::Mat_<float> Regressor::NegMinePredict(cv::Mat_<uchar>& image,
