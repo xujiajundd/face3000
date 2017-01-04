@@ -283,30 +283,34 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                 do {
                     int index = random_generator.uniform(0, pos_num);
                     temp = augmented_ground_truth_shapes[index];
-                    temp = ProjectShape(temp, bboxes_[index]);
-                    rtemp = ReProjection(temp, augmented_bboxes[j]);
+                    temp = ProjectShape(temp, augmented_bboxes[index]);
+//                    rtemp = ReProjection(temp, augmented_bboxes[j]);
                     if ( debug_on_){
-                        if ( CalculateError(augmented_ground_truth_shapes[j], rtemp) > 0.5 ){
-                            DrawPredictImage(images[augmented_images_index[j]], augmented_ground_truth_shapes[j]);
-                            DrawPredictImage(images[augmented_images_index[j]], rtemp);
-                        }
+                        DrawPredictImage(images[augmented_images_index[j]], augmented_ground_truth_shapes[j]);
+                        DrawPredictImage(images[augmented_images_index[j]], rtemp);
                     }
                     tryTimes++;
-                } while ( CalculateError(augmented_ground_truth_shapes[j], rtemp) > 0.3  && tryTimes < 30); //这个地方可能会死循环的
-                int is_face = 1;
-                float score = 0.0;
-                current_fi[j] = 0;
-                current_weight[j] = 1;
-                augmented_current_shapes[j] = PredictPos(images[augmented_images_index[j]], temp, augmented_bboxes[j], is_face, score, i);
-                if ( is_face ){
-                    if ( CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]) < 2.5 * error/count ){
-                        std::cout <<"rescure image:" << j << " image index:" << augmented_images_index[j] << std::endl;
-                        find_times[j] = 0;
-                        augmented_ground_truth_faces[j] = 1;
-                        current_fi[j] = score;
-                        current_weight[j] = exp(0.0-augmented_ground_truth_faces[j]*current_fi[j]);
+                
+                    int is_face = 1;
+                    float score = 0.0;
+                    current_fi[j] = 0;
+                    current_weight[j] = 1;
+                    cv::Mat_<float> ppos = PredictPos(images[augmented_images_index[j]], temp, augmented_bboxes[j], is_face, score, i);
+                    if ( is_face ){
+                        if ( CalculateError(augmented_ground_truth_shapes[j], ppos) < 2.5 * error/count ){
+                            std::cout <<"rescure image:" << j << " image index:" << augmented_images_index[j] << std::endl;
+                            augmented_current_shapes[j] = ppos;
+                            if ( debug_on_ ){
+                                DrawPredictImage(images[augmented_images_index[j]], augmented_current_shapes[j]);
+                            }
+                            find_times[j] = 0;
+                            augmented_ground_truth_faces[j] = 1;
+                            current_fi[j] = score;
+                            current_weight[j] = exp(0.0-augmented_ground_truth_faces[j]*current_fi[j]);
+                            break;
+                        }
                     }
-                }
+                } while ( tryTimes < 30); //这个地方可能会死循环的
             }
         }
         
@@ -386,7 +390,7 @@ std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& im
         }
         std::cout<< "positive example left:" << pos_examples_num << " negative example left:" << neg_examples_num << std::endl;
         
-        if ( neg_examples_num < 4096 ){ //挖掘负例太少，终止训练
+        if ( neg_examples_num < pos_num / 20 ){ //挖掘负例太少，终止训练
             rd_forests_.resize(i+1);
             linear_model_x_.resize(0);
             linear_model_y_.resize(0);

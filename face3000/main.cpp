@@ -612,9 +612,9 @@ void Train(const char* ModelName){
     params.regressor_stages_ = 6;
 //    params.local_radius_by_stage_.push_back(0.6);
 //    params.local_radius_by_stage_.push_back(0.5);
-	params.local_radius_by_stage_.push_back(0.25);
+	params.local_radius_by_stage_.push_back(0.45);
+    params.local_radius_by_stage_.push_back(0.3);
     params.local_radius_by_stage_.push_back(0.2);
-    params.local_radius_by_stage_.push_back(0.15);
 	params.local_radius_by_stage_.push_back(0.1);//0.1
     params.local_radius_by_stage_.push_back(0.08);//0.08
     params.local_radius_by_stage_.push_back(0.08);
