@@ -384,11 +384,11 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                         for ( int orient = so; orient < 1; orient++ ){
                             float cols = images[augmented_images_index[idx]].cols;
                             float rows = images[augmented_images_index[idx]].rows;
-                            for ( int sw_size = 32 * std::pow(1.07, ss); sw_size < std::min(cols, rows); sw_size = 32 * std::pow(1.07, ss)){
+                            for ( int sw_size = 32 * std::pow(1.08, ss); sw_size < std::min(cols, rows); sw_size = 32 * std::pow(1.08, ss)){
                                 ss++;
                                 int p = (idx+ss) % true_pos_num_;
                                 float shuffle_size = sw_size * 0.08;
-                                if ( shuffle_size > 10 ) shuffle_size = 10;
+                                if ( shuffle_size > 15 ) shuffle_size = 15;
                                 for ( int sw_x = shuffle_size * sx; sw_x<cols - sw_size && sx < 256; sw_x+=shuffle_size){
                                     sx++;
                                     for ( int sw_y = shuffle_size * sy; sw_y<rows - sw_size && sy < 256; sw_y+=shuffle_size){
@@ -508,7 +508,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             if (( search_box.start_y + search_box.height) > rows ) search_box.height = rows - search_box.start_y;
                             
                             
-                            for ( int sw_size = 32 * std::pow(1.07, ss); sw_size < std::min(search_box.width, search_box.height); sw_size = 32 * std::pow(1.07, ss)){
+                            for ( int sw_size = 32 * std::pow(1.08, ss); sw_size < std::min(search_box.width, search_box.height); sw_size = 32 * std::pow(1.08, ss)){
                                 ss++;
                                 float shuffle_size = sw_size * 0.08;
                                 if ( shuffle_size > 10 ) shuffle_size = 10;
