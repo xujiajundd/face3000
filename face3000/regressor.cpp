@@ -310,7 +310,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                             break;
                         }
                     }
-                } while ( tryTimes < 30); //这个地方可能会死循环的
+                } while ( tryTimes < 50); //这个地方可能会死循环的
             }
         }
         
