@@ -297,7 +297,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                     current_weight[j] = 1;
                     cv::Mat_<float> ppos = PredictPos(images[augmented_images_index[j]], temp, augmented_bboxes[j], is_face, score, i);
                     if ( is_face ){
-                        if ( CalculateError(augmented_ground_truth_shapes[j], ppos) < 2.5 * error/count ){
+                        if ( CalculateError(augmented_ground_truth_shapes[j], ppos) < 2.0 * error/count ){
                             std::cout <<"rescure image:" << j << " image index:" << augmented_images_index[j] << std::endl;
                             augmented_current_shapes[j] = ppos;
                             if ( debug_on_ ){
