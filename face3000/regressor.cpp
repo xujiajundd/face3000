@@ -220,6 +220,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 	for (int i = 0; i < params_.regressor_stages_; i++){
         gettimeofday(&t1, NULL);
 		std::cout << "training stage: " << i << " of " << params_.regressor_stages_  << std::endl;
+        regressors_[i].cameraOrient = cameraOrient;
 		shape_increaments = regressors_[i].Train(images_,
 											augmented_images_index,
 											augmented_ground_truth_shapes,
@@ -260,10 +261,12 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
             }
 		}
         std::cout << std::endl;
+        
+        float trimPosThresh = 2.0 * error / count;
         for (int j = 0; j < shape_increaments.size(); j++){
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
                 float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
-                if ( e  >  2.0 * error/count){
+                if ( e  >  trimPosThresh ){
                     //表示本阶段alignment的结果比较差，取消作为正例。这个地方如何重新利用？
                     find_times[j] = MAXFINDTIMES+8;
                     augmented_ground_truth_faces[j] = -1;
@@ -276,6 +279,8 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
         }
         
         //那些被排除的正例，重新用不同的初始shape做一遍来挽救
+        std::cout << "cameraOrient:" << cameraOrient << " " << regressors_[i].cameraOrient << std::endl;
+        
         for (int j = 0; j < shape_increaments.size(); j++){
             if ( augmented_ground_truth_faces[j] == -1 && find_times[j] == MAXFINDTIMES+8){
                 int tryTimes = 0;
@@ -284,7 +289,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                     int index = random_generator.uniform(0, pos_num);
                     temp = augmented_ground_truth_shapes[index];
                     temp = ProjectShape(temp, augmented_bboxes[index]);
-//                    rtemp = ReProjection(temp, augmented_bboxes[j]);
+                    rtemp = ReProjection(temp, augmented_bboxes[j]);
                     if ( debug_on_){
                         DrawPredictImage(images[augmented_images_index[j]], augmented_ground_truth_shapes[j]);
                         DrawPredictImage(images[augmented_images_index[j]], rtemp);
@@ -297,8 +302,9 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                     current_weight[j] = 1;
                     cv::Mat_<float> ppos = PredictPos(images[augmented_images_index[j]], temp, augmented_bboxes[j], is_face, score, i);
                     if ( is_face ){
-                        if ( CalculateError(augmented_ground_truth_shapes[j], ppos) < 2.0 * error/count ){
-                            std::cout <<"rescure image:" << j << " image index:" << augmented_images_index[j] << std::endl;
+                        float ee = CalculateError(augmented_ground_truth_shapes[j], ppos);
+                        if (  ee < trimPosThresh ){
+                            std::cout <<"rescure image:" << j << " image index:" << augmented_images_index[j] << "  error:" << ee <<  std::endl;
                             augmented_current_shapes[j] = ppos;
                             if ( debug_on_ ){
                                 DrawPredictImage(images[augmented_images_index[j]], augmented_current_shapes[j]);
@@ -308,6 +314,9 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                             current_fi[j] = score;
                             current_weight[j] = exp(0.0-augmented_ground_truth_faces[j]*current_fi[j]);
                             break;
+                        }
+                        else{
+//                            std::cout << "image index:" << augmented_images_index[j] << " tryTimes:" << tryTimes << " ee:" << ee << std::endl;
                         }
                     }
                 } while ( tryTimes < 50); //这个地方可能会死循环的
@@ -1439,6 +1448,7 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
             icols = image.rows;
             break;
         default:
+            std::cout<<"Erro cameraOrient:" << cameraOrient << std::endl;
             break;
     }
     
@@ -1538,6 +1548,9 @@ struct feature_node* Regressor::GetGlobalBinaryFeatures(cv::Mat_<uchar>& image,
                 else if ( cameraOrient == CASCADE_ORIENT_BOTTOM_LEFT ){
                     tmp = image( real_xs, image.cols - real_ys );
                     tmp2 = image( real_xe, image.cols - real_ye );
+                }
+                else{
+//                    std::cout << "E";
                 }
                 
                 
