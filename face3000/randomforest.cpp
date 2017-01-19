@@ -384,10 +384,10 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                         for ( int orient = so; orient < 1; orient++ ){
                             float cols = images[augmented_images_index[idx]].cols;
                             float rows = images[augmented_images_index[idx]].rows;
-                            for ( int sw_size = 32 * std::pow(1.08, ss); sw_size < std::min(cols, rows); sw_size = 32 * std::pow(1.08, ss)){
+                            for ( int sw_size = 32 * std::pow(1.07, ss); sw_size < std::min(cols, rows); sw_size = 32 * std::pow(1.07, ss)){
                                 ss++;
                                 int p = (idx+ss) % true_pos_num_;
-                                float shuffle_size = sw_size * 0.08;
+                                float shuffle_size = sw_size * 0.07;
                                 if ( shuffle_size > 15 ) shuffle_size = 15;
                                 for ( int sw_x = shuffle_size * sx; sw_x<cols - sw_size && sx < 256; sw_x+=shuffle_size){
                                     sx++;
@@ -508,9 +508,9 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             if (( search_box.start_y + search_box.height) > rows ) search_box.height = rows - search_box.start_y;
                             
                             
-                            for ( int sw_size = 32 * std::pow(1.08, ss); sw_size < std::min(search_box.width, search_box.height); sw_size = 32 * std::pow(1.08, ss)){
+                            for ( int sw_size = 32 * std::pow(1.07, ss); sw_size < std::min(search_box.width, search_box.height); sw_size = 32 * std::pow(1.07, ss)){
                                 ss++;
-                                float shuffle_size = sw_size * 0.08;
+                                float shuffle_size = sw_size * 0.07;
                                 if ( shuffle_size > 10 ) shuffle_size = 10;
                                 for ( int sw_x = shuffle_size * sx; sw_x<search_box.width - sw_size && sx < 256; sw_x+=shuffle_size){
                                     sx++;
@@ -940,9 +940,9 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 //    else if ( landmark_index_ < 17 ){
 //        df = detect_factor_ + 0.1;
 //    }
-    if ( stage_ == 0 && landmark_index_ < 10 ) df = 0.8;
-    if ( stage_ == 1 && landmark_index_ > 26 && landmark_index_ < 35 ) df = 0.8;
-    if ( stage_ == 2 && landmark_index_ > 35 && landmark_index_ < 48 ) df = 0.7;
+    if ( stage_ == 0 && landmark_index_ < 10 ) df = 0.7;
+    if ( stage_ == 1 && landmark_index_ > 26 && landmark_index_ < 35 ) df = 0.6;
+    if ( stage_ == 2 && landmark_index_ > 35 && landmark_index_ < 48 ) df = 0.6;
     for ( int i=0; i<vars.size(); i++){
         double tmpvar = ( vars[i] - minvar ) / (maxvar - minvar + DBL_MIN);
         double tmpent = ( entropys[i] - minent ) / (maxent - minent + DBL_MIN);

@@ -96,11 +96,13 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
             else{
                 BoundingBox ibox = bboxes_[i];
                 float minor = random_generator.uniform(-ibox.width, ibox.width);
-                minor = 0.02 * minor;
+                float minor1 = random_generator.uniform(-ibox.width, ibox.width);
+                minor = 0.08 * minor;
+                minor1 = 0.08 * minor1;
                 ibox.start_x -= minor/2.0;
                 ibox.start_y -= minor/2.0;
-                ibox.width += minor;
-                ibox.height += minor;
+                ibox.width += minor1;
+                ibox.height += minor1;
                 if ( ibox.start_x < 0 ) ibox.start_x = 0;
                 if ( ibox.start_y < 0 ) ibox.start_y = 0;
                 if ( (ibox.start_x + ibox.width) > images[i].cols ) ibox.width = images[i].cols - ibox.start_x;
@@ -113,7 +115,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                 augmented_ground_truth_faces.push_back(ground_truth_faces[i]);
                 augmented_bboxes.push_back(ibox);
                 cv::Mat_<float> temp; // = ground_truth_shapes_[index];
-                if ( j == 0 ){
+                if ( false && j == 0 ){
     //                temp = ProjectShape(temp, bboxes_[index]);
     //                temp = ReProjection(temp, ibox);
                     int tryTimes = 0;
