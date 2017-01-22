@@ -638,7 +638,7 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.2);
     
     params.tree_depth_ = 3;
-    params.trees_num_per_forest_ = 5;
+    params.trees_num_per_forest_ = 6;
     params.initial_guess_ = 2;
 
 //    params.group_num_ = 6;

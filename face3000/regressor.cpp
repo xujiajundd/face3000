@@ -97,8 +97,8 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                 BoundingBox ibox = bboxes_[i];
                 float minor = random_generator.uniform(-ibox.width, ibox.width);
                 float minor1 = random_generator.uniform(-ibox.width, ibox.width);
-                minor = 0.08 * minor;
-                minor1 = 0.08 * minor1;
+                minor = 0.1 * minor;
+                minor1 = 0.1 * minor1;
                 ibox.start_x -= minor/2.0;
                 ibox.start_y -= minor/2.0;
                 ibox.width += minor1;
@@ -321,7 +321,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 //                            std::cout << "image index:" << augmented_images_index[j] << " tryTimes:" << tryTimes << " ee:" << ee << std::endl;
                         }
                     }
-                } while ( tryTimes < 50); //这个地方可能会死循环的
+                } while ( tryTimes < 60); //这个地方可能会死循环的
             }
         }
         
