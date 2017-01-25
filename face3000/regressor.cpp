@@ -97,8 +97,8 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                 BoundingBox ibox = bboxes_[i];
                 float minor = random_generator.uniform(-ibox.width, ibox.width);
                 float minor1 = random_generator.uniform(-ibox.width, ibox.width);
-                minor = 0.1 * minor;
-                minor1 = 0.1 * minor1;
+                minor = 0.12 * minor;
+                minor1 = 0.12 * minor1;
                 ibox.start_x -= minor/2.0;
                 ibox.start_y -= minor/2.0;
                 ibox.width += minor1;
@@ -149,9 +149,9 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                         cv::Mat_<float> rot;
                         cv::transpose(rotation, rot);
                         temp = ReProjection(params_.mean_shape_ * rot, ibox);
-    //                    DrawPredictImage(images[i], temp);
+//                        DrawPredictImage(images[i], temp);
                         tryTimes++;
-                    } while ( CalculateError(ground_truth_shapes[i], temp) > 0.7 && tryTimes < 10 );
+                    } while ( CalculateError(ground_truth_shapes[i], temp) > 0.6 && tryTimes < 20 );
 //                getSimilarityTransform(params_.mean_shape_, ProjectShape(ground_truth_shapes_[index], bboxes_[index]), rotation, scale);
                 }
                 augmented_current_shapes.push_back(temp);
@@ -264,7 +264,8 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 		}
         std::cout << std::endl;
         
-        float trimPosThresh = 2.0 * error / count;
+        float trimPosThresh = 1.8 * error / count;
+        if ( trimPosThresh < 0.1 ) trimPosThresh = 0.1;
         for (int j = 0; j < shape_increaments.size(); j++){
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
                 float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);

@@ -388,7 +388,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                 ss++;
                                 int p = (idx+ss) % true_pos_num_;
                                 float shuffle_size = sw_size * 0.07;
-                                if ( shuffle_size > 15 ) shuffle_size = 15;
+                                if ( shuffle_size > 10 ) shuffle_size = 10;
                                 for ( int sw_x = shuffle_size * sx; sw_x<cols - sw_size && sx < 256; sw_x+=shuffle_size){
                                     sx++;
                                     for ( int sw_y = shuffle_size * sy; sw_y<rows - sw_size && sy < 256; sw_y+=shuffle_size){
@@ -940,8 +940,8 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 //    else if ( landmark_index_ < 17 ){
 //        df = detect_factor_ + 0.1;
 //    }
-    if ( stage_ == 0 && landmark_index_ < 10 ) df = 0.7;
-    if ( stage_ == 1 && landmark_index_ > 26 && landmark_index_ < 35 ) df = 0.6;
+    if ( stage_ == 0 && landmark_index_ < 10 ) df = 0.8;
+    if ( stage_ == 1 && landmark_index_ > 26 && landmark_index_ < 35 ) df = 0.7;
     if ( stage_ == 2 && landmark_index_ > 35 && landmark_index_ < 48 ) df = 0.6;
     for ( int i=0; i<vars.size(); i++){
         double tmpvar = ( vars[i] - minvar ) / (maxvar - minvar + DBL_MIN);
