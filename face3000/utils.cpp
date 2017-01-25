@@ -772,6 +772,22 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
         ground_truth_faces.push_back(-1);
         bboxes.push_back(nbbox);
         neg_num++;
+        
+        cv::transpose(image, image); //转置一次图片
+        ground_truth_shape = ground_truth_shapes[neg_num % pos_num];
+        bbox = bboxes[neg_num % pos_num];
+        nbbox.width = std::min(image.cols / 5, image.rows / 5);
+        nbbox.height = nbbox.width;
+        nbbox.start_x = image.cols - nbbox.width - 20;
+        nbbox.start_y = image.rows - nbbox.height - 20;
+        nbbox.center_x = nbbox.start_x + nbbox.width / 2.0;
+        nbbox.center_y = nbbox.start_y + nbbox.height / 2.0;
+        images.push_back(image);
+        ground_truth_shapes.push_back(ReProjection(ProjectShape(ground_truth_shape, bbox), nbbox));
+        ground_truth_faces.push_back(-1);
+        bboxes.push_back(nbbox);
+        neg_num++;
+        
         if ( neg_num >= 4 * pos_num ) break;
     }
     fin.close();
