@@ -940,8 +940,8 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 //    else if ( landmark_index_ < 17 ){
 //        df = detect_factor_ + 0.1;
 //    }
-    if ( stage_ == 0 && landmark_index_ < 10 ) df = 0.8;
-    if ( stage_ == 1 && landmark_index_ > 26 && landmark_index_ < 35 ) df = 0.7;
+    if ( stage_ == 0 && landmark_index_ < 10 ) df = 0.9;
+    if ( stage_ == 1 && landmark_index_ > 26 && landmark_index_ < 35 ) df = 0.8;
     if ( stage_ == 2 && landmark_index_ > 35 && landmark_index_ < 48 ) df = 0.6;
     for ( int i=0; i<vars.size(); i++){
         double tmpvar = ( vars[i] - minvar ) / (maxvar - minvar + DBL_MIN);
