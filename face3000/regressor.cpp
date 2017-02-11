@@ -21,16 +21,16 @@ CascadeRegressor::CascadeRegressor(){
     previousFrameShapes.clear();
     std::cout << "CascadeRegressor created" << std::endl;
     isLoaded = false;
-    trimNum = 40;
+    trimNum = 80;
     trimFactor = 0.5;
-    scaleFactor = 1.15;
+    scaleFactor = 1.2;
     flags = 0 | CASCADE_FLAG_TRACK_MODE;
-    defaultMinSize = 150;
-    shuffle = 0.25;
+    defaultMinSize = 100;
+    shuffle = 0.4;
     searchPriority = CASCADE_PRIORITY_NORMAL;
     cameraOrient = CASCADE_ORIENT_TOP_LEFT;
-    f_nodes = new feature_node_short*[2*trimNum];
-    for ( int i=0; i<2*trimNum; i++ ){
+    f_nodes = new feature_node_short*[3*trimNum];
+    for ( int i=0; i<3*trimNum; i++ ){
         f_nodes[i] = NULL;
     }
 }
@@ -797,7 +797,7 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
                 maxSize = 0.9 * std::min(icols, irows);
                 searchRect.x = 0; searchRect.y = 0; searchRect.width = icols; searchRect.height = irows;
                 float rpi;
-                if ( full_scans % 2 != 0 ){
+                if ( true || full_scans % 2 != 0 ){
                     rpi = 0;
                 }
                 else{
