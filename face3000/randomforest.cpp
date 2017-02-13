@@ -158,14 +158,19 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
             //TODO，这个地方可以试多个策略：1）自己，2）自己和随机一个，3）随机两个
             //TODO，在前2个stage，用3，第三stage用2，后续stage，用1？如何？
             int landmark1, landmark2;
-            if ( stage_ == 0  /*&& landmark_index_ < 50*/ ){
+            if ( stage_ == 0 && landmark_index_ < 17 /*&& landmark_index_ < 50*/ ){
                 landmark1 = (int)rd.uniform(0, landmark_num_);
                 landmark2 = (int)rd.uniform(0, landmark_num_);
             }
             else{
                 landmark1 = landmark_index_;
-                landmark2 = (int)rd.uniform(0, landmark_num_);
+//                landmark2 = (int)rd.uniform(0, landmark_num_);
+                landmark2 = landmark_index_;
             }
+//            //test
+//            landmark1 = landmark_index_;
+//            landmark2 = landmark_index_;
+            
 //            else if (  n % (stage_ + 3) == 0 ){
 //                landmark1 = landmark_index_;
 //                landmark2 = landmark_index_;
@@ -1126,11 +1131,14 @@ RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std
 	stage_ = stage;
     param_ = param;
     local_features_num_ = param.local_features_num_; // 200 + param.local_features_num_ / ( stage_ + 1 );
-    if ( stage == 0 ){
-        local_features_num_ = 2 * param.local_features_num_;
+    if ( stage == 0 && landmark_index < 17 ){
+        local_features_num_ = param.local_features_num_;
     }
-    else if ( stage >= 3 ){
-        local_features_num_ = param.local_features_num_ / 2;
+//    else if ( stage >= 3 ){
+//        local_features_num_ = param.local_features_num_ / 2;
+//    }
+    else{
+        local_features_num_ = param.local_features_num_ / 8;
     }
 	landmark_index_ = landmark_index;
     landmark_num_ = param.landmarks_num_per_face_;
