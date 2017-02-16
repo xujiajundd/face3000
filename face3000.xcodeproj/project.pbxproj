@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		CA13B2BB1CAB92D000EE2276 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CA13B2BA1CAB92D000EE2276 /* Accelerate.framework */; };
+		CA3DB5D11E53FF580082C683 /* libopencv_calib3d.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = CA3DB5D01E53FF580082C683 /* libopencv_calib3d.dylib */; };
 		CA49B0F21C817CEE00A0951B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CA49B0F11C817CEE00A0951B /* main.cpp */; };
 		CA49B0FF1C817D0600A0951B /* randomforest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CA49B0F81C817D0600A0951B /* randomforest.cpp */; };
 		CA49B1001C817D0600A0951B /* regressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CA49B0FA1C817D0600A0951B /* regressor.cpp */; };
@@ -36,6 +37,7 @@
 /* Begin PBXFileReference section */
 		CA13B2BA1CAB92D000EE2276 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		CA36A0E21D0030D4003F86C0 /* annotate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = annotate.h; sourceTree = "<group>"; };
+		CA3DB5D01E53FF580082C683 /* libopencv_calib3d.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libopencv_calib3d.dylib; sourceTree = "<group>"; };
 		CA49B0E71C817C4800A0951B /* face3000 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = face3000; sourceTree = BUILT_PRODUCTS_DIR; };
 		CA49B0F11C817CEE00A0951B /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		CA49B0F31C817D0600A0951B /* detect.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = detect.png; sourceTree = "<group>"; };
@@ -72,6 +74,7 @@
 				CA49B11C1C81839000A0951B /* libopencv_objdetect.dylib in Frameworks */,
 				CA49B1161C81835400A0951B /* libopencv_imgproc.dylib in Frameworks */,
 				CA49B11A1C81836800A0951B /* libopencv_core.dylib in Frameworks */,
+				CA3DB5D11E53FF580082C683 /* libopencv_calib3d.dylib in Frameworks */,
 				CA49B1181C81836000A0951B /* libopencv_highgui.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -103,6 +106,7 @@
 				CA49B1171C81836000A0951B /* libopencv_highgui.dylib */,
 				CA49B1191C81836800A0951B /* libopencv_core.dylib */,
 				CA49B11B1C81839000A0951B /* libopencv_objdetect.dylib */,
+				CA3DB5D01E53FF580082C683 /* libopencv_calib3d.dylib */,
 				CA49B0F31C817D0600A0951B /* detect.png */,
 				CA49B0F41C817D0600A0951B /* final.png */,
 				CA49B0F51C817D0600A0951B /* haarcascade_frontalface_alt2.xml */,

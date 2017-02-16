@@ -28,6 +28,13 @@ enum
     CASCADE_ORIENT_BOTTOM_LEFT
 };
 
+enum
+{
+    CASCADE_CATEGORY_FRONT = 1,
+    CASCADE_CATEGORY_LEFT = 2,
+    CASCADE_CATEGORY_RIGHT = 4,
+    CASCADE_CATEGORY_OPEN_MOUTH = 8
+};
 
 //std::mutex m;
 class BoundingBox {
@@ -85,12 +92,16 @@ public:
 	cv::Mat_<float> mean_shape_;
     int predict_regressor_stages_;
 //    std::set<int> predict_group_;
+    int category_num_;
+    std::vector<cv::Mat_<float>> category_mean_shapes_;
 };
 
 cv::Mat_<float> ProjectShape(const cv::Mat_<float>& shape, const BoundingBox& bbox);
 cv::Mat_<float> ReProjection(const cv::Mat_<float>& shape, const BoundingBox& bbox);
 cv::Mat_<float> GetMeanShape(const std::vector<cv::Mat_<float> >& all_shapes, std::vector<int>& ground_truth_faces,
 	const std::vector<BoundingBox>& all_bboxes);
+std::vector<cv::Mat_<float>> GetCategoryMeanShapes(std::vector<cv::Mat_<float> >& all_shapes, std::vector<int>& ground_truth_faces, std::vector<int> & ground_truth_categorys,
+                                                   std::vector<BoundingBox>& all_bboxes);
 void getSimilarityTransformAcc(const cv::Mat_<float>& shape_to,
                                const cv::Mat_<float>& shape_from,
                                cv::Mat_<float>& rotation, float& scale);
@@ -113,6 +124,7 @@ std::vector<cv::Rect> DetectFaces(cv::Mat_<uchar>& image, cv::CascadeClassifier&
 float CalculateError(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predicted_shape);
 float CalculateError2(cv::Mat_<float>& ground_truth_shape, cv::Mat_<float>& predicted_shape, int stage, int landmark);
 
+void DrawImage(cv::Mat_<uchar> image, cv::Mat_<float>& ishape);
 void DrawPredictImage(cv::Mat_<uchar>& image, cv::Mat_<float>& shapes);
 void DrawImageNoShow(cv::Mat image, cv::Mat_<float>& ishape);
 void DrawImageNoShowOrientation(cv::Mat image, cv::Mat_<float>& ishape, int orient);

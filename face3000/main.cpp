@@ -575,6 +575,7 @@ void Train(const char* ModelName){
 	std::vector<cv::Mat_<uchar> > images;
 	std::vector<cv::Mat_<float> > ground_truth_shapes;
     std::vector<int> ground_truth_faces;
+    std::vector<int> ground_truth_categorys;
 	std::vector<BoundingBox> bboxes;
     std::string file_names = "/Users/xujiajun/developer/dataset/helen/train_jpgs.txt";
     std::string neg_file_names = "/Users/xujiajun/developer/dataset/helen/train_neg_jpgs.txt";
@@ -593,6 +594,15 @@ void Train(const char* ModelName){
     
 	int pos_num = LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names, neg_file_names);
 	params.mean_shape_ = GetMeanShape(ground_truth_shapes, ground_truth_faces, bboxes);
+    
+    ground_truth_categorys.resize(ground_truth_shapes.size());
+    params.category_mean_shapes_ = GetCategoryMeanShapes(ground_truth_shapes, ground_truth_faces, ground_truth_categorys, bboxes);
+    params.category_num_ = (int)params.category_mean_shapes_.size();
+    
+    for ( int i = 0; i<params.category_num_; i++){
+        cv::Mat_<float> shape = ReProjection(params.category_mean_shapes_[i], bboxes[i]);
+        DrawImage(images[i], shape);
+    }
     
     //检查一下各种数算得对不对
 //    for ( int i=0; i<images.size(); i++){
@@ -637,7 +647,7 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.4);
     params.detect_factor_by_stage_.push_back(0.2);
     
-    params.tree_depth_ = 3;
+    params.tree_depth_ = 4;
     params.trees_num_per_forest_ = 6;
     params.initial_guess_ = 2;
 

@@ -128,6 +128,143 @@ cv::Mat_<float> GetMeanShape(const std::vector<cv::Mat_<float> >& all_shapes, st
 	return mean_shape;
 }
 
+void getEulerAngles(cv::Mat &rotCameraMatrix,cv::Vec3d &eulerAngles){
+    
+    cv::Mat cameraMatrix,rotMatrix,transVect,rotMatrixX,rotMatrixY,rotMatrixZ;
+    double* _r = rotCameraMatrix.ptr<double>();
+    double projMatrix[12] = {_r[0],_r[1],_r[2],0,
+        _r[3],_r[4],_r[5],0,
+        _r[6],_r[7],_r[8],0};
+    
+    decomposeProjectionMatrix( cv::Mat(3,4,CV_64FC1,projMatrix),
+                              cameraMatrix,
+                              rotMatrix,
+                              transVect,
+                              rotMatrixX,
+                              rotMatrixY,
+                              rotMatrixZ,
+                              eulerAngles);
+}
+
+cv::Vec3d getShapeEulerAngles(cv::Mat_<float>& shape, BoundingBox& box)
+{
+    cv::Vec3d eulerAngles;
+    // 2D image points. If you change the image, you need to change vector
+    std::vector<cv::Point2d> image_points;
+    image_points.push_back( cv::Point2d(shape(30, 1), shape(30, 0)) );    // Nose tip
+    image_points.push_back( cv::Point2d(shape(16, 1), shape(16, 0)) );    // Chin
+    image_points.push_back( cv::Point2d(shape(36, 1), shape(36, 0)) );     // Left eye left corner
+    image_points.push_back( cv::Point2d(shape(45, 1), shape(45, 0)) );    // Right eye right corner
+    image_points.push_back( cv::Point2d(shape(48, 1), shape(48, 0)) );    // Left Mouth corner
+    image_points.push_back( cv::Point2d(shape(54, 1), shape(54, 0)) );    // Right mouth corner
+    
+    // 3D model points.
+    static std::vector<cv::Point3d> model_points;
+    if ( model_points.size() == 0 ){
+        model_points.push_back(cv::Point3d(0.0f, 0.0f, 0.0f));               // Nose tip
+        model_points.push_back(cv::Point3d(0.0f, -330.0f, -65.0f));          // Chin
+        model_points.push_back(cv::Point3d(-225.0f, 170.0f, -135.0f));       // Left eye left corner
+        model_points.push_back(cv::Point3d(225.0f, 170.0f, -135.0f));        // Right eye right corner
+        model_points.push_back(cv::Point3d(-150.0f, -150.0f, -125.0f));      // Left Mouth corner
+        model_points.push_back(cv::Point3d(150.0f, -150.0f, -125.0f));       // Right mouth corner
+    }
+    
+    // Camera internals
+    double focal_length = 2*box.width; // Approximate focal length.
+    cv::Point2d center = cv::Point2d(box.center_x,box.center_y);
+    cv::Mat camera_matrix = (cv::Mat_<double>(3,3) << focal_length, 0, center.x, 0 , focal_length, center.y, 0, 0, 1);
+    cv::Mat dist_coeffs = cv::Mat::zeros(4,1,cv::DataType<double>::type); // Assuming no lens distortion
+    
+    // Output rotation and translation
+    cv::Mat rotation_vector; // Rotation in axis-angle form
+    cv::Mat translation_vector;
+    
+    // Solve for pose
+    cv::solvePnP(model_points, image_points, camera_matrix, dist_coeffs, rotation_vector, translation_vector);
+    
+    
+    // Project a 3D point (0, 0, 1000.0) onto the image plane.
+    // We use this to draw a line sticking out of the nose
+    
+//    std::vector<cv::Point3d> nose_end_point3D;
+//    std::vector<cv::Point2d> nose_end_point2D;
+//    nose_end_point3D.push_back(cv::Point3d(0,0,0.7*w));
+//    
+//    projectPoints(nose_end_point3D, rotation_vector, translation_vector, camera_matrix, dist_coeffs, nose_end_point2D);
+//    
+//    
+//    for(int i=0; i < image_points.size(); i++)
+//    {
+//        circle(image, image_points[i], 3, cv::Scalar(0,0,255), -1);
+//    }
+//    
+//    cv::line(image,image_points[0], nose_end_point2D[0], cv::Scalar(255,0,0), 2);
+    
+    cv::Mat rotCameraMatrix;
+    Rodrigues(rotation_vector, rotCameraMatrix);
+    getEulerAngles(rotCameraMatrix, eulerAngles);
+    std::cout << "yaw:" << eulerAngles[1] << "   pitch:" << eulerAngles[0] << "    roll:" << eulerAngles[2] <<  std::endl;
+    return eulerAngles;
+}
+
+std::vector<cv::Mat_<float>> GetCategoryMeanShapes(std::vector<cv::Mat_<float> >& all_shapes, std::vector<int>& ground_truth_faces, std::vector<int> & ground_truth_categorys,
+                             std::vector<BoundingBox>& all_bboxes)
+{
+    std::vector<cv::Mat_<float>> category_mean_shapes;
+    cv::Vec3d eangle;
+    int countFront = 0, countLeft = 0, countRight = 0, countMouth = 0;
+    cv::Mat_<float> mean_shape_front = cv::Mat::zeros(all_shapes[0].rows, 2, CV_32FC1);
+    cv::Mat_<float> mean_shape_left = cv::Mat::zeros(all_shapes[0].rows, 2, CV_32FC1);
+    cv::Mat_<float> mean_shape_right = cv::Mat::zeros(all_shapes[0].rows, 2, CV_32FC1);
+    cv::Mat_<float> mean_shape_mouth = cv::Mat::zeros(all_shapes[0].rows, 2, CV_32FC1);
+    
+    for ( int i=0; i< all_shapes.size(); i++){
+        ground_truth_categorys[i] = 0;
+        if ( ground_truth_faces[i] == 1 ){
+            eangle = getShapeEulerAngles(all_shapes[i], all_bboxes[i]);
+            double yaw = eangle[1];
+            if ( yaw > 40 ){
+                ground_truth_categorys[i] = ground_truth_categorys[i] | CASCADE_CATEGORY_RIGHT;
+                countRight++;
+                mean_shape_right += ProjectShape(all_shapes[i], all_bboxes[i]);
+            }
+            else if ( yaw < -40 ){
+                ground_truth_categorys[i] = ground_truth_categorys[i] | CASCADE_CATEGORY_LEFT;
+                countLeft++;
+                mean_shape_left += ProjectShape(all_shapes[i], all_bboxes[i]);
+            }
+            else{
+                ground_truth_categorys[i] = ground_truth_categorys[i] | CASCADE_CATEGORY_FRONT;
+                countFront++;
+                mean_shape_front += ProjectShape(all_shapes[i], all_bboxes[i]);
+            }
+            float d1 = sqrtf((all_shapes[i](36,0) - all_shapes[i](48,0)) * (all_shapes[i](36,0) - all_shapes[i](48,0)) + (all_shapes[i](36,1) - all_shapes[i](48,1)) * (all_shapes[i](36,1) - all_shapes[i](48,1)));
+            float d2 = sqrtf((all_shapes[i](45,0) - all_shapes[i](54,0)) * (all_shapes[i](45,0) - all_shapes[i](54,0)) + (all_shapes[i](45,1) - all_shapes[i](54,1)) * (all_shapes[i](45,1) - all_shapes[i](54,1)));
+            float d3 = sqrtf((all_shapes[i](62,0) - all_shapes[i](66,0)) * (all_shapes[i](62,0) - all_shapes[i](66,0)) + (all_shapes[i](62,1) - all_shapes[i](66,1)) * (all_shapes[i](62,1) - all_shapes[i](66,1)));
+            if ( d3 > 0.1 * ( d1 + d2) ){
+                ground_truth_categorys[i] = ground_truth_categorys[i] | CASCADE_CATEGORY_OPEN_MOUTH;
+                countMouth++;
+                mean_shape_mouth += ProjectShape(all_shapes[i], all_bboxes[i]);
+            }
+        }
+    }
+    mean_shape_front = 1.0 / countFront * mean_shape_front;
+    mean_shape_left = 1.0 / countLeft * mean_shape_left;
+    mean_shape_right = 1.0 / countRight * mean_shape_right;
+    mean_shape_mouth = 1.0 / countMouth * mean_shape_mouth;
+    category_mean_shapes.push_back(mean_shape_front);
+    category_mean_shapes.push_back(mean_shape_left);
+    category_mean_shapes.push_back(mean_shape_right);
+    category_mean_shapes.push_back(mean_shape_mouth);
+    
+    std::cout << "front:" << countFront << "  left:" << countLeft << "   right:" << countRight << "   open mouth:" << countMouth << std::endl;
+    
+    return category_mean_shapes;
+}
+
+
+
+
 void getSimilarityTransformAcc(const cv::Mat_<float>& shape_to,
                             const cv::Mat_<float>& shape_from,
                             cv::Mat_<float>& rotation, float& scale){
@@ -655,7 +792,10 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
 //                bbox.center_y = bbox.start_y + bbox.height / 2.0;
                 bboxes.push_back(bbox);
                 pos_num++;
-                
+        
+//        cv::Mat_<float> temps = convertShape(ground_truth_shape);
+//        cv::Vec3d eangle = getShapeEulerAngles(temps, bbox);
+//        DrawImage(image, temps);
 //                //加负例
 //                BoundingBox nbbox;
 //                nbbox.start_x = image.cols * 3 / 4;
@@ -740,7 +880,10 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
                 flipped_bbox.center_y = flipped_bbox.start_y + flipped_bbox.height / 2.0;
                 bboxes.push_back(flipped_bbox);
                 pos_num++;
-
+       
+//        cv::Mat_<float> ftemps = convertShape(flipped_ground_truth_shape);
+//        cv::Vec3d feangle = getShapeEulerAngles(ftemps, flipped_bbox);
+//        DrawImage(image, ftemps);
                 count++;
                 if (count%100 == 0){
                     std::cout << count << " images loaded\n";
