@@ -595,14 +595,14 @@ void Train(const char* ModelName){
 	int pos_num = LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names, neg_file_names);
 	params.mean_shape_ = GetMeanShape(ground_truth_shapes, ground_truth_faces, bboxes);
     
-    ground_truth_categorys.resize(ground_truth_shapes.size());
-    params.category_mean_shapes_ = GetCategoryMeanShapes(ground_truth_shapes, ground_truth_faces, ground_truth_categorys, bboxes);
-    params.category_num_ = (int)params.category_mean_shapes_.size();
+//    ground_truth_categorys.resize(ground_truth_shapes.size());
+//    params.category_mean_shapes_ = GetCategoryMeanShapes(ground_truth_shapes, ground_truth_faces, ground_truth_categorys, bboxes);
+//    params.category_num_ = (int)params.category_mean_shapes_.size();
     
-    for ( int i = 0; i<params.category_num_; i++){
-        cv::Mat_<float> shape = ReProjection(params.category_mean_shapes_[i], bboxes[i]);
-        DrawImage(images[i], shape);
-    }
+//    for ( int i = 0; i<params.category_num_; i++){
+//        cv::Mat_<float> shape = ReProjection(params.category_mean_shapes_[i], bboxes[i]);
+//        DrawImage(images[i], shape);
+//    }
     
     //检查一下各种数算得对不对
 //    for ( int i=0; i<images.size(); i++){
@@ -617,7 +617,7 @@ void Train(const char* ModelName){
 //        DrawPredictedImage(images[i], ground_truth_shapes[i]);
 //    }
     
-    params.local_features_num_ = 8000;
+    params.local_features_num_ = 4000;
 	params.landmarks_num_per_face_ = NUM_LANDMARKS;
     params.regressor_stages_ = 5;
 //    params.local_radius_by_stage_.push_back(0.6);
@@ -640,15 +640,15 @@ void Train(const char* ModelName){
     
     params.detect_factor_by_stage_.push_back(0.8);
     params.detect_factor_by_stage_.push_back(0.7);
+    params.detect_factor_by_stage_.push_back(0.6);
     params.detect_factor_by_stage_.push_back(0.5);
-    params.detect_factor_by_stage_.push_back(0.4);
-    params.detect_factor_by_stage_.push_back(0.3);
+    params.detect_factor_by_stage_.push_back(0.2);
     params.detect_factor_by_stage_.push_back(0.9);
     params.detect_factor_by_stage_.push_back(0.4);
     params.detect_factor_by_stage_.push_back(0.2);
     
-    params.tree_depth_ = 4;
-    params.trees_num_per_forest_ = 6;
+    params.tree_depth_ = 3;
+    params.trees_num_per_forest_ = 8;
     params.initial_guess_ = 2;
 
 //    params.group_num_ = 6;
