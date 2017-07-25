@@ -97,8 +97,8 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                 BoundingBox ibox = bboxes_[i];
                 float minor = random_generator.uniform(-ibox.width, ibox.width);
                 float minor1 = random_generator.uniform(-ibox.width, ibox.width);
-                minor = 0.12 * minor;
-                minor1 = 0.12 * minor1;
+                minor = 0.05 * minor;
+                minor1 = 0.05 * minor1;
                 ibox.start_x -= minor/2.0;
                 ibox.start_y -= minor/2.0;
                 ibox.width += minor1;
@@ -244,6 +244,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 		std::cout << "update current shapes" << std::endl;
 		float error = 0.0;
         int count = 0;
+        int ecount = 0;
 		for (int j = 0; j < shape_increaments.size(); j++){
 			augmented_current_shapes[j] = shape_increaments[j] + ProjectShape(augmented_current_shapes[j], augmented_bboxes[j]);
 			augmented_current_shapes[j] = ReProjection(augmented_current_shapes[j], augmented_bboxes[j]);
@@ -253,7 +254,8 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                     //表示本阶段alignment的结果比较差，取消作为正例
                     find_times[j] = MAXFINDTIMES+8;
                     augmented_ground_truth_faces[j] = -1;
-                    std::cout << "Alignment error:" << e << " for:"<< j << " image index:" << augmented_images_index[j] << std::endl;
+                    //std::cout << "Alignment error:" << e << " for:"<< j << " image index:" << augmented_images_index[j] << std::endl;
+                    ecount++;
                     if ( debug_on_ ){
                         DrawPredictImage(images[augmented_images_index[j]], augmented_current_shapes[j]);
                     }
@@ -262,8 +264,9 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                 count++;
             }
 		}
-        std::cout << std::endl;
+        std::cout << "Alignment error:" << ecount << std::endl;
         
+        ecount = 0;
         float trimPosThresh = 2.0 * error / count;
 //        if ( trimPosThresh < 0.1 ) trimPosThresh = 0.1;
         for (int j = 0; j < shape_increaments.size(); j++){
@@ -273,17 +276,18 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                     //表示本阶段alignment的结果比较差，取消作为正例。这个地方如何重新利用？
                     find_times[j] = MAXFINDTIMES+8;
                     augmented_ground_truth_faces[j] = -1;
-                    std::cout << "Alignment error:" << e << " for:"<< j << " image index:" << augmented_images_index[j] << std::endl;
+                    //std::cout << "Alignment error:" << e << " for:"<< j << " image index:" << augmented_images_index[j] << std::endl;
+                    ecount++;
                     if ( debug_on_ ){
                         DrawPredictImage(images[augmented_images_index[j]], augmented_current_shapes[j]);
                     }
                 }
             }
         }
-        
+        std::cout << "Alignment error:" << ecount << std::endl;
         //那些被排除的正例，重新用不同的初始shape做一遍来挽救
         std::cout << "cameraOrient:" << cameraOrient << " " << regressors_[i].cameraOrient << std::endl;
-        
+        int rcount = 0;
         for (int j = 0; j < shape_increaments.size(); j++){
             if ( augmented_ground_truth_faces[j] == -1 && find_times[j] == MAXFINDTIMES+8){
                 int tryTimes = 0;
@@ -307,7 +311,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                     if ( is_face ){
                         float ee = CalculateError(augmented_ground_truth_shapes[j], ppos);
                         if (  ee < trimPosThresh ){
-                            std::cout <<"rescure image:" << j << " image index:" << augmented_images_index[j] << "  error:" << ee <<  std::endl;
+                            //std::cout <<"rescure image:" << j << " image index:" << augmented_images_index[j] << "  error:" << ee <<  std::endl;
                             augmented_current_shapes[j] = ppos;
                             if ( debug_on_ ){
                                 DrawPredictImage(images[augmented_images_index[j]], augmented_current_shapes[j]);
@@ -327,7 +331,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
         }
         
         gettimeofday(&t1, NULL);
-        std::cout << std::endl;
+        std::cout <<"rescure image:" << rcount << std::endl;
         std::cout << "regression error: " <<  error << ": " << error/count << " time:" << t1.tv_sec << std::endl;
 	}
     if ( debug_on_){
