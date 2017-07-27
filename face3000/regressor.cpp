@@ -312,6 +312,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                         float ee = CalculateError(augmented_ground_truth_shapes[j], ppos);
                         if (  ee < trimPosThresh ){
                             //std::cout <<"rescure image:" << j << " image index:" << augmented_images_index[j] << "  error:" << ee <<  std::endl;
+                            rcount++;
                             augmented_current_shapes[j] = ppos;
                             if ( debug_on_ ){
                                 DrawPredictImage(images[augmented_images_index[j]], augmented_current_shapes[j]);
