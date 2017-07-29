@@ -386,12 +386,12 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                         //int ss = find_times[idx] / ( MAXFINDTIMES / 32 );
     //                    for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.1, ss++)){
     //                    int sw_size = 50 + 10 * ss;
-                        for ( int orient = so; orient < 1; orient++ ){
+                        for ( int orient = so; orient < 4; orient++ ){
                             float cols = images[augmented_images_index[idx]].cols;
                             float rows = images[augmented_images_index[idx]].rows;
-                            for ( int sw_size = 32 * std::pow(1.06, ss); sw_size < std::min(cols, rows); sw_size = 32 * std::pow(1.06, ss)){
+                            for ( int sw_size = 50 * std::pow(1.06, ss); sw_size < std::min(cols, rows); sw_size = 50 * std::pow(1.06, ss)){
                                 ss++;
-                                int p = (idx+ss) % true_pos_num_;
+                                int p = (idx+ss+so) % true_pos_num_;
                                 float shuffle_size = sw_size * 0.06;
                                 if ( shuffle_size > 5 ) shuffle_size = 5;
                                 for ( int sw_x = shuffle_size * sx; sw_x<cols - sw_size && sx < 256; sw_x+=shuffle_size){
@@ -513,7 +513,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             if (( search_box.start_y + search_box.height) > rows ) search_box.height = rows - search_box.start_y;
                             
                             
-                            for ( int sw_size = 32 * std::pow(1.1, ss); sw_size < std::min(search_box.width, search_box.height); sw_size = 32 * std::pow(1.1, ss)){
+                            for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(search_box.width, search_box.height); sw_size = 50 * std::pow(1.1, ss)){
                                 ss++;
                                 float shuffle_size = sw_size * 0.1;
                                 //if ( shuffle_size > 15 ) shuffle_size = 15;
@@ -531,7 +531,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         
                                         float delta_start = sqrtf(powf((new_box.start_x - pos_box.start_x), 2.0) + powf((new_box.start_y - pos_box.start_y), 2.0));
                                         float delta_end = sqrtf(powf((new_box.start_x + new_box.width - pos_box.start_x - pos_box.width), 2.0) + powf((new_box.start_y + new_box.height - pos_box.start_y - pos_box.height), 2.0));
-                                        if ( delta_start < 0.3 * pos_box.width && delta_end < 0.3 * pos_box.width ) continue; //判断与正例的位置接近则不采用
+                                        if ( delta_start < 0.4 * pos_box.width && delta_end < 0.4 * pos_box.width ) continue; //判断与正例的位置接近则不采用
                                         if ( (delta_start + delta_end) < 0.5 * pos_box.width  ) continue;
                                         
 //                                        cv::Mat_<float> temp1 = ProjectShape(augmented_ground_truth_shapes[p], augmented_bboxes[p]);
