@@ -267,7 +267,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
         std::cout << "Alignment error:" << ecount << std::endl;
         
         ecount = 0;
-        float trimPosThresh = 2.0 * error / count;
+        float trimPosThresh = 3.0 * error / count;
 //        if ( trimPosThresh < 0.1 ) trimPosThresh = 0.1;
         for (int j = 0; j < shape_increaments.size(); j++){
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
