@@ -1145,6 +1145,8 @@ RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std
     else{
         local_features_num_ = param.local_features_num_ / 4;
     }
+    //这个测试都是单点landmark,不用上面的规则
+    local_features_num_ = param.local_features_num_ / 5;
 	landmark_index_ = landmark_index;
     landmark_num_ = param.landmarks_num_per_face_;
 	tree_depth_ = param.tree_depth_;
