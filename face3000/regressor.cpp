@@ -838,8 +838,8 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
             if ( searchRect.y + searchRect.height > irows + sbox.height * 0.4 ) searchRect.height = irows + sbox.height * 0.4 - searchRect.y;
             cv::Mat_<float> rot;
             cv::transpose(previousFrameRotation, rot);
-            default_shape = params_.mean_shape_ * rot;
-            //default_shape = ProjectShape(lastRes, sbox);
+            //default_shape = params_.mean_shape_ * rot;
+            default_shape = ProjectShape(lastRes, sbox);
             tracking = true;
         }
     }
