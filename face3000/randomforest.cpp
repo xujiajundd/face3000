@@ -158,7 +158,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
             //TODO，这个地方可以试多个策略：1）自己，2）自己和随机一个，3）随机两个
             //TODO，在前2个stage，用3，第三stage用2，后续stage，用1？如何？
             int landmark1, landmark2;
-            if ( stage_ == 0 && landmark_index_ < 17 /*&& landmark_index_ < 50*/ ){
+            if ( false && stage_ == 0 && landmark_index_ < 17 /*&& landmark_index_ < 50*/ ){
                 landmark1 = (int)rd.uniform(0, landmark_num_);
                 landmark2 = (int)rd.uniform(0, landmark_num_);
             }
@@ -513,9 +513,9 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                             if (( search_box.start_y + search_box.height) > rows ) search_box.height = rows - search_box.start_y;
                             
                             
-                            for ( int sw_size = 50 * std::pow(1.1, ss); sw_size < std::min(search_box.width, search_box.height); sw_size = 50 * std::pow(1.1, ss)){
+                            for ( int sw_size = 50 * std::pow(1.2, ss); sw_size < std::min(search_box.width, search_box.height); sw_size = 50 * std::pow(1.2, ss)){
                                 ss++;
-                                float shuffle_size = sw_size * 0.1;
+                                float shuffle_size = sw_size * 0.2;
                                 //if ( shuffle_size > 15 ) shuffle_size = 15;
                                 for ( int sw_x = shuffle_size * sx; sw_x<search_box.width - sw_size && sx < 256; sw_x+=shuffle_size){
                                     sx++;
