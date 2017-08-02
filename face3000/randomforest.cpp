@@ -948,8 +948,8 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 //    if ( stage_ == 0 && landmark_index_ < 10 ) df = 0.9;
 //    if ( stage_ == 1 && landmark_index_ > 26 && landmark_index_ < 35 ) df = 0.8;
 //    if ( stage_ == 2 && landmark_index_ > 35 && landmark_index_ < 48 ) df = 0.7;
-    if ( stage_ == 3 && landmark_index_ > 26 && landmark_index_ < 35 ) df = 0.5;
-    if ( stage_ == 4 && landmark_index_ > 35 && landmark_index_ < 48 ) df = 0.5;
+//    if ( stage_ == 3 && landmark_index_ > 26 && landmark_index_ < 35 ) df = 0.5;
+//    if ( stage_ == 4 && landmark_index_ > 35 && landmark_index_ < 48 ) df = 0.5;
     
 
     
@@ -1146,7 +1146,7 @@ RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std
         local_features_num_ = param.local_features_num_ / 4;
     }
     //这个测试都是单点landmark,不用上面的规则
-    local_features_num_ = param.local_features_num_ / 5;
+    local_features_num_ = param.local_features_num_;
 	landmark_index_ = landmark_index;
     landmark_num_ = param.landmarks_num_per_face_;
 	tree_depth_ = param.tree_depth_;
