@@ -87,7 +87,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "video mv0724"
+            argument = "video mv0801"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

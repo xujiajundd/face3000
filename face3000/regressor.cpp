@@ -115,7 +115,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                 augmented_ground_truth_faces.push_back(ground_truth_faces[i]);
                 augmented_bboxes.push_back(ibox);
                 cv::Mat_<float> temp; // = ground_truth_shapes_[index];
-                if ( true || j == 0 ){
+                if ( false && j == 0 ){
     //                temp = ProjectShape(temp, bboxes_[index]);
     //                temp = ReProjection(temp, ibox);
                     int tryTimes = 0;
@@ -838,8 +838,8 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
             if ( searchRect.y + searchRect.height > irows + sbox.height * 0.4 ) searchRect.height = irows + sbox.height * 0.4 - searchRect.y;
             cv::Mat_<float> rot;
             cv::transpose(previousFrameRotation, rot);
-            //default_shape = params_.mean_shape_ * rot;
-            default_shape = ProjectShape(lastRes, sbox);
+            default_shape = params_.mean_shape_ * rot;
+            //default_shape = ProjectShape(lastRes, sbox);
             tracking = true;
         }
     }
