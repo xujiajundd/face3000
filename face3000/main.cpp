@@ -638,17 +638,17 @@ void Train(const char* ModelName){
 //    params.local_radius_by_stage_.push_back(0.05);
 //    params.local_radius_by_stage_.push_back(0.03);
     
-    params.detect_factor_by_stage_.push_back(0.8);
     params.detect_factor_by_stage_.push_back(0.7);
     params.detect_factor_by_stage_.push_back(0.6);
     params.detect_factor_by_stage_.push_back(0.5);
     params.detect_factor_by_stage_.push_back(0.4);
+    params.detect_factor_by_stage_.push_back(0.3);
     params.detect_factor_by_stage_.push_back(0.9);
     params.detect_factor_by_stage_.push_back(0.4);
     params.detect_factor_by_stage_.push_back(0.2);
     
     params.tree_depth_ = 3;
-    params.trees_num_per_forest_ = 6;
+    params.trees_num_per_forest_ = 8;
     params.initial_guess_ = 2;
 
 //    params.group_num_ = 6;
