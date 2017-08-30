@@ -899,10 +899,11 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
                 struct feature_node_short *fnode = f_nodes[candCount];
                 int cc = candCount;
                 regressors_[0].GetGlobalBinaryFeaturesShort(image, default_shape, box, initRotation, scale, score, is_face, lastThreshold, fnode);
-                if ( is_face != 1){
+                if ( is_face != 1 && !tracking){
                     continue;
                 }
-                candCount++;
+                if ( is_face )
+                    candCount++;
                 int foundNear = 0;
                 int notFoundCount = 0;
                 if ( !tracking ) stepX = 1; //非跟踪模式不做精细搜索
@@ -965,7 +966,7 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
                     for ( int p=0; p<foundNear; p++)
                         candidates.pop_back(); //这么搞max，min有可能会不对的
                 }
-                else {
+                else if ( is_face ){
 //                    cv::Mat_<float> result_shape = shape_increaments + default_shape;
                     struct candidate cand;
 //                    cand.shape = result_shape;
@@ -1001,13 +1002,29 @@ _label_search_1:
             std::cout << cand.no <<"   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << std::endl;
         }
     
-    if ( candidates.size() < 3 || (candidates.size() < 5 && !tracking) ){ //第一没有足够neighbor可能是误识别
+    if ( candidates.size() < 3 || (candidates.size() < 16 && !tracking) ){ //第一没有足够neighbor可能是误识别
         return false;
     }
     
+//看一下初始的识别区域
+//    cv::Mat_<uchar> img = image.clone();
+//    for ( int i = 0; i<candidates.size(); i++){
+//        struct candidate& cand = candidates[i];
+// 
+//        cv::Rect rect;
+//        rect.x = cand.box.start_x;
+//        rect.y = cand.box.start_y;
+//        rect.width = cand.box.width;
+//        rect.height = cand.box.height;
+//        cv::rectangle(img, rect, (255), 1);
+//    }
+//    cv::imshow("show image", img);
+//    cv::waitKey(0);
+    
+    
     //处理candidates，删除排名靠后的。
     std::vector<struct candidate>::iterator it;
-    int h = (int)candidates.size() - trimNum + trimNum/10;
+    int h = 0;//(int)candidates.size() - trimNum + trimNum/10;
     if ( h < 0 || tracking ) h = 0;
     for ( it = candidates.begin(); it != candidates.end();){
         struct candidate& cand = *it;
@@ -1048,6 +1065,15 @@ _label_search_1:
             if ( cand.score < minScore ) minScore = cand.score;
         }
         
+        //log
+        std::cout << std::endl;
+        std::cout << "candidates:" << candidates.size() << std::endl;
+        for ( int j = 0; j<candidates.size(); j++){
+            struct candidate& cand = candidates[j];
+            std::cout << cand.no << "   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << "    " << cand.ss[4] << std::endl;
+        }
+        
+        
         //剔除非人脸
         for ( it = candidates.begin(); it != candidates.end();){
             struct candidate& cand = *it;
@@ -1058,8 +1084,9 @@ _label_search_1:
                 ++it;
             }
         }
-        if ( candidates.size() < ( params_.predict_regressor_stages_ - i - 1) ){ //中间阶段没有neighbor也可能是误识别
-            return false;
+        if ( !tracking && candidates.size() < ( params_.predict_regressor_stages_ - i - 1) ){ //中间阶段没有neighbor也可能是误识别
+            if ( maxScore < 0 )
+                return false;
         }
         //处理candidates，删除排名靠后的
         std::vector<struct candidate>::iterator it;
@@ -1081,13 +1108,13 @@ _label_search_1:
             }
         }
         
-        //log
-        std::cout << std::endl;
-        std::cout << "candidates:" << candidates.size() << std::endl;
-        for ( int j = 0; j<candidates.size(); j++){
-            struct candidate& cand = candidates[j];
-            std::cout << cand.no << "   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << std::endl;
-        }
+//        //log
+//        std::cout << std::endl;
+//        std::cout << "candidates:" << candidates.size() << std::endl;
+//        for ( int j = 0; j<candidates.size(); j++){
+//            struct candidate& cand = candidates[j];
+//            std::cout << cand.no << "   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << "    " << cand.ss[4] << std::endl;
+//        }
     }
     
     if ( candidates.size() == 0 ){
@@ -1099,6 +1126,9 @@ _label_search_1:
             if ( candidates[i].score > cand.score ){
                 cand = candidates[i];
             }
+        }
+        if ( !tracking && cand.score < 0 ){
+            return false;
         }
         shape = ReProjection(cand.shape, cand.box);
         previousFrameRotation = cand.rotation;

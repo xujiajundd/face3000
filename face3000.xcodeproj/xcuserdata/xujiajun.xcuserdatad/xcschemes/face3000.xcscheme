@@ -83,12 +83,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "hello"
-            isEnabled = "NO">
+            argument = "annotate /Users/xujiajun/developer/dataset/xujj/newTrain/test"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "video mv0801"
-            isEnabled = "YES">
+            argument = "annotate /Users/xujiajun/developer/dataset/xujj/newTrain/negtest"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>
