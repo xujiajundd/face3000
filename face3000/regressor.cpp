@@ -137,7 +137,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                             }
                         }
                         tryTimes++;
-                    } while ( CalculateError(ground_truth_shapes[i], temp) > 0.6  && tryTimes < 20); //这个地方可能会死循环的
+                    } while ( CalculateError(ground_truth_shapes[i], temp) > 0.8  && tryTimes < 20); //这个地方可能会死循环的
                 }
                 else{
                     cv::Mat_<float> rotation;
@@ -151,7 +151,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
                         temp = ReProjection(params_.mean_shape_ * rot, ibox);
 //                        DrawPredictImage(images[i], temp);
                         tryTimes++;
-                    } while ( CalculateError(ground_truth_shapes[i], temp) > 0.6 && tryTimes < 20 );
+                    } while ( CalculateError(ground_truth_shapes[i], temp) > 0.8 && tryTimes < 20 );
 //                getSimilarityTransform(params_.mean_shape_, ProjectShape(ground_truth_shapes_[index], bboxes_[index]), rotation, scale);
                 }
                 augmented_current_shapes.push_back(temp);
@@ -250,7 +250,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 			augmented_current_shapes[j] = ReProjection(augmented_current_shapes[j], augmented_bboxes[j]);
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
                 float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
-                if ( e * (2+i) > 1.0){
+                if ( e * (2+i) > 1.4){
                     //表示本阶段alignment的结果比较差，取消作为正例
                     find_times[j] = MAXFINDTIMES+8;
                     augmented_ground_truth_faces[j] = -1;
@@ -267,7 +267,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
         std::cout << "Alignment error:" << ecount << std::endl;
         
         ecount = 0;
-        float trimPosThresh = 3.0 * error / count;
+        float trimPosThresh = 4.0 * error / count;
 //        if ( trimPosThresh < 0.1 ) trimPosThresh = 0.1;
         for (int j = 0; j < shape_increaments.size(); j++){
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差

@@ -63,8 +63,8 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "video mv0206"
-            isEnabled = "NO">
+            argument = "video mv0802"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "video model_t6d4n8i2"
@@ -84,7 +84,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "annotate /Users/xujiajun/developer/dataset/xujj/newTrain/test"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "annotate /Users/xujiajun/developer/dataset/xujj/newTrain/negtest"
