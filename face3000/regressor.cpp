@@ -21,13 +21,13 @@ CascadeRegressor::CascadeRegressor(){
     previousFrameShapes.clear();
     std::cout << "CascadeRegressor created" << std::endl;
     isLoaded = false;
-    trimNum = 80;
+    trimNum = 120;
     trimFactor = 0.5;
-    scaleFactor = 1.2;
+    scaleFactor = 1.15;
     flags = 0 | CASCADE_FLAG_TRACK_MODE;
     defaultMinSize = 100;
-    shuffle = 0.4;
-    searchPriority = CASCADE_PRIORITY_NORMAL;
+    shuffle = 0.2;
+    searchPriority = CASCADE_PRIORITY_ACCURACY;
     cameraOrient = CASCADE_ORIENT_TOP_LEFT;
     f_nodes = new feature_node_short*[3*trimNum];
     for ( int i=0; i<3*trimNum; i++ ){
@@ -910,7 +910,7 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
                     for (int dy = -1; dy <= 1; dy++){
                         scan_count++;
                         BoundingBox boxNear = box;
-                        boxNear.start_x = box.start_x + dx * currentSize * (5 - stepX ) * 0.025;
+                        boxNear.start_x = box.start_x + dx * currentSize * (5 - stepX ) * 0.02;
                         boxNear.start_y = box.start_y + dy * currentSize * 0.08;
                         boxNear.center_x = boxNear.start_x + boxNear.height * 0.5;
                         boxNear.center_y = boxNear.start_y + boxNear.height * 0.5;
@@ -1105,7 +1105,7 @@ _label_search_1:
         gettimeofday(&previousFrameTime, NULL);
         
         //    add by xujj, 做一个小幅抖动滤波，这个在detect时无效了。。。
-        antiJitter = 0;
+        antiJitter = 1;
         cv::Mat_<float> res = shape;
         if ( antiJitter == 1 && params_.landmarks_num_per_face_ == 68 ){
             float jitterScope = cand.box.width / 30;
