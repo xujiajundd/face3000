@@ -78,6 +78,30 @@ enum{
     CASCADE_PRIORITY_ACCURACY = 3
 };
 
+class Tracker{
+public:
+    int trackCount;
+    int maxTrackId;
+    struct trackItem{
+        int trackId;
+        struct timeval previousTime;
+        cv::Mat_<float> previousShape;
+        cv::Mat_<float> previousRotation;
+        BoundingBox     previousBox;
+    };
+    std::vector<struct trackItem> trackItems;
+    std::vector<int> lostTrackIdsLeft;
+    std::vector<int> lostTrackIdsRight;
+public:
+    Tracker();
+    ~Tracker();
+    bool isTracking(int i);
+    void deTracking(int i, cv::Mat_<uchar>& image);
+    bool isBoxInTrackingArea(BoundingBox box);
+    int track(int trackId, cv::Mat_<float>& shape, cv::Mat_<float>& rotation, BoundingBox& box, cv::Mat_<uchar> &image);
+};
+
+
 class CascadeRegressor {
 public:
 	Parameters params_;
@@ -98,11 +122,15 @@ public:
     float trimFactor;
     float scaleFactor;
     int flags;
-    int defaultMinSize;
+//    int defaultMinSize;
+    int minSizeFactor;
     float shuffle;
     int searchPriority;
     int cameraOrient;
+    bool multiOrientSupport;
     struct feature_node_short **f_nodes;
+    Tracker tracker;
+    
 public:
 	CascadeRegressor();
     ~CascadeRegressor();

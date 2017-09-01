@@ -83,7 +83,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "annotate /Users/xujiajun/developer/dataset/xujj/newTrain/test"
+            argument = "annotate /Users/xujiajun/developer/dataset/xujj/newTrain/test3"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

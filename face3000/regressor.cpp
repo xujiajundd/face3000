@@ -10,9 +10,10 @@
 
 //#endif
 
+#define logDisplay true
 
 CascadeRegressor::CascadeRegressor(){
-    lastRes = cv::Mat_<float>(68,2,0.0);
+    previousFrameShape = cv::Mat_<float>(68,2,0.0);
     previousScanTime.tv_sec = 0;
     previousScanTime.tv_usec = 0;
     previousFrameTime.tv_sec = 0;
@@ -25,10 +26,12 @@ CascadeRegressor::CascadeRegressor(){
     trimFactor = 0.5;
     scaleFactor = 1.15;
     flags = 0 | CASCADE_FLAG_TRACK_MODE;
-    defaultMinSize = 100;
+//    defaultMinSize = 100;
+    minSizeFactor = 6;
     shuffle = 0.2;
     searchPriority = CASCADE_PRIORITY_ACCURACY;
     cameraOrient = CASCADE_ORIENT_TOP_LEFT;
+    multiOrientSupport = false;
     f_nodes = new feature_node_short*[3*trimNum];
     for ( int i=0; i<3*trimNum; i++ ){
         f_nodes[i] = NULL;
@@ -755,7 +758,8 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
     struct timeval current_time;
     gettimeofday(&current_time, NULL);
     int maxSize;
-    int minSize = defaultMinSize;
+    int minSize;
+    
     cv::Rect searchRect;
     cv::Mat_<float> default_shape;
     BoundingBox sbox;
@@ -792,29 +796,55 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
             break;
     }
     
-    static uint full_scans = 0;
+    minSize = std::min(icols, irows) / minSizeFactor;
+    static uint full_scans = 1;
     if ( track_mode ){
         //跟踪模式，首先是时间与上次帧在200ms之内，然后，计算defaultshape和框。
-        if (((current_time.tv_sec - previousFrameTime.tv_sec)*(long long)1000000 + current_time.tv_usec - previousFrameTime.tv_usec) > (long long)200000 ){
+        long long frameTimeInterval = (current_time.tv_sec - previousFrameTime.tv_sec)*(long long)1000000 + current_time.tv_usec - previousFrameTime.tv_usec;
+        if ( frameTimeInterval > (long long)200000 ){
+//        if (((current_time.tv_sec - previousFrameTime.tv_sec)*(long long)1000000 + current_time.tv_usec - previousFrameTime.tv_usec) > (long long)200000 ){
             //没有有效的上次识别
-            if (((current_time.tv_sec - previousScanTime.tv_sec)*(long long)1000000 + current_time.tv_usec - previousScanTime.tv_usec ) > (long long)200000 ){
+            long long scanTimeInterval = (current_time.tv_sec - previousScanTime.tv_sec)*(long long)1000000 + current_time.tv_usec - previousScanTime.tv_usec;
+            if (scanTimeInterval > 200000 ){
+//            if (((current_time.tv_sec - previousScanTime.tv_sec)*(long long)1000000 + current_time.tv_usec - previousScanTime.tv_usec ) > (long long)200000 ){
                 //做一次全局扫描
                 maxSize = 0.9 * std::min(icols, irows);
                 searchRect.x = 0; searchRect.y = 0; searchRect.width = icols; searchRect.height = irows;
-                float rpi;
-                if ( true || full_scans % 2 != 0 ){
-                    rpi = 0;
+                
+                if ( multiOrientSupport ){
+                    float rpi;
+                    if ( full_scans % 2 != 0 ){
+                        rpi = 0;
+                    }
+                    else{
+                        rpi = (( full_scans / 2 ) % 3 + 1 ) * M_PI_2;
+                    }
+                    full_scans++;
+                    cv::Mat_<float> rot(2, 2);
+                    rot(0, 0) = cosf(rpi);
+                    rot(1, 0) = sinf(rpi);
+                    rot(0, 1) = -sinf(rpi);
+                    rot(1, 1) = cosf(rpi);
+                    default_shape = params_.mean_shape_ * rot;
                 }
                 else{
-                    rpi = (( full_scans / 2 ) % 5 + 1 ) * 0.3333333 * M_PI;
+                    default_shape = params_.mean_shape_;
                 }
-                full_scans++;
-                cv::Mat_<float> rot(2, 2);
-                rot(0, 0) = cosf(rpi);
-                rot(1, 0) = sinf(rpi);
-                rot(0, 1) = -sinf(rpi);
-                rot(1, 1) = cosf(rpi);
-                default_shape = params_.mean_shape_ * rot;
+                
+//                float rpi;
+//                if ( true || full_scans % 2 != 0 ){
+//                    rpi = 0;
+//                }
+//                else{
+//                    rpi = (( full_scans / 2 ) % 5 + 1 ) * 0.3333333 * M_PI;
+//                }
+//                full_scans++;
+//                cv::Mat_<float> rot(2, 2);
+//                rot(0, 0) = cosf(rpi);
+//                rot(1, 0) = sinf(rpi);
+//                rot(0, 1) = -sinf(rpi);
+//                rot(1, 1) = cosf(rpi);
+//                default_shape = params_.mean_shape_ * rot;
                 gettimeofday(&previousScanTime, NULL);
                 tracking = false;
             }
@@ -825,7 +855,7 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
             }
         }
         else{
-            sbox = CalculateBoundingBoxRotation(lastRes, previousFrameRotation);//CalculateBoundingBox(lastRes);
+            sbox = CalculateBoundingBoxRotation(previousFrameShape, previousFrameRotation);//CalculateBoundingBox(previousFrameShape);
             minSize = sbox.width;
             maxSize = sbox.width;
             searchRect.x = sbox.start_x;
@@ -839,7 +869,7 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
             cv::Mat_<float> rot;
             cv::transpose(previousFrameRotation, rot);
             default_shape = params_.mean_shape_ * rot;
-            //default_shape = ProjectShape(lastRes, sbox);
+            //default_shape = ProjectShape(previousFrameShape, sbox);
             tracking = true;
         }
     }
@@ -848,6 +878,10 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
         searchRect.x = 0; searchRect.y = 0; searchRect.width = icols; searchRect.height = irows;
         default_shape = params_.mean_shape_;
         tracking = false;
+        previousScanTime.tv_sec = 0;
+        previousScanTime.tv_usec = 0;
+        previousFrameTime.tv_sec = 0;
+        previousFrameTime.tv_usec = 0;
     }
     
     struct candidate{
@@ -858,9 +892,9 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
         float scale;
         float lastThreshold;
         int is_face;
-                float ss[5];
-                int no;
-                int size;
+        float ss[5];
+        int no;
+        int size;
         struct feature_node_short *fnode;
     };
     int candCount = 0;
@@ -952,9 +986,9 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
                         cand.score = score;
                         cand.is_face = is_face;
                         cand.lastThreshold = lastThreshold;
-                                                cand.no = cc;
-                                                cand.ss[0] = score;
-                                                cand.size = currentSize;
+                        cand.no = cc;
+                        cand.ss[0] = score;
+                        cand.size = currentSize;
                         cand.fnode = fnode;
                         candidates.push_back(cand);
                         if ( cand.score > maxScore ) maxScore = cand.score;
@@ -976,9 +1010,9 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
                     cand.score = score;
                     cand.is_face = is_face;
                     cand.lastThreshold = lastThreshold;
-                                        cand.no = cc;
-                                        cand.ss[0] = score;
-                                        cand.size = currentSize;
+                    cand.no = cc;
+                    cand.ss[0] = score;
+                    cand.size = currentSize;
                     cand.fnode = fnode;
                     candidates.push_back(cand);
                     if ( cand.score > maxScore ) maxScore = cand.score;
@@ -994,13 +1028,14 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
     }
     
 _label_search_1:
-
+    if ( logDisplay){
         std::cout << std::endl;
         std::cout << "***************scan:" << scan_count << " candidates:" << candidates.size() << std::endl;
         for ( int j = 0; j<candidates.size(); j++){
             struct candidate& cand = candidates[j];
             std::cout << cand.no <<"   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << std::endl;
         }
+    }
     
     if ( candidates.size() < 3 || (candidates.size() < 16 && !tracking) ){ //第一没有足够neighbor可能是误识别
         return false;
@@ -1038,7 +1073,12 @@ _label_search_1:
             ++it;
         }
     }
+    
+    if ( logDisplay){
         std::cout << "trimmed:" << scan_count << " candidates:" << candidates.size() << std::endl;
+    }
+    
+    //TODO:这个地方如果cand超过5个,还可以继续删减
     
     for ( int i = 0; i<candidates.size(); i++){
         struct candidate& cand = candidates[i];
@@ -1060,19 +1100,20 @@ _label_search_1:
                 continue;
             }
 //            cand.shape = shape_increaments + cand.shape;
-                        cand.ss[i] = cand.score;
+            cand.ss[i] = cand.score;
             if ( cand.score > maxScore ) maxScore = cand.score;
             if ( cand.score < minScore ) minScore = cand.score;
         }
         
         //log
-        std::cout << std::endl;
-        std::cout << "candidates:" << candidates.size() << std::endl;
-        for ( int j = 0; j<candidates.size(); j++){
-            struct candidate& cand = candidates[j];
-            std::cout << cand.no << "   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << "    " << cand.ss[4] << std::endl;
+        if ( logDisplay ){
+            std::cout << std::endl;
+            std::cout << "candidates:" << candidates.size() << std::endl;
+            for ( int j = 0; j<candidates.size(); j++){
+                struct candidate& cand = candidates[j];
+                std::cout << cand.no << "   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << "    " << cand.ss[4] << std::endl;
+            }
         }
-        
         
         //剔除非人脸
         for ( it = candidates.begin(); it != candidates.end();){
@@ -1084,6 +1125,7 @@ _label_search_1:
                 ++it;
             }
         }
+        
         if ( !tracking && candidates.size() < ( params_.predict_regressor_stages_ - i - 1) ){ //中间阶段没有neighbor也可能是误识别
             if ( maxScore < 0 )
                 return false;
@@ -1092,7 +1134,7 @@ _label_search_1:
         std::vector<struct candidate>::iterator it;
         for ( it = candidates.begin(); it != candidates.end();){
             struct candidate& cand = *it;
-            if ( cand.score < ((1.0-trimFactor)*minScore + trimFactor*maxScore ) ){
+            if ( cand.score < ((1.0-trimFactor)*minScore + trimFactor*maxScore - 1.0) ){
                 it = candidates.erase(it);
             }
             else{
@@ -1131,8 +1173,8 @@ _label_search_1:
             return false;
         }
         shape = ReProjection(cand.shape, cand.box);
-        previousFrameRotation = cand.rotation;
-        gettimeofday(&previousFrameTime, NULL);
+//        previousFrameRotation = cand.rotation;
+//        gettimeofday(&previousFrameTime, NULL);
         
         //    add by xujj, 做一个小幅抖动滤波，这个在detect时无效了。。。
         antiJitter = 1;
@@ -1143,8 +1185,8 @@ _label_search_1:
             if ( jitterScope < 1.0 ) jitterScope = 1.0;
             float alphax=0, alphay=0;
             for ( int j=17; j<54; j++){
-                alphax += fabs(res(j,0)-lastRes(j,0)) / jitterScope;
-                alphay += fabs(res(j,1)-lastRes(j,1)) / jitterScope;
+                alphax += fabs(res(j,0)-previousFrameShape(j,0)) / jitterScope;
+                alphay += fabs(res(j,1)-previousFrameShape(j,1)) / jitterScope;
             }
             alphax /= 39;
             alphay /= 39;
@@ -1156,22 +1198,27 @@ _label_search_1:
             if ( alphay2 > 1.0 ) alphay2 = 1.0;
             for ( int j=0; j<68; j++){
                 if ( (j >= 12 && j <= 16) || (j >= 55 && j <= 59)  || (j >= 65 && j <= 67) ){
-                    shape(j,0) = ((1.0-alphax2)*lastRes(j,0) + alphax2*res(j,0));
-                    shape(j,1) = ((1.0-alphay2)*lastRes(j,1) + alphay2*res(j,1));
+                    shape(j,0) = ((1.0-alphax2)*previousFrameShape(j,0) + alphax2*res(j,0));
+                    shape(j,1) = ((1.0-alphay2)*previousFrameShape(j,1) + alphay2*res(j,1));
                     
                 }
                 else{
-                    shape(j,0) = ((1.0-alphax)*lastRes(j,0) + alphax*res(j,0));
-                    shape(j,1) = ((1.0-alphay)*lastRes(j,1) + alphay*res(j,1));
+                    shape(j,0) = ((1.0-alphax)*previousFrameShape(j,0) + alphax*res(j,0));
+                    shape(j,1) = ((1.0-alphay)*previousFrameShape(j,1) + alphay*res(j,1));
                 }
             }
         }
-        
-        lastRes = shape;
+        if ( track_mode ){
+            previousFrameShape = shape;
+            previousFrameRotation = cand.rotation;
+            gettimeofday(&previousFrameTime, NULL);
+        }
+//        previousFrameShape = shape;
         rect.x = cand.box.start_x;
         rect.y = cand.box.start_y;
         rect.width = cand.box.width;
         rect.height = cand.box.height;
+        full_scans = 1;
         return true;
     }
 }
@@ -1373,18 +1420,18 @@ _destfor:
 //        if ( antiJitter == 1 && params_.landmarks_num_per_face_ == 68 ){
 //            float alphax=0, alphay=0;
 //            for ( int j=17; j<68; j++){
-//                alphax += fabs(res(j,0)-lastRes(j,0)) / 6.0;
-//                alphay += fabs(res(j,1)-lastRes(j,1)) / 6.0;
+//                alphax += fabs(res(j,0)-previousFrameShape(j,0)) / 6.0;
+//                alphay += fabs(res(j,1)-previousFrameShape(j,1)) / 6.0;
 //            }
 //            alphax /= 53;
 //            alphay /= 53;
 //            if (alphax > 1.0 ) alphax = 1.0;
 //            if (alphay > 1.0 ) alphay = 1.0;
 //            for ( int j=0; j<68; j++){
-//                lastRes(j,0) = ((1.0-alphax)*lastRes(j,0) + alphax*res(j,0));
-//                lastRes(j,1) = ((1.0-alphay)*lastRes(j,1) + alphay*res(j,1));
+//                previousFrameShape(j,0) = ((1.0-alphax)*previousFrameShape(j,0) + alphax*res(j,0));
+//                previousFrameShape(j,1) = ((1.0-alphay)*previousFrameShape(j,1) + alphay*res(j,1));
 //            }
-//            shapes[0] = lastRes;
+//            shapes[0] = previousFrameShape;
 //        }
     }
     return faces;
@@ -2410,4 +2457,176 @@ void Regressor::SaveRegressor(std::string ModelName, int stage){
 		save_model_bin(fout, linear_model_y_[i]);
         fout.close();
 	}
+}
+
+
+
+bool box_overlap(BoundingBox box1, BoundingBox box2, float threshold){
+    float sx = std::max(box1.start_x, box2.start_x);
+    float sy = std::max(box1.start_y, box2.start_y);
+    float ex = std::min(box1.start_x+box1.width, box2.start_x+box2.width);
+    float ey = std::min(box1.start_y+box1.height, box2.start_y+box2.height);
+    float oversquare = 0;
+    if ( ex > sx && ey > sy ){
+        oversquare = (ex - sx)*(ey - sy);
+    }
+    
+    float square1 = box1.width * box1.height;
+    float square2 = box2.width * box2.height;
+    
+    if ( oversquare > threshold * std::min(square1, square2)) {
+        return true;
+    }
+    
+    return false;
+}
+
+cv::Mat_<float> jitterSmooth(cv::Mat_<float>& shape, cv::Mat_<float>& previousShape, BoundingBox& box){
+    //    add by xujj, 做一个小幅抖动滤波，这个在detect时无效了。。。
+    cv::Mat_<float> res = shape;
+    float jitterScope = box.width / 20;
+    if ( jitterScope > 10.0 ) jitterScope = 10.0;
+    if ( jitterScope < 1.0 ) jitterScope = 1.0;
+    float alphax=0, alphay=0;
+    for ( int j=17; j<54; j++){
+        alphax += fabs(res(j,0)-previousShape(j,0)) / jitterScope;
+        alphay += fabs(res(j,1)-previousShape(j,1)) / jitterScope;
+    }
+    alphax /= 39;
+    alphay /= 39;
+    if (alphax > 1.0 ) alphax = 1.0;
+    if (alphay > 1.0 ) alphay = 1.0;
+    float alphax2 = 2.5 * alphax;
+    float alphay2 = 2.5 * alphay;
+    if ( alphax2 > 1.0 ) alphax2 = 1.0;
+    if ( alphay2 > 1.0 ) alphay2 = 1.0;
+    for ( int j=0; j<68; j++){
+        if ( (j >= 12 && j <= 16) || (j >= 55 && j <= 59)  || (j >= 65 && j <= 67) ){
+            shape(j,0) = ((1.0-alphax2)*previousShape(j,0) + alphax2*res(j,0));
+            shape(j,1) = ((1.0-alphay2)*previousShape(j,1) + alphay2*res(j,1));
+            
+        }
+        else{
+            shape(j,0) = ((1.0-alphax)*previousShape(j,0) + alphax*res(j,0));
+            shape(j,1) = ((1.0-alphay)*previousShape(j,1) + alphay*res(j,1));
+        }
+    }
+    return shape;
+}
+
+Tracker::Tracker()
+{
+    trackCount = 0;
+    maxTrackId = 0;
+    trackItems.clear();
+}
+
+Tracker::~Tracker()
+{
+    
+}
+
+bool Tracker::isTracking(int i)
+{
+    struct timeval current_time;
+    gettimeofday(&current_time, NULL);
+    long long frameTimeInterval = (current_time.tv_sec - trackItems[i].previousTime.tv_sec)*(long long)1000000 + current_time.tv_usec - trackItems[i].previousTime.tv_usec;
+    if ( frameTimeInterval < 150000 ){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+void Tracker::deTracking(int i, cv::Mat_<uchar>& image)
+{
+    std::vector<struct trackItem>::iterator it;
+    int ii = 0;
+    for ( it = trackItems.begin(); it != trackItems.end();){
+        struct trackItem & item = *it;
+        if ( ii == i ){
+            if ( item.previousBox.center_x < image.cols/2 ){
+                lostTrackIdsLeft.push_back(item.trackId);
+            }
+            else{
+                lostTrackIdsRight.push_back(item.trackId);
+            }
+            it = trackItems.erase(it);
+            break;
+        }
+        else{
+            ++it;
+            ++ii;
+        }
+    }
+    trackCount = trackItems.size();
+}
+
+bool Tracker::isBoxInTrackingArea(BoundingBox box)
+{
+    for ( int i=0; i<trackItems.size(); i++){
+        struct trackItem & item = trackItems[i];
+        if ( box_overlap(box, item.previousBox, 0.2)){
+            return true;
+        }
+    }
+    return false;
+}
+
+int Tracker::track(int trackId, cv::Mat_<float>& shape, cv::Mat_<float>& rotation, BoundingBox& box, cv::Mat_<uchar> &image)
+{
+    if ( trackId >= 0 ){
+        std::vector<struct trackItem>::iterator it;
+        for ( it = trackItems.begin(); it != trackItems.end();){
+            struct trackItem & item = *it;
+            if ( item.trackId == trackId){
+                shape = jitterSmooth(shape, item.previousShape, box);
+                item.previousShape = shape;
+                item.previousRotation = rotation;
+                struct timeval current_time;
+                gettimeofday(&current_time, NULL);
+                item.previousTime = current_time;
+                item.previousBox = box;
+                break;
+            }
+            else{
+                ++it;
+            }
+        }
+    }
+    else{
+        struct trackItem item;
+        if (box.center_x < image.cols / 2){
+            if ( lostTrackIdsLeft.size() > 0 ){
+                trackId = lostTrackIdsLeft.back();
+                lostTrackIdsLeft.pop_back();
+            }
+            else{
+                maxTrackId++;
+                trackId = maxTrackId;
+            }
+        }
+        else{
+            if ( lostTrackIdsRight.size() > 0 ){
+                trackId = lostTrackIdsRight.back();
+                lostTrackIdsRight.pop_back();
+            }
+            else{
+                maxTrackId++;
+                trackId = maxTrackId;
+            }
+        }
+        
+        item.trackId = trackId;
+        item.previousShape = shape;
+        item.previousRotation = rotation;
+        struct timeval current_time;
+        gettimeofday(&current_time, NULL);
+        item.previousTime = current_time;
+        item.previousBox = box;
+        trackItems.push_back(item);
+    }
+    trackCount = trackItems.size();
+    return trackId;
 }

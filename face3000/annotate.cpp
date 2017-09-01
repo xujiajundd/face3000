@@ -69,7 +69,11 @@ public:
             cv::Mat_<uchar> grayImage;
             cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
             cv::Rect rect;
+            struct timeval t1, t2;
+            gettimeofday(&t1, NULL);
             bool ret = face_detector.detectOne(grayImage, rect, shape);
+            gettimeofday(&t2, NULL);
+            cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " isface:" << ret << endl;
             if ( ret > 0 ){
                 shape = reConvertShape(shape);
             }
