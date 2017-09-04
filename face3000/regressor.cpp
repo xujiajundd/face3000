@@ -22,7 +22,7 @@ CascadeRegressor::CascadeRegressor(){
     previousFrameShapes.clear();
     std::cout << "CascadeRegressor created" << std::endl;
     isLoaded = false;
-    trimNum = 120;
+    trimNum = 100;
     trimFactor = 0.5;
     scaleFactor = 1.15;
     flags = 0 | CASCADE_FLAG_TRACK_MODE;
@@ -253,7 +253,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
 			augmented_current_shapes[j] = ReProjection(augmented_current_shapes[j], augmented_bboxes[j]);
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
                 float e = CalculateError(augmented_ground_truth_shapes[j], augmented_current_shapes[j]);
-                if ( e * (2+i) > 1.4){
+                if ( e * (2+i) > 1.0){
                     //表示本阶段alignment的结果比较差，取消作为正例
                     find_times[j] = MAXFINDTIMES+8;
                     augmented_ground_truth_faces[j] = -1;
@@ -270,7 +270,7 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
         std::cout << "Alignment error:" << ecount << std::endl;
         
         ecount = 0;
-        float trimPosThresh = 4.0 * error / count;
+        float trimPosThresh = 2.0 * error / count;
 //        if ( trimPosThresh < 0.1 ) trimPosThresh = 0.1;
         for (int j = 0; j < shape_increaments.size(); j++){
             if ( augmented_ground_truth_faces[j] == 1){ //pos example才计算误差
@@ -751,6 +751,25 @@ bool box_overlap(BoundingBox box1, BoundingBox box2){
     return false;
 }
 
+struct candidate{
+    float score;
+    float score16;
+    BoundingBox box;
+    cv::Mat_<float> shape;
+    cv::Mat_<float> rotation;
+    float scale;
+    float lastThreshold;
+    int is_face;
+    float ss[5];
+    int no;
+    int size;
+    struct feature_node_short *fnode;
+};
+
+int my_cmp(struct candidate& cand1, struct candidate& cand2)
+{
+    return cand1.score > cand2.score;
+};
 
 bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat_<float>& shape){
     int track_mode = flags & CASCADE_FLAG_TRACK_MODE;
@@ -884,19 +903,7 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
         previousFrameTime.tv_usec = 0;
     }
     
-    struct candidate{
-        float score;
-        BoundingBox box;
-        cv::Mat_<float> shape;
-        cv::Mat_<float> rotation;
-        float scale;
-        float lastThreshold;
-        int is_face;
-        float ss[5];
-        int no;
-        int size;
-        struct feature_node_short *fnode;
-    };
+
     int candCount = 0;
     std::vector<struct candidate> candidates;
     candidates.reserve(2*trimNum);
@@ -981,13 +988,13 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
                         struct candidate cand;
 //                        cand.shape = result_shape;
                         cand.box = boxNear;
-                        cand.rotation = initRotation;
+                        cand.rotation = initRotation.clone();
                         cand.scale = scale;
                         cand.score = score;
                         cand.is_face = is_face;
                         cand.lastThreshold = lastThreshold;
                         cand.no = cc;
-                        cand.ss[0] = score;
+                        cand.ss[0] = score; cand.ss[1] = 0; cand.ss[2] = 0; cand.ss[3] = 0; cand.ss[4] = 0;
                         cand.size = currentSize;
                         cand.fnode = fnode;
                         candidates.push_back(cand);
@@ -1005,13 +1012,13 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
                     struct candidate cand;
 //                    cand.shape = result_shape;
                     cand.box = box;
-                    cand.rotation = initRotation;
+                    cand.rotation = initRotation.clone();
                     cand.scale = scale;
                     cand.score = score;
                     cand.is_face = is_face;
                     cand.lastThreshold = lastThreshold;
                     cand.no = cc;
-                    cand.ss[0] = score;
+                    cand.ss[0] = score; cand.ss[1] = 0; cand.ss[2] = 0; cand.ss[3] = 0; cand.ss[4] = 0;
                     cand.size = currentSize;
                     cand.fnode = fnode;
                     candidates.push_back(cand);
@@ -1033,7 +1040,7 @@ _label_search_1:
         std::cout << "***************scan:" << scan_count << " candidates:" << candidates.size() << std::endl;
         for ( int j = 0; j<candidates.size(); j++){
             struct candidate& cand = candidates[j];
-            std::cout << cand.no <<"   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << std::endl;
+            std::cout << cand.no <<"   " << cand.size << "   " << cand.score16 << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << std::endl;
         }
     }
     
@@ -1078,7 +1085,11 @@ _label_search_1:
         std::cout << "trimmed:" << scan_count << " candidates:" << candidates.size() << std::endl;
     }
     
-    //TODO:这个地方如果cand超过5个,还可以继续删减
+    //TODO:这个地方如果cand超过5个或全幅10个,还可以继续删减
+//    sort(candidates.begin(), candidates.end(), my_cmp);
+//    while (candidates.size() > 30 ){
+//        candidates.pop_back();
+//    }
     
     for ( int i = 0; i<candidates.size(); i++){
         struct candidate& cand = candidates[i];
@@ -1111,7 +1122,7 @@ _label_search_1:
             std::cout << "candidates:" << candidates.size() << std::endl;
             for ( int j = 0; j<candidates.size(); j++){
                 struct candidate& cand = candidates[j];
-                std::cout << cand.no << "   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << "    " << cand.ss[4] << std::endl;
+                std::cout << cand.no << "   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << "    " << cand.ss[4] << "   rotate:" << cand.rotation(0,0) << "   scale:" << cand.scale << std::endl;
             }
         }
         

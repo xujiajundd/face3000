@@ -20,6 +20,10 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include "headers.h"
+
+
+#define MODEL_NAME "mv0830"
+
 //==============================================================================
 using namespace cv;
 using namespace std;
@@ -644,7 +648,7 @@ int annotate_main(const char *path)
     std::cout << std::endl;
 
 
-    const char *ModelName = "mv0802";
+    const char *ModelName = MODEL_NAME;
     annotation.face_detector.LoadCascadeRegressor(ModelName);
 
     std::string current_dir = "";
@@ -833,7 +837,7 @@ int annotate_main(const char *path)
 
 int annotate_filter(const char *path)
 {
-    const char *ModelName = "mv0802";
+    const char *ModelName = MODEL_NAME;
     annotation.face_detector.LoadCascadeRegressor(ModelName);
 
     std::vector<std::string> lists;
