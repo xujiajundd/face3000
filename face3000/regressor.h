@@ -152,7 +152,7 @@ public:
                                                              std::vector<cv::Mat_<float>>& shapes, float scaleFactor, int minNeighbors=2, int flags=0,
                                                              int minSize=100 );
     void unload();
-    bool detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat_<float>& shape);
+    bool detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat_<float>& shape, int flags = 0, int cameraOrient = CASCADE_ORIENT_TOP_LEFT);
 };
 
 #endif

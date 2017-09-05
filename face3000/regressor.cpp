@@ -771,7 +771,7 @@ int my_cmp(struct candidate& cand1, struct candidate& cand2)
     return cand1.score > cand2.score;
 };
 
-bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat_<float>& shape){
+bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat_<float>& shape, int flags, int cameraOrient){
     int track_mode = flags & CASCADE_FLAG_TRACK_MODE;
     bool tracking;
     struct timeval current_time;
@@ -1073,7 +1073,7 @@ _label_search_1:
         if ( h-- > 0){
             it = candidates.erase(it);
         }
-        else if ( cand.score < ((1.0-trimFactor)*minScore + trimFactor*maxScore)  ){
+        else if ( cand.score < ((1.0-trimFactor)*minScore + trimFactor*maxScore - 1.0)  ){
             it = candidates.erase(it);
         }
         else{
@@ -1137,7 +1137,7 @@ _label_search_1:
             }
         }
         
-        if ( !tracking && candidates.size() < ( params_.predict_regressor_stages_ - i - 1) ){ //中间阶段没有neighbor也可能是误识别
+        if ( !tracking && candidates.size() < ( /*params_.predict_regressor_stages_*/ 5 - i - 1) ){ //中间阶段没有neighbor也可能是误识别
             if ( maxScore < 0 )
                 return false;
         }

@@ -9,7 +9,7 @@
 #ifndef annotate_h
 #define annotate_h
 
-int annotate_main(const char *path);
+int annotate_main(const char *path, const char *model);
 int annotate_filter(const char *path);
 
 #endif /* annotate_h */

@@ -22,7 +22,7 @@
 #include "headers.h"
 
 
-#define MODEL_NAME "mv0830"
+#define MODEL_NAME "mv0904"
 
 //==============================================================================
 using namespace cv;
@@ -75,7 +75,7 @@ public:
             cv::Rect rect;
             struct timeval t1, t2;
             gettimeofday(&t1, NULL);
-            bool ret = face_detector.detectOne(grayImage, rect, shape);
+            bool ret = face_detector.detectOne(grayImage, rect, shape, CASCADE_FLAG_TRACK_MODE);
             gettimeofday(&t2, NULL);
             cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " isface:" << ret << endl;
             if ( ret > 0 ){
@@ -604,7 +604,7 @@ std::string video_process(std::string path){
 }
 
 //==============================================================================
-int annotate_main(const char *path)
+int annotate_main(const char *path, const char *model)
 {
     //如果path为空，则读取当前data目录下的所有jpg或png文件，如果还没有pts文件，则自动生成一个
     //如果path为video文件，则读取video，按间隔5帧保存jpg到video名的临时目录。
@@ -648,7 +648,7 @@ int annotate_main(const char *path)
     std::cout << std::endl;
 
 
-    const char *ModelName = MODEL_NAME;
+    const char *ModelName = model;
     annotation.face_detector.LoadCascadeRegressor(ModelName);
 
     std::string current_dir = "";

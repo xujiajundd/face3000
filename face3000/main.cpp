@@ -419,7 +419,7 @@ void TestVideo(const char* ModelName){
             gettimeofday(&t1, NULL);
             cv::Mat_<float> shape;
             cv::Rect rect;
-            bool ret = rg.detectOne(image, rect, shape);
+            bool ret = rg.detectOne(image, rect, shape, CASCADE_FLAG_TRACK_MODE);
             gettimeofday(&t2, NULL);
             cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " faces:" << ret <<  endl;
             cv::rectangle(frame, rect, (255), 1);
@@ -619,7 +619,7 @@ void Train(const char* ModelName){
     
     params.local_features_num_ = 4000;
 	params.landmarks_num_per_face_ = NUM_LANDMARKS;
-    params.regressor_stages_ = 5;
+    params.regressor_stages_ = 6;
 //    params.local_radius_by_stage_.push_back(0.6);
 //    params.local_radius_by_stage_.push_back(0.5);
 	params.local_radius_by_stage_.push_back(0.45);
@@ -643,7 +643,7 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.5);
     params.detect_factor_by_stage_.push_back(0.4);
     params.detect_factor_by_stage_.push_back(0.3);
-    params.detect_factor_by_stage_.push_back(0.9);
+    params.detect_factor_by_stage_.push_back(0.3);
     params.detect_factor_by_stage_.push_back(0.4);
     params.detect_factor_by_stage_.push_back(0.2);
     
@@ -998,8 +998,8 @@ int main(int argc, char* argv[])
         }
         if (strcmp(argv[1], "annotate") == 0){
             std::cout << "annotate image\n";
-            if ( argc == 3){
-                annotate_main(argv[2]);
+            if ( argc == 4){
+                annotate_main(argv[2], argv[3]);
             }
         }
         if (strcmp(argv[1], "annotate_filter") == 0){
@@ -1017,7 +1017,7 @@ int main(int argc, char* argv[])
         }
         if (strcmp(argv[1], "annotate") == 0){
             std::cout << "annotate image\n";
-            annotate_main("");
+            annotate_main("", "");
         }
     }
 
