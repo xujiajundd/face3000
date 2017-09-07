@@ -13,6 +13,7 @@
  Jason Saragih (2012)
  */
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/contrib/contrib.hpp>
 #include <iostream>
 #include <fstream>
 #include <dirent.h>
@@ -44,11 +45,15 @@ public:
     std::string shape_file_name;
     CascadeRegressor face_detector;
     bool imageScaled;
+    
+    Ptr<FaceRecognizer> model;
 
 
     annotate(){
         wname = "Annotate"; idx = 0; pidx = -1;
         message = "";
+        model = createFisherFaceRecognizer();
+        model->load("/Users/xujiajun/developer/face3000/face3000/gender_at.yml");
     }
 
     int set_current_image(const int cidx = 0){ //读取图片，读取pts，如果没有pts，调用shape程序自动计算一个
@@ -137,13 +142,48 @@ public:
             draw_alert("Error: right eye!!!!!");
         }
         if ( shape(51,1) > shape(62,1) || shape(62,1)>shape(66,1) || shape(66,1)>shape(57,1) || shape(50,1) > shape(61,1) || shape(61,1)>shape(67,1) || shape(67,1)>shape(58,1) || shape(52,1)>shape(63,1) || shape(63,1)>shape(65,1) || shape(65,1) > shape(56,1)){
-            draw_alert("Error: mouth!!!!!");
+//            draw_alert("Error: mouth!!!!!");
         }
         if ( shape(21,0) > shape(22,0)){
-            draw_alert("Error: eyebow!!!!!");
+//            draw_alert("Error: eyebow!!!!!");
         }
         draw_instructions();
         draw_message();
+        
+        cv::Mat_<uchar> grayImage;
+        cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
+        cv::Rect rect;
+        BoundingBox box = CalculateBoundingBox(shape);
+        rect.x = box.start_x;
+        rect.y = box.start_y;
+        rect.width = box.width;
+        rect.height = box.height;
+        
+        float adj = 0.08 * box.width;
+        rect.x -= adj;
+        rect.y -= 2*adj;
+        rect.width += 2*adj;
+        rect.height += 2*adj;
+        if ( rect.x < 0) rect.x = 0;
+        if ( rect.y < 0) rect.y = 0;
+        if ( rect.width > image.cols) rect.width = image.cols;
+        if ( rect.height > image.rows ) rect.height = image.rows;
+        if (( rect.x + rect.width ) > image.cols ) rect.x = image.cols - rect.width - 1;
+        if (( rect.y + rect.height) > image.rows ) rect.y = image.rows - rect.height - 1;
+        if ( rect.x < 0) rect.x = 0;
+        if ( rect.y < 0) rect.y = 0;
+        cv::rectangle(image, rect, Scalar(255,255,255));
+        cv::Mat face = grayImage(rect);
+        cv::Mat face_resized;
+        cv::resize(face, face_resized, cv::Size(200,200));
+        int prediction = model->predict(face_resized);
+        if ( prediction == 0 ){
+            draw_alert("Male");
+        }
+        else if ( prediction == 1){
+            draw_alert("Female");
+        }
+        
         cv::imshow(wname, image);
     }
 
