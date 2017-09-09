@@ -347,6 +347,142 @@ void CascadeRegressor::Train(std::vector<cv::Mat_<uchar> >& images,
     }
 }
 
+
+void CascadeRegressor::TrainGender(std::vector<cv::Mat_<uchar> >& images,
+                             std::vector<cv::Mat_<float> >& ground_truth_shapes,
+                             std::vector<int> ground_truth_genders,
+                             std::vector<BoundingBox>& bboxes,
+                             Parameters& params,
+                             int pos_num ){
+    
+    struct timeval t1, t2;
+    gettimeofday(&t1, NULL);
+    std::cout << "Start training..." << std::endl;
+    images_ = images;
+    params_ = params;
+    bboxes_ = bboxes;
+    ground_truth_shapes_ = ground_truth_shapes;
+    
+    std::vector<int> augmented_images_index; // just index in images_
+    std::vector<BoundingBox> augmented_bboxes;
+    std::vector<cv::Mat_<float> > augmented_ground_truth_shapes;
+    std::vector<int> augmented_ground_truth_genders;
+    std::vector<cv::Mat_<float> > augmented_current_shapes; //
+    std::vector<float> current_fi;
+    std::vector<float> current_weight;
+    std::vector<int> find_times;
+    
+    time_t current_time;
+    current_time = time(0);
+    //cv::RNG *random_generator = new cv::RNG();
+    std::cout << "augment data sets" << std::endl;
+    cv::RNG random_generator(current_time);
+    int hasGenderLabelNum = 0;
+    int fnum=0, mnum = 0;
+    for (int i = 0; i < pos_num; i++){
+        if (ground_truth_genders[i] == -1 || ground_truth_genders[i] == 1 ){
+            if ( ground_truth_genders[i] == -1 ) fnum++;
+            if ( ground_truth_genders[i] == 1 ) mnum++;
+            hasGenderLabelNum++;
+            augmented_images_index.push_back(i);
+            augmented_ground_truth_shapes.push_back(ground_truth_shapes_[i]);
+            augmented_ground_truth_genders.push_back(ground_truth_genders[i]);
+            augmented_bboxes.push_back(bboxes_[i]);
+            augmented_current_shapes.push_back(ground_truth_shapes_[i]);
+            current_fi.push_back(0);
+            current_weight.push_back(1);
+            find_times.push_back(0);
+            
+            if ( debug_on_){
+                DrawPredictImage(images[i], ground_truth_shapes[i]);
+            }
+        }
+    }
+    
+    pos_num = hasGenderLabelNum;
+    
+    std::cout << "sample num:" << pos_num << "female:" << fnum << " male:" << mnum << std::endl;
+    
+    regressors_.resize(params_.regressor_stages_);
+    for (int i = 0; i < params_.regressor_stages_; i++){
+        gettimeofday(&t1, NULL);
+        std::cout << "training stage: " << i << " of " << params_.regressor_stages_  << std::endl;
+        regressors_[i].cameraOrient = cameraOrient;
+        regressors_[i].TrainGender(images_,
+                             augmented_images_index,
+                             augmented_ground_truth_shapes,
+                             augmented_ground_truth_genders,
+                             augmented_bboxes,
+                             augmented_current_shapes,
+                             current_fi,
+                             current_weight,
+                             find_times,
+                             params_,
+                             i,
+                             pos_num,
+                             this);
+    }
+}
+
+void Regressor::TrainGender(std::vector<cv::Mat_<uchar> >& images,
+                                               std::vector<int>& augmented_images_index,
+                                               std::vector<cv::Mat_<float> >& augmented_ground_truth_shapes,
+                                               std::vector<int> & augmented_ground_truth_genders,
+                                               std::vector<BoundingBox>& augmented_bboxes,
+                                               std::vector<cv::Mat_<float> >& augmented_current_shapes,
+                                               std::vector<float>& current_fi,
+                                               std::vector<float>& current_weight,
+                                               std::vector<int>& find_times,
+                                               const Parameters& params,
+                                               const int stage,
+                                               const int pos_num,
+                                               CascadeRegressor *casRegressor){
+    
+    stage_ = stage;
+    params_ = params;
+    
+    std::vector<cv::Mat_<float> > regression_targets;
+    std::vector<cv::Mat_<float> > rotations_;
+    std::vector<float> scales_;
+    regression_targets.resize(augmented_current_shapes.size());
+    rotations_.resize(augmented_current_shapes.size());
+    scales_.resize(augmented_current_shapes.size());
+    
+    // calculate the regression targets
+    std::cout << "calculate regression targets" << std::endl;
+#pragma omp parallel for
+    for (int i = 0; i < augmented_current_shapes.size(); i++){
+        regression_targets[i] = ProjectShape(augmented_ground_truth_shapes[i], augmented_bboxes[i])
+        - ProjectShape(augmented_current_shapes[i], augmented_bboxes[i]);
+        cv::Mat_<float> rotation;
+        float scale;
+        getSimilarityTransform(params_.mean_shape_, ProjectShape(augmented_current_shapes[i], augmented_bboxes[i]), rotation, scale);
+        cv::transpose(rotation, rotation);
+        regression_targets[i] = scale * regression_targets[i] * rotation;
+        getSimilarityTransform(ProjectShape(augmented_current_shapes[i], augmented_bboxes[i]), params_.mean_shape_, rotation, scale);
+        rotations_[i] = rotation;
+        scales_[i] = scale;
+    }
+    
+    std::cout << "train forest of stage:" << stage_ << std::endl;
+    rd_forests_.resize(params_.landmarks_num_per_face_);
+    //    #pragma omp parallel for
+    for (int i = 0; i < params_.landmarks_num_per_face_; ++i){
+        std::cout << "landmark: " << i << std::endl;
+        int true_pos_num = pos_num;
+        rd_forests_[i] = RandomForest(params_, i, stage_, regression_targets, casRegressor, true_pos_num);
+        rd_forests_[i].TrainForestGender(
+                                   images,augmented_images_index, augmented_ground_truth_shapes, augmented_bboxes, augmented_current_shapes,
+                                   augmented_ground_truth_genders, current_fi, current_weight, find_times,
+                                   rotations_, scales_);
+        
+        linear_model_x_.resize(0);
+        linear_model_y_.resize(0);
+    }
+
+}
+
+
 std::vector<cv::Mat_<float> > Regressor::Train(std::vector<cv::Mat_<uchar> >& images,
 	std::vector<int>& augmented_images_index,
 	std::vector<cv::Mat_<float> >& augmented_ground_truth_shapes,
@@ -770,6 +906,23 @@ int my_cmp(struct candidate& cand1, struct candidate& cand2)
 {
     return cand1.score > cand2.score;
 };
+
+int CascadeRegressor::detectGender(cv::Mat_<uchar>& image, cv::Mat_<float>& shape, int cameraOrient)
+{
+    regressors_[0].cameraOrient = cameraOrient;
+    
+    int is_male = 1;
+    float score = 0;
+    float lastThreshold = -1.0;
+    cv::Mat_<float> rotation;
+    float scale;
+    BoundingBox box = CalculateBoundingBox(shape);
+    cv::Mat_<float> pshape = ProjectShape(shape, box);
+    getSimilarityTransformAcc(pshape, params_.mean_shape_, rotation, scale); //这句其实也可能可以省去
+    regressors_[0].GetGlobalBinaryFeaturesGender(image, pshape, box, rotation, scale, score, is_male, lastThreshold);
+    std::cout<<"gender:" << is_male << " score:" << score <<  std::endl;
+    return is_male;
+}
 
 bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat_<float>& shape, int flags, int cameraOrient){
     int track_mode = flags & CASCADE_FLAG_TRACK_MODE;
@@ -1908,6 +2061,159 @@ void Regressor::GetGlobalBinaryFeaturesShort(cv::Mat_<uchar>& image, cv::Mat_<fl
     lastThreshold = rd_forests_[rd_forests_.size()-1].trees_[params_.trees_num_per_forest_-1]->score_;
     return;
 }
+
+void Regressor::GetGlobalBinaryFeaturesGender(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_male, float& lastThreshold){
+    short index = 1;
+    
+    int ind = 0;
+    float ss = scale * bbox.width * 0.5; //add by xujj
+    cv::Mat_<float> current_shape_re = ReProjection(current_shape, bbox);
+    
+    int irows, icols;
+    switch (cameraOrient) {
+        case CASCADE_ORIENT_TOP_LEFT:
+            irows = image.rows;
+            icols = image.cols;
+            break;
+        case CASCADE_ORIENT_TOP_RIGHT:
+            irows = image.cols;
+            icols = image.rows;
+            break;
+        case CASCADE_ORIENT_BOTTOM_LEFT:
+            irows = image.cols;
+            icols = image.rows;
+            break;
+        default:
+            break;
+    }
+    
+    for (short j = 0; j < rd_forests_.size(); ++j)
+    {
+        for (short k = 0; k < params_.trees_num_per_forest_; ++k)
+        {
+            short outBound = 4;
+            short kk = k % 2;
+            Node* node = rd_forests_[j].trees_[k];
+            float scoreThreshold = node->score_;
+            while (!node->is_leaf_){
+                FeatureLocations& pos = node->feature_locations_;
+                float delta_xs = rotation(0,0)*pos.start.x + rotation(0,1)*pos.start.y;
+                float delta_ys = rotation(1,0)*pos.start.x + rotation(1,1)*pos.start.y;
+                float delta_xe = rotation(0,0)*pos.end.x + rotation(0,1)*pos.end.y;
+                float delta_ye = rotation(1,0)*pos.end.x + rotation(1,1)*pos.end.y;
+                
+                short real_xs = ss * delta_xs + current_shape_re(pos.lmark1, 0);
+                short real_ys = ss * delta_ys + current_shape_re(pos.lmark1, 1);
+                short real_xe = ss * delta_xe + current_shape_re(pos.lmark2, 0);
+                short real_ye = ss * delta_ye + current_shape_re(pos.lmark2, 1);
+                
+                
+                if ( real_xs < 0 || real_ys < 0 || real_xs >= icols|| real_ys >= irows ){
+                    outBound--;
+                    if ( real_xs < 0 ){
+                        real_xs = 0;
+                    }
+                    else if ( real_xs >= icols ){
+                        real_xs = icols - 1;
+                    }
+                    if ( real_ys < 0 ){
+                        real_ys = 0;
+                    }
+                    else if ( real_ys >= irows ){
+                        real_ys = irows - 1;
+                    }
+                }
+                
+                if ( real_xe < 0 || real_ye < 0 || real_xe >= icols || real_ye >= irows ){
+                    outBound--;
+                    if ( real_xe < 0 ){
+                        real_xe = 0;
+                    }
+                    else if ( real_xe >= icols ){
+                        real_xe = icols - 1;
+                    }
+                    if ( real_ye < 0 ){
+                        real_ye = 0;
+                    }
+                    else if ( real_ye >= irows ){
+                        real_ye = irows - 1;
+                    }
+                }
+                
+                int tmp, tmp2;
+                if ( cameraOrient == CASCADE_ORIENT_TOP_RIGHT ){
+                    tmp = image(real_xs, real_ys);
+                    tmp2 = image(real_xe, real_ye);
+                }
+                else if ( cameraOrient == CASCADE_ORIENT_TOP_LEFT ){
+                    tmp = image(real_ys, real_xs);
+                    tmp2 = image(real_ye, real_xe);
+                }
+                
+                else if ( cameraOrient == CASCADE_ORIENT_BOTTOM_LEFT ){
+                    tmp = image( real_xs, image.cols - real_ys );
+                    tmp2 = image( real_xe, image.cols - real_ye );
+                }
+                
+                
+                if ( kk ){
+                    if ( (tmp - tmp2 ) < node->threshold_){
+                        node = node->left_child_;// go left
+                    }
+                    else{
+                        node = node->right_child_;// go right
+                    }
+                }
+                else{
+                    if ( abs(tmp - tmp2 ) < node->threshold_){
+                        node = node->left_child_;// go left
+                    }
+                    else{
+                        node = node->right_child_;// go right
+                    }
+                }
+            }
+            if ( outBound < 0 ) {
+                if ( k == 0 ){
+                    if ( j == 0 ){
+                        score += rd_forests_[j].trees_[k]->score_ - lastThreshold;
+                    }
+                    else{
+                        score += rd_forests_[j].trees_[k]->score_ - rd_forests_[j-1].trees_[params_.trees_num_per_forest_-1]->score_;
+                    }
+                }
+                else{
+                    score += rd_forests_[j].trees_[k]->score_ - rd_forests_[j].trees_[k-1]->score_;
+                }
+            }
+            else{
+                score += node->score_;
+            }
+            if ( score < scoreThreshold ){
+                is_male = - 1;
+                //std::cout <<"stage:"<<stage_ << "lmark=" << j << " tree=" <<  k << " score:" << score << " threshold:" << rd_forests_[j].trees_[k]->score_<< std::endl;
+            }
+            else{
+                is_male = 1;
+            }
+            
+            //            if ( node->is_leaf_a ){
+//            fnode[ind].index = index + node->leaf_identity;//rd_forests_[j].GetBinaryFeatureIndex(k,image, bbox, current_shape, rotation, scale);
+            //                tmp_binary_features[ind].value = 1.0;
+            ind++;
+            //            }
+            //std::cout << binary_features[ind].index << " ";
+        }
+        
+        index += rd_forests_[j].all_leaf_nodes_;
+    }
+    
+//    fnode[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].index = -1;
+    //    tmp_binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].value = -1.0;
+    lastThreshold = rd_forests_[rd_forests_.size()-1].trees_[params_.trees_num_per_forest_-1]->score_;
+    return;
+}
+
 
 struct feature_node* Regressor::GetGlobalBinaryFeaturesOld(cv::Mat_<uchar>& image,
                                                         cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold){

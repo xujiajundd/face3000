@@ -75,16 +75,16 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "video model_t6d4n9i2"
+            argument = "trainGender mv0802g"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "annotate  /Users/xujiajun/developer/dataset/xujj/xujj-family"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "annotate /Users/xujiajun/developer/dataset/xujj/newTrain/test2 mv0802"
+            argument = "annotate  /Users/xujiajun/developer/dataset/xujj/newtrain/test5 mv0802 "
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "annotate /Users/xujiajun/developer/dataset/xujj/newTrain/test5 mv0904"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "annotate /Users/xujiajun/developer/dataset/xujj/newTrain/negtest"

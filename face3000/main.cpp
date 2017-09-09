@@ -83,10 +83,11 @@ void Test(const char* ModelName){
 	std::vector<cv::Mat_<uchar> > images;
 	std::vector<cv::Mat_<float> > ground_truth_shapes;
     std::vector<int> ground_truth_faces;
+    std::vector<int> ground_truth_genders;
 	std::vector<BoundingBox> bboxes;
 	std::string file_names = "/Users/xujiajun/developer/dataset/helen/test_jpgs.txt"; //"./../dataset/helen/train_jpgs.txt";
     std::string neg_file_names = "/Users/xujiajun/developer/dataset/helen/test_jpgs.txt.no";
-    LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names, neg_file_names);
+    LoadImages(images, ground_truth_shapes, ground_truth_faces, ground_truth_genders, bboxes, file_names, neg_file_names);
     
     struct timeval t1, t2;
     gettimeofday(&t1, NULL);
@@ -179,10 +180,11 @@ void Test2(const char* ModelName){
     std::vector<cv::Mat_<uchar> > images;
     std::vector<cv::Mat_<float> > ground_truth_shapes;
     std::vector<int> ground_truth_faces;
+    std::vector<int> ground_truth_genders;
     std::vector<BoundingBox> bboxes;
     std::string file_names = "/Users/xujiajun/developer/dataset/helen/test2_jpgs.txt"; //"./../dataset/helen/train_jpgs.txt";
     std::string neg_file_names = "/Users/xujiajun/developer/dataset/helen/test_jpgs.txt.no";
-    LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names, neg_file_names);
+    LoadImages(images, ground_truth_shapes, ground_truth_faces, ground_truth_genders, bboxes, file_names, neg_file_names);
     
     struct timeval t1, t2;
     gettimeofday(&t1, NULL);
@@ -575,6 +577,7 @@ void Train(const char* ModelName){
 	std::vector<cv::Mat_<uchar> > images;
 	std::vector<cv::Mat_<float> > ground_truth_shapes;
     std::vector<int> ground_truth_faces;
+    std::vector<int> ground_truth_genders;
     std::vector<int> ground_truth_categorys;
 	std::vector<BoundingBox> bboxes;
     std::string file_names = "/Users/xujiajun/developer/dataset/helen/train_jpgs.txt";
@@ -592,7 +595,7 @@ void Train(const char* ModelName){
     */
     NUM_LANDMARKS = 68;
     
-	int pos_num = LoadImages(images, ground_truth_shapes, ground_truth_faces, bboxes, file_names, neg_file_names);
+	int pos_num = LoadImages(images, ground_truth_shapes, ground_truth_faces, ground_truth_genders, bboxes, file_names, neg_file_names);
 	params.mean_shape_ = GetMeanShape(ground_truth_shapes, ground_truth_faces, bboxes);
     
 //    ground_truth_categorys.resize(ground_truth_shapes.size());
@@ -702,6 +705,40 @@ void Train(const char* ModelName){
     cas_reg.SaveCascadeRegressor(ModelName);
     
 	return;
+}
+
+void TrainGender(const char* ModelName){
+    std::vector<cv::Mat_<uchar> > images;
+    std::vector<cv::Mat_<float> > ground_truth_shapes;
+    std::vector<int> ground_truth_faces;
+    std::vector<int> ground_truth_genders;
+    std::vector<int> ground_truth_categorys;
+    std::vector<BoundingBox> bboxes;
+    std::string file_names = "/Users/xujiajun/developer/dataset/helen/train_jpgs.txt";
+    std::string neg_file_names = "/Users/xujiajun/developer/dataset/helen/train_neg_jpgs.txt";
+    Parameters params;
+    NUM_LANDMARKS = 68;
+    
+    int pos_num = LoadImages(images, ground_truth_shapes, ground_truth_faces, ground_truth_genders, bboxes, file_names, neg_file_names);
+    params.mean_shape_ = GetMeanShape(ground_truth_shapes, ground_truth_faces, bboxes);
+    
+    params.local_features_num_ = 2000;
+    params.landmarks_num_per_face_ = NUM_LANDMARKS;
+    params.regressor_stages_ = 1;
+    params.local_radius_by_stage_.push_back(0.1);
+    
+    params.detect_factor_by_stage_.push_back(1.0);
+    
+    params.tree_depth_ = 3;
+    params.trees_num_per_forest_ = 8;
+    params.initial_guess_ = 2;
+
+    
+    CascadeRegressor cas_reg;
+    cas_reg.TrainGender(images, ground_truth_shapes, ground_truth_genders, bboxes, params, pos_num);
+    cas_reg.SaveCascadeRegressor(ModelName);
+    
+    return;
 }
 //TODO:研究下回归数据要不要用short型存放，节省模型空间。是否还是搞成全局回归，改数据结构，用数组提高性能。（研究运算cache优化）
 //回归的模式中，有没有可能看出detect的特征规律？
@@ -962,6 +999,13 @@ int main(int argc, char* argv[])
 
             return 0;
 		}
+        if (strcmp(argv[1], "trainGender") == 0)
+        {
+            std::cout << "enter train\n";
+            TrainGender(argv[2]);
+            
+            return 0;
+        }
 		if (strcmp(argv[1], "test") == 0)
 		{
 			std::cout << "enter test\n";

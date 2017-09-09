@@ -32,6 +32,7 @@ class annotate{
 public:
     int idx;                       //index of image to annotate
     int pidx;                      //index of point to manipulate
+    int gender;
     cv::Mat_<float> shape;
     cv::Mat image;
     cv::Mat image_clean;
@@ -44,13 +45,14 @@ public:
     std::string file_name;
     std::string shape_file_name;
     CascadeRegressor face_detector;
+    CascadeRegressor gender_detector;
     bool imageScaled;
     
     Ptr<FaceRecognizer> model;
 
 
     annotate(){
-        wname = "Annotate"; idx = 0; pidx = -1;
+        wname = "Annotate"; idx = 0; pidx = -1; gender = 0;
         message = "";
         model = createFisherFaceRecognizer();
         model->load("/Users/xujiajun/developer/face3000/face3000/gender_at.yml");
@@ -59,6 +61,7 @@ public:
     int set_current_image(const int cidx = 0){ //读取图片，读取pts，如果没有pts，调用shape程序自动计算一个
         pidx = -1;
         idx = cidx;
+        gender = 0;
         file_name = lists[idx];
         image = cv::imread(file_name, 1);
         float scale = max(image.cols,image.rows) / 1024.0;
@@ -84,6 +87,8 @@ public:
             gettimeofday(&t2, NULL);
             cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " isface:" << ret << endl;
             if ( ret > 0 ){
+                int gender = gender_detector.detectGender(grayImage, shape);
+                cout << "gender: " << gender << std::endl;
                 shape = reConvertShape(shape);
             }
             else{
@@ -109,6 +114,12 @@ public:
                 fin >> s(i, 0) >> s(i, 1);
             }
             shape = s;
+            getline(fin, temp);
+            getline(fin, temp);
+            getline(fin, temp);
+            if ( temp == "f" ) gender = -1;
+            else if ( temp == "m" ) gender = 1;
+            else gender = 0;
             fin.close();
             if ( imageScaled ){
                 s /= scale;
@@ -150,6 +161,7 @@ public:
         draw_instructions();
         draw_message();
         
+/* 这一段是测试检测性别的, 效果不好
         cv::Mat_<uchar> grayImage;
         cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
         cv::Rect rect;
@@ -183,7 +195,14 @@ public:
         else if ( prediction == 1){
             draw_alert("Female");
         }
+*/
+        cv::Mat_<uchar> grayImage;
+        cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
+        int gen = gender_detector.detectGender(grayImage, shape);
+        cout << "gender: " << gen << std::endl;
         
+        if ( gender == -1 ) draw_alert("Female");
+        if ( gender == 1 ) draw_alert("Male");
         cv::imshow(wname, image);
     }
 
@@ -205,6 +224,8 @@ public:
                 fout << shape(i,0) << " " << shape(i,1) << std::endl;
             }
             fout << "}" << std::endl;
+            if ( gender == -1 ) fout << "f" << std::endl;
+            else if ( gender == 1 ) fout << "m" << std::endl;
         }
         fout.close();
         if ( imageScaled ){
@@ -292,6 +313,7 @@ public:
         instructions.push_back(string(" n - Next image"));
         instructions.push_back(string(" s - Save annotations"));
         instructions.push_back(string(" d - Delete image and annotations"));
+        instructions.push_back(string(" m,f - Set male/female"));
         instructions.push_back(string(" q - Quit"));
     }
     void set_pick_points_instructions(){
@@ -688,8 +710,10 @@ int annotate_main(const char *path, const char *model)
     std::cout << std::endl;
 
 
-    const char *ModelName = model;
+//    const char *ModelName = model;
+    std::string ModelName = model;
     annotation.face_detector.LoadCascadeRegressor(ModelName);
+    annotation.gender_detector.LoadCascadeRegressor("mv0802g");
 
     std::string current_dir = "";
     std::vector<std::string> lists;
@@ -759,6 +783,14 @@ int annotate_main(const char *path, const char *model)
             annotation.set_current_image(current_index); //读取图片，读取pts，如果没有pts，调用shape程序自动计算一个
             std::cout<<"current:" << current_index << " file:" << annotation.file_name << std::endl;
             annotation.draw_image(); //画图片，画各点，选中点高亮
+        }
+        else if ( c == 'm'){
+            annotation.gender = 1;
+            annotation.draw_image();
+        }
+        else if ( c == 'f'){
+            annotation.gender = -1;
+            annotation.draw_image();
         }
         else if (c==63232){//up
             keyPressed(c);

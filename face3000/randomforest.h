@@ -59,6 +59,20 @@ public:
         std::vector<int> & find_times,
 		std::vector<cv::Mat_<float> >& rotations,
 		std::vector<float>& scales);
+    
+    bool TrainForestGender(//std::vector<cv::Mat_<float> >& regression_targets,
+                     std::vector<cv::Mat_<uchar> >& images,
+                     std::vector<int>& augmented_images_index,
+                     std::vector<cv::Mat_<float> >& augmented_ground_truth_shapes,
+                     std::vector<BoundingBox>& augmented_bboxes,
+                     std::vector<cv::Mat_<float> >& augmented_current_shapes,
+                     std::vector<int> & augmented_ground_truth_genders,
+                     std::vector<float> & current_fi,
+                     std::vector<float> & current_weight,
+                     std::vector<int> & find_times,
+                     std::vector<cv::Mat_<float> >& rotations,
+                     std::vector<float>& scales);
+    
     Node* BuildTree(std::set<int>& selected_indexes, cv::Mat_<int>& pixel_differences, std::vector<int>& images_indexes, std::vector<int> & augmented_ground_truth_faces,
                     std::vector<float> & current_weight, int current_depth);
 	int FindSplitFeature(Node* node, std::set<int>& selected_indexes,

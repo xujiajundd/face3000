@@ -45,6 +45,19 @@ public:
 		const int stage,
         const int pos_num,
         CascadeRegressor *casRegressor);
+    void TrainGender(std::vector<cv::Mat_<uchar> >& images,
+                                        std::vector<int>& augmented_images_index,
+                                        std::vector<cv::Mat_<float> >& augmented_ground_truth_shapes,
+                                        std::vector<int> & augmented_ground_truth_genders,
+                                        std::vector<BoundingBox>& augmented_bboxes,
+                                        std::vector<cv::Mat_<float> >& augmented_current_shapes,
+                                        std::vector<float>& current_fi,
+                                        std::vector<float>& current_weight,
+                                        std::vector<int>& find_times,
+                                        const Parameters& params,
+                                        const int stage,
+                                        const int pos_num,
+                                        CascadeRegressor *casRegressor);
     struct feature_node* GetGlobalBinaryFeatures(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold);
     struct feature_node* GetGlobalBinaryFeaturesOld(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold);
     
@@ -60,6 +73,7 @@ public:
     struct feature_node* GetGlobalBinaryFeaturesMP(cv::Mat_<uchar>& image,
         cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale);
     void GetGlobalBinaryFeaturesShort(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold, feature_node_short * fnode);
+    void GetGlobalBinaryFeaturesGender(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_male, float& lastThreshold);
     cv::Mat_<float> PredictShort( cv::Mat_<float>& current_shape, feature_node_short* fnode, cv::Mat_<float>& rotation, float scale );
     cv::Mat_<float> PredictPos(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape,
                             BoundingBox& bbox, cv::Mat_<float>& rotation, float scale, float& score, int& is_face, float& lastThreshold);
@@ -140,6 +154,12 @@ public:
 		std::vector<BoundingBox>& bboxes,
 		Parameters& params,
         int pos_num);
+    void TrainGender(std::vector<cv::Mat_<uchar> >& images,
+               std::vector<cv::Mat_<float> >& ground_truth_shapes,
+               std::vector<int> ground_truth_genders,
+               std::vector<BoundingBox>& bboxes,
+               Parameters& params,
+               int pos_num);
 	cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, cv::Mat_<float>& ground_truth_shape);
     cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& score);
     cv::Mat_<float> Predict(cv::Mat_<uchar>& image, cv::Mat_<float>& current_shape, BoundingBox& bbox, int& is_face, float& score, cv::Mat_<float>& rot);
@@ -153,6 +173,7 @@ public:
                                                              int minSize=100 );
     void unload();
     bool detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat_<float>& shape, int flags = 0, int cameraOrient = CASCADE_ORIENT_TOP_LEFT);
+    int detectGender(cv::Mat_<uchar>& image, cv::Mat_<float>& shape, int cameraOrient = CASCADE_ORIENT_TOP_LEFT);
 };
 
 #endif

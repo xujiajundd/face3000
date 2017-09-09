@@ -193,7 +193,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 
             cv::Mat_<float> rotation = rotations[n];
             float scale = scales[n];
-            int gauss = (int) augmented_bboxes[n].width / 200;
+            int gauss = (int) augmented_bboxes[n].width / 300;
             gauss = std::min(2, gauss);
             for (int j = 0; j < local_features_num_; j++){
                 FeatureLocations pos = local_position_[j];
@@ -1054,7 +1054,7 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<uchar>& image,
 	const BoundingBox& bbox, const cv::Mat_<float>& current_shape, const cv::Mat_<float>& rotation, const float& scale, float& score){
 	Node* node = trees_[tree_index];
-    int gauss = (int) bbox.width / 200;
+    int gauss = (int) bbox.width / 300;
     gauss = std::min(2, gauss);
 	while (!node->is_leaf_){
 		FeatureLocations& pos = node->feature_locations_;
@@ -1131,6 +1131,245 @@ int RandomForest::GetBinaryFeatureIndex(int tree_index, const cv::Mat_<uchar>& i
 //	}
 //
 //}
+
+
+
+bool RandomForest::TrainForestGender(//std::vector<cv::Mat_<float>>& regression_targets,
+                               std::vector<cv::Mat_<uchar> >& images,
+                               std::vector<int>& augmented_images_index,
+                               std::vector<cv::Mat_<float>>& augmented_ground_truth_shapes,
+                               std::vector<BoundingBox>& augmented_bboxes,
+                               std::vector<cv::Mat_<float> >& augmented_current_shapes,
+                               std::vector<int> & augmented_ground_truth_genders,
+                               std::vector<float> & current_fi,
+                               std::vector<float> & current_weight,
+                               std::vector<int> & find_times,
+                               std::vector<cv::Mat_<float> >& rotations,
+                               std::vector<float>& scales){
+    
+    time_t current_time;
+    current_time = time(0);
+    cv::RNG rd(current_time);
+    //	 random generate feature locations
+    std::cout << "generate feature locations" << std::endl;
+
+    float overlap = 0.4;
+    int step = floor(((float)augmented_images_index.size())*overlap / (trees_num_per_forest_ - 1));
+    trees_.clear();
+    all_leaf_nodes_ = 0;
+    int accuDeleteNum = 0;
+    for (int i = 0; i < trees_num_per_forest_; i++){
+        //为每棵树都重新生成一次local feature，否则每个森林树太多时，特征不够用。如果16棵树，4层，需要31*16个不同特征
+        local_position_.clear();
+        local_position_.resize(local_features_num_);
+        for (int n = 0; n < local_features_num_; n++){
+            float x, y;
+            do{
+                x = rd.uniform(-local_radius_, local_radius_);
+                y = rd.uniform(-local_radius_, local_radius_);
+                //                            if ( i < 4 && x < -local_radius_/5.0) continue; //add by xujj, 避免脸部外侧的pixel
+                //                            if ( (i>13 && i<17) && x > local_radius_/5.0) continue;
+                //                            if ( (i>6 && i<10 ) && y > local_radius_/5.0) continue;
+            } while (x*x + y*y > local_radius_*local_radius_);
+            cv::Point2f a(x, y);
+            
+            do{
+                x = rd.uniform(-local_radius_, local_radius_);
+                y = rd.uniform(-local_radius_, local_radius_);
+                //                            if ( i < 4 && x < -local_radius_/5.0) continue;
+                //                            if ( (i>13 && i<17) && x > local_radius_/5.0) continue;
+                //                            if ( (i>6 && i<10 ) && y > local_radius_/5.0) continue;
+            } while (x*x + y*y > local_radius_*local_radius_);
+            cv::Point2f b(x, y);
+            
+            //TODO，这个地方可以试多个策略：1）自己，2）自己和随机一个，3）随机两个
+            //TODO，在前2个stage，用3，第三stage用2，后续stage，用1？如何？
+            int landmark1, landmark2;
+            if ( stage_ == 0 ){
+                landmark1 = (int)rd.uniform(0, landmark_num_);
+                landmark2 = (int)rd.uniform(0, landmark_num_);
+            }
+            else{
+                landmark1 = landmark_index_;
+                //                landmark2 = (int)rd.uniform(0, landmark_num_);
+                landmark2 = landmark_index_;
+            }
+            //            //test
+            //            landmark1 = landmark_index_;
+            //            landmark2 = landmark_index_;
+            
+            //            else if (  n % (stage_ + 3) == 0 ){
+            //                landmark1 = landmark_index_;
+            //                landmark2 = landmark_index_;
+            //            }
+            //            else if ( n % (stage_ + 3) == 1 ){
+            //                landmark1 = landmark_index_;
+            //                landmark2 = (int)rd.uniform(0, landmark_num_);
+            //            }
+            //            else {
+            //                landmark1 = landmark_index_;
+            //                landmark2 = adjointPoint(landmark1);
+            //            }
+            local_position_[n] = FeatureLocations(landmark1, landmark2, a, b);
+        }
+        //std::cout << "get pixel differences" << std::endl;
+        cv::Mat_<int> pixel_differences(local_features_num_, augmented_images_index.size()); // matrix: features*images
+        
+        //#pragma omp parallel for
+        for (int n = 0; n < augmented_images_index.size(); n++){
+            
+            cv::Mat_<float> rotation = rotations[n];
+            float scale = scales[n];
+            int gauss = (int) augmented_bboxes[n].width / 200;
+            gauss = std::min(2, gauss);
+            for (int j = 0; j < local_features_num_; j++){
+                FeatureLocations pos = local_position_[j];
+                float delta_x = rotation(0, 0)*pos.start.x + rotation(0, 1)*pos.start.y;
+                float delta_y = rotation(1, 0)*pos.start.x + rotation(1, 1)*pos.start.y;
+                delta_x = scale*delta_x*augmented_bboxes[n].width / 2.0;
+                delta_y = scale*delta_y*augmented_bboxes[n].height / 2.0;
+                int real_x = delta_x + augmented_current_shapes[n](pos.lmark1, 0);
+                int real_y = delta_y + augmented_current_shapes[n](pos.lmark1, 1);
+                real_x = std::max(gauss, std::min(real_x, images[augmented_images_index[n]].cols - 1 - gauss)); // which cols
+                real_y = std::max(gauss, std::min(real_y, images[augmented_images_index[n]].rows - 1 - gauss)); // which rows
+                int tmp = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-gauss, real_x) + images[augmented_images_index[n]](real_y+gauss, real_x) + images[augmented_images_index[n]](real_y, real_x-gauss) +images[augmented_images_index[n]](real_y, real_x+gauss)) / 6 ; //real_y at first
+                //int tmp = images[augmented_images_index[n]](real_y, real_x);
+                
+                delta_x = rotation(0, 0)*pos.end.x + rotation(0, 1)*pos.end.y;
+                delta_y = rotation(1, 0)*pos.end.x + rotation(1, 1)*pos.end.y;
+                delta_x = scale*delta_x*augmented_bboxes[n].width / 2.0;
+                delta_y = scale*delta_y*augmented_bboxes[n].height / 2.0;
+                real_x = delta_x + augmented_current_shapes[n](pos.lmark2, 0);
+                real_y = delta_y + augmented_current_shapes[n](pos.lmark2, 1);
+                real_x = std::max(gauss, std::min(real_x, images[augmented_images_index[n]].cols - 1 - gauss)); // which cols
+                real_y = std::max(gauss, std::min(real_y, images[augmented_images_index[n]].rows - 1 - gauss)); // which rows
+                int tmp2 = (int)(2*images[augmented_images_index[n]](real_y, real_x) + images[augmented_images_index[n]](real_y-gauss, real_x) + images[augmented_images_index[n]](real_y+gauss, real_x) + images[augmented_images_index[n]](real_y, real_x-gauss) +images[augmented_images_index[n]](real_y, real_x+gauss)) / 6 ;
+                //int tmp2 = images[augmented_images_index[n]](real_y, real_x);
+                if ( i % 2 == 0 ){
+                    pixel_differences(j, n) = abs(tmp - tmp2);
+                }
+                else{
+                    pixel_differences(j, n) = tmp - tmp2;
+                }
+            }
+        }
+        
+        //计算每个训练实例的weight
+        for(int k=0;k<current_weight.size();++k)
+        {
+            current_weight[k] = exp(0.0-augmented_ground_truth_genders[k]*current_fi[k]);
+        }
+        
+        int start_index = 0;//i*step;
+        int end_index = augmented_images_index.size();//augmented_images_index.size() - (trees_num_per_forest_ - i - 1)*step;
+        //cv::Mat_<int> data = pixel_differences(cv::Range(0, local_features_num_), cv::Range(start_index, end_index));
+        //cv::Mat_<int> sorted_data;
+        //cv::sortIdx(data, sorted_data, cv::SORT_EVERY_ROW + cv::SORT_ASCENDING);
+        std::set<int> selected_feature_indexes; //这个是用来表示那个feature已经被用过了
+        selected_feature_indexes.clear();
+        
+        current_time = time(0);
+        cv::RNG rd(current_time);
+        std::vector<int> images_indexes;
+        for (int j = start_index; j < end_index; j++){
+            if ( find_times[j] < MAXFINDTIMES){
+                //让每棵树的样本有点不一样
+                int r = rd.uniform(0, trees_num_per_forest_);
+                if ( r != 0 ){
+                    images_indexes.push_back(j);
+                }
+            }
+        }
+        
+        Node* root = BuildTree(selected_feature_indexes, pixel_differences, images_indexes, augmented_ground_truth_genders, current_weight, 0);
+        trees_.push_back(root);
+        
+        //计算每个训练实例的fi
+        for ( int n=0; n<augmented_images_index.size(); n++){
+            if ( find_times[n] >= MAXFINDTIMES ) continue;
+            float score = 0;
+            //用训练实例去遍历此树得出叶子节点的score
+            //            cv::Mat_<float> rotation;
+            //            float scale;
+            //            getSimilarityTransform(ProjectShape(augmented_current_shapes[n],augmented_bboxes[n]),mean_shape_,rotation,scale);
+            GetBinaryFeatureIndex(i, images[augmented_images_index[n]], augmented_bboxes[n], augmented_current_shapes[n], rotations[n] , scales[n], score);
+            current_fi[n] += score;
+        }
+        
+        //开始计算这棵树的detection threshold
+        std::vector<std::pair<float,int>> fiSort;
+        fiSort.clear();
+        for(int n=0;n<current_fi.size();++n)
+        {
+            if ( find_times[n] >= MAXFINDTIMES ) continue;
+            fiSort.push_back(std::pair<float,int>(current_fi[n],n));
+        }
+        // ascent , small fi means false sample
+        sort(fiSort.begin(),fiSort.end(),my_cmp);
+        // compute recall
+        // set threshold
+        float max_recall=0;
+        int min_error = fiSort.size();
+        int nn;
+        float cscore=0, pscore=0, nscore=0;
+        
+        //        int idx_tmp=-1;
+        
+        //        std::vector<std::pair<float,float>> precise_recall;
+        for (int n=0;n<fiSort.size();++n)
+        {
+            int true_pos=0;int false_neg=0;
+            int true_neg=0;int false_pos=0;
+            for(int m=0;m<fiSort.size();++m)
+            {
+                int isFace = augmented_ground_truth_genders[fiSort[m].second];
+                // below the threshold as non-face
+                if (m<n)
+                {
+                    if (isFace==1)
+                    {
+                        false_neg++;
+                    }
+                    else
+                    {
+                        true_neg++;
+                    }
+                }
+                // up the threshold as face
+                else
+                {
+                    if (isFace==1)
+                    {
+                        true_pos++;
+                    }
+                    else
+                    {
+                        false_pos++;
+                    }
+                }
+            }
+            //TODO：这个地方这样貌似取了最大召回率，应该再核对一下错误率。
+            //
+            if ( min_error > (false_neg + false_pos) /*true_pos/(true_pos+false_neg+FLT_MIN)>=max_recall*/)
+            {
+//                max_recall=true_pos/(true_pos+false_neg+FLT_MIN);
+                min_error = false_neg + false_pos;
+                //                precise_recall.push_back(pair<float,float>(true_pos/(true_pos+false_neg+FLT_MIN),false_pos/(false_pos+true_neg+FLT_MIN)));
+                                nn = n;
+                cscore = fiSort[n].first;
+                if ( n > 0 ) pscore = fiSort[n-1].first;
+                if ( n < fiSort.size() - 1 ) nscore = fiSort[n+1].first;
+                root->score_ = (pscore + cscore ) / 2; //跟节点的score作为threshold使用
+
+                //idx_tmp=n;
+            }
+        }
+        std::cout << "min_error " << min_error << " nn:" << nn << " pscore:" << pscore << " cscore:" << cscore << " nscore:" << nscore <<  std::endl;
+    }
+    
+    return true;
+}
+
 
 RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std::vector<cv::Mat_<float> >& regression_targets, CascadeRegressor *casRegressor, int true_pos_num){
 	stage_ = stage;

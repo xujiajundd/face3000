@@ -397,7 +397,7 @@ void getSimilarityTransform(const cv::Mat_<float>& shape_to,
 	rotation(1, 1) = cos_theta;
 }
 
-cv::Mat_<float> LoadGroundTruthShape(const char* name){
+cv::Mat_<float> LoadGroundTruthShape(const char* name, int& gender){
 	int landmarks = 0;
 	std::ifstream fin;
 	std::string temp;
@@ -410,6 +410,13 @@ cv::Mat_<float> LoadGroundTruthShape(const char* name){
 	for (int i = 0; i<landmarks; i++){
 		fin >> shape(i, 0) >> shape(i, 1);
 	}
+    getline(fin, temp); //读回车
+    getline(fin, temp); //读}
+    getline(fin, temp); //如果存在,读性别
+    if ( temp == "f" ) gender = -1;
+    else if ( temp == "m" ) gender = 1;
+    else gender = 0;
+    
 	fin.close();
 //    //add by xujj
 //    if (  shape.rows != 68 || shape.cols != 2) return shape; //错误，有调用者去处理
@@ -685,6 +692,7 @@ BoundingBox CalculateBoundingBoxRotation(cv::Mat_<float>& shape, cv::Mat_<float>
 int LoadImages(std::vector<cv::Mat_<uchar> >& images,
 	std::vector<cv::Mat_<float> >& ground_truth_shapes,
     std::vector<int>& ground_truth_faces,
+    std::vector<int>& ground_truth_genders,
 	//const std::vector<cv::Mat_<float> >& current_shapes,
 	std::vector<BoundingBox>& bboxes,
 	std::string file_names,
@@ -728,7 +736,8 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
         cv::Mat_<uchar> image = cv::imread(("/Users/xujiajun/developer/dataset/helen/" + name).c_str(), 0);
 //        cv::imshow("show image", image);
 //        cv::waitKey(0);
-        cv::Mat_<float> ground_truth_shape = LoadGroundTruthShape(("/Users/xujiajun/developer/dataset/helen/" + pts).c_str());
+        int gender;
+        cv::Mat_<float> ground_truth_shape = LoadGroundTruthShape(("/Users/xujiajun/developer/dataset/helen/" + pts).c_str(), gender);
         if ( ground_truth_shape.rows != 68 || ground_truth_shape.cols != 2){
             std::cout<<"error:" << pts << std::endl;
             continue;
@@ -783,6 +792,7 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
                 images.push_back(image);
                 ground_truth_shapes.push_back(convertShape(ground_truth_shape));
                 ground_truth_faces.push_back(1);
+                ground_truth_genders.push_back(gender);
                 BoundingBox bbox = CalculateBoundingBox(ground_truth_shape);
 //                bbox.start_x = faceRec.x;
 //                bbox.start_y = faceRec.y;
@@ -871,6 +881,7 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
                 }
                 ground_truth_shapes.push_back(convertShape(flipped_ground_truth_shape));
                 ground_truth_faces.push_back(1);
+                ground_truth_genders.push_back(gender);
                 BoundingBox flipped_bbox;
                 flipped_bbox.start_x = image.cols - (bbox.start_x + bbox.width);
                 flipped_bbox.start_y = bbox.start_y;
@@ -913,6 +924,7 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
         images.push_back(image);
         ground_truth_shapes.push_back(ReProjection(ProjectShape(ground_truth_shape, bbox), nbbox));
         ground_truth_faces.push_back(-1);
+        ground_truth_genders.push_back(0);
         bboxes.push_back(nbbox);
         neg_num++;
         
@@ -928,6 +940,7 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
         images.push_back(image);
         ground_truth_shapes.push_back(ReProjection(ProjectShape(ground_truth_shape, bbox), nbbox));
         ground_truth_faces.push_back(-1);
+        ground_truth_genders.push_back(0);
         bboxes.push_back(nbbox);
         neg_num++;
         
