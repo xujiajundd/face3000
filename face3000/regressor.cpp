@@ -22,7 +22,7 @@ CascadeRegressor::CascadeRegressor(){
     previousFrameShapes.clear();
     std::cout << "CascadeRegressor created" << std::endl;
     isLoaded = false;
-    trimNum = 100;
+    trimNum = 120;
     trimFactor = 0.5;
     scaleFactor = 1.15;
     flags = 0 | CASCADE_FLAG_TRACK_MODE;
@@ -919,6 +919,7 @@ int CascadeRegressor::detectGender(cv::Mat_<uchar>& image, cv::Mat_<float>& shap
     BoundingBox box = CalculateBoundingBox(shape);
     cv::Mat_<float> pshape = ProjectShape(shape, box);
     getSimilarityTransformAcc(pshape, params_.mean_shape_, rotation, scale); //这句其实也可能可以省去
+    
     regressors_[0].GetGlobalBinaryFeaturesGender(image, pshape, box, rotation, scale, score, is_male, lastThreshold);
     std::cout<<"gender:" << is_male << " score:" << score <<  std::endl;
     return is_male;
@@ -1197,7 +1198,7 @@ _label_search_1:
         }
     }
     
-    if ( candidates.size() < 3 || (candidates.size() < 16 && !tracking) ){ //第一没有足够neighbor可能是误识别
+    if ( candidates.size() < 3 || (candidates.size() < 12 && !tracking) ){ //第一没有足够neighbor可能是误识别
         return false;
     }
     
@@ -2188,6 +2189,7 @@ void Regressor::GetGlobalBinaryFeaturesGender(cv::Mat_<uchar>& image, cv::Mat_<f
             }
             else{
                 score += node->score_;
+//                std::cout << node->score_ << " ";
             }
             if ( score < scoreThreshold ){
                 is_male = - 1;
@@ -2207,7 +2209,7 @@ void Regressor::GetGlobalBinaryFeaturesGender(cv::Mat_<uchar>& image, cv::Mat_<f
         
         index += rd_forests_[j].all_leaf_nodes_;
     }
-    
+//    std::cout << std::endl;
 //    fnode[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].index = -1;
     //    tmp_binary_features[params_.trees_num_per_forest_*params_.landmarks_num_per_face_].value = -1.0;
     lastThreshold = rd_forests_[rd_forests_.size()-1].trees_[params_.trees_num_per_forest_-1]->score_;

@@ -622,16 +622,16 @@ void Train(const char* ModelName){
     
     params.local_features_num_ = 4000;
 	params.landmarks_num_per_face_ = NUM_LANDMARKS;
-    params.regressor_stages_ = 6;
+    params.regressor_stages_ = 7;
 //    params.local_radius_by_stage_.push_back(0.6);
 //    params.local_radius_by_stage_.push_back(0.5);
-	params.local_radius_by_stage_.push_back(0.45);
-    params.local_radius_by_stage_.push_back(0.3);
+	params.local_radius_by_stage_.push_back(0.5);
+    params.local_radius_by_stage_.push_back(0.35);
     params.local_radius_by_stage_.push_back(0.2);
-	params.local_radius_by_stage_.push_back(0.1);//0.1
-    params.local_radius_by_stage_.push_back(0.08);//0.08
+	params.local_radius_by_stage_.push_back(0.15);//0.1
+    params.local_radius_by_stage_.push_back(0.12);//0.08
+    params.local_radius_by_stage_.push_back(0.1);
     params.local_radius_by_stage_.push_back(0.08);
-    params.local_radius_by_stage_.push_back(0.04);
     params.local_radius_by_stage_.push_back(0.03);
 
 //    params.local_radius_by_stage_.push_back(0.2);

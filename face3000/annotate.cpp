@@ -87,8 +87,8 @@ public:
             gettimeofday(&t2, NULL);
             cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " isface:" << ret << endl;
             if ( ret > 0 ){
-                int gender = gender_detector.detectGender(grayImage, shape);
-                cout << "gender: " << gender << std::endl;
+//                int gender = gender_detector.detectGender(grayImage, shape);
+//                cout << "gender: " << gender << std::endl;
                 shape = reConvertShape(shape);
             }
             else{
@@ -130,6 +130,14 @@ public:
     }
 
     void draw_image(){  //画图片，画各点，选中点高亮
+        cv::Mat_<uchar> grayImage;
+        cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
+        cv::Mat_<float> cshape = convertShape(shape);
+        int gen = gender_detector.detectGender(grayImage, cshape);
+        cout << "gender: " << gen << std::endl;
+        if ( gen == -1 ) draw_alert("Female");
+        if ( gen == 1 ) draw_alert("Male");
+        
         for (int i = 0; i < shape.rows; i++){
             if ( i == pidx ){
                 cv::circle(image, cv::Point2f(shape(i, 0), shape(i, 1)), 4, Scalar(0,0,255));
@@ -196,10 +204,6 @@ public:
             draw_alert("Female");
         }
 */
-        cv::Mat_<uchar> grayImage;
-        cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
-        int gen = gender_detector.detectGender(grayImage, shape);
-        cout << "gender: " << gen << std::endl;
         
         if ( gender == -1 ) draw_alert("Female");
         if ( gender == 1 ) draw_alert("Male");
