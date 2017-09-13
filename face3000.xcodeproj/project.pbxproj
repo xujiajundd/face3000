@@ -36,7 +36,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		CA0CBE2C1F611EBF00F9E2AD /* gender_at.yml */ = {isa = PBXFileReference; lastKnownFileType = text; path = gender_at.yml; sourceTree = "<group>"; };
 		CA0CBE2D1F61238E00F9E2AD /* libopencv_contrib.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libopencv_contrib.dylib; sourceTree = "<group>"; };
 		CA13B2BA1CAB92D000EE2276 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		CA36A0E21D0030D4003F86C0 /* annotate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = annotate.h; sourceTree = "<group>"; };
@@ -129,7 +128,6 @@
 				CA49B0F11C817CEE00A0951B /* main.cpp */,
 				CAEF28DF1CFD670F0021664F /* annotate.cpp */,
 				CA36A0E21D0030D4003F86C0 /* annotate.h */,
-				CA0CBE2C1F611EBF00F9E2AD /* gender_at.yml */,
 				CA49B1021C817D1300A0951B /* liblinear */,
 			);
 			path = face3000;
@@ -309,7 +307,7 @@
 				ALWAYS_SEARCH_USER_PATHS = YES;
 				CLANG_X86_VECTOR_INSTRUCTIONS = default;
 				GCC_FAST_MATH = YES;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_UNROLL_LOOPS = NO;
 				HEADER_SEARCH_PATHS = (
 					/usr/local/include,

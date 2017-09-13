@@ -48,14 +48,14 @@ public:
     CascadeRegressor gender_detector;
     bool imageScaled;
     
-    Ptr<FaceRecognizer> model;
+//    Ptr<FaceRecognizer> model;
 
 
     annotate(){
         wname = "Annotate"; idx = 0; pidx = -1; gender = 0;
         message = "";
-        model = createFisherFaceRecognizer();
-        model->load("/Users/xujiajun/developer/face3000/face3000/gender_at.yml");
+//        model = createFisherFaceRecognizer();
+//        model->load("/Users/xujiajun/developer/face3000/face3000/gender_at.yml");
     }
 
     int set_current_image(const int cidx = 0){ //读取图片，读取pts，如果没有pts，调用shape程序自动计算一个

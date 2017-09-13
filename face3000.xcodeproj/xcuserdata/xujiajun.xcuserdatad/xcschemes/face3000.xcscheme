@@ -63,7 +63,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "video mv0802"
+            argument = "video mv0905"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -76,18 +76,18 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "trainGender mv0913g"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "annotate  /Users/xujiajun/developer/dataset/xujj/newtrain/test3 mv0802 "
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "annotate /Users/xujiajun/developer/dataset/xujj/newTrain/test4 mv0905"
-            isEnabled = "YES">
+            argument = "annotate /Users/xujiajun/developer/dataset/xujj/newTrain/test5 mv0905"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "annotate /Users/xujiajun/developer/dataset/xujj/newTrain/negtest"
+            argument = "annotate /Users/xujiajun/developer/dataset/xujj/newTrain/negtest mv0905"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>

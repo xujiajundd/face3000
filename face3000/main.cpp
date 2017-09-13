@@ -651,7 +651,7 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.2);
     
     params.tree_depth_ = 3;
-    params.trees_num_per_forest_ = 8;
+    params.trees_num_per_forest_ = 6;
     params.initial_guess_ = 2;
 
 //    params.group_num_ = 6;
@@ -822,64 +822,6 @@ void Hello(){
     gettimeofday(&t2, NULL);
     cout << "sum of image pointer: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " sum:" << sum << endl;
     
-//    int modellen = 2000;
-//    int stride = 16;
-//    int dim = 68;
-//    float x[modellen][dim], y[dim];
-//    for ( int i=0; i<dim; i++ ){
-//        for (int j=0; j<modellen; j++ ){
-//            x[j][i] = i*j;
-//            y[i] = 0;
-//        }
-//    }
-//    int rn = 10000;
-//    float sum;
-//    
-//
-//    gettimeofday(&t1, NULL);
-//    for ( int r=0; r<rn; r++){
-//        for ( int i=0; i<dim; i++){
-//            for (int j=0; j<modellen; j+= stride ){
-//                y[i] += x[j][i];
-//            }
-//        }
-//    }
-//    gettimeofday(&t2, NULL);
-//    sum = 0;
-//    for ( int i=0; i<dim; i++){
-//        sum += y[i];
-//    }
-//    cout << sum << endl;
-//    cout << "time1: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
-//
-//
-//    float xx[modellen][dim], yy[dim];
-//    for (int j=0; j<modellen; j++){
-//        for ( int i=0; i<dim; i++ ){
-//            xx[j][i] = i*j;
-//            yy[i] = 0;
-//        }
-//    }
-//
-//    float ssum;
-//
-//    gettimeofday(&t1, NULL);
-//
-//    for ( int r=0; r<rn; r++){
-//        for (int j=0; j<modellen; j+=stride){
-//            for ( int i=0; i<dim; i++){
-//                yy[i] += xx[j][i];
-//            }
-//        }
-//    }
-//    gettimeofday(&t2, NULL);
-//    ssum = 0;
-//
-//    for ( int i=0; i<dim; i++){
-//        ssum += yy[i];
-//    }
-//    cout << ssum << endl;
-//    cout << "time2: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << endl;
 }
 
 

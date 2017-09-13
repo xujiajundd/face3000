@@ -389,7 +389,15 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                         for ( int orient = so; orient < 4; orient++ ){
                             float cols = images[augmented_images_index[idx]].cols;
                             float rows = images[augmented_images_index[idx]].rows;
-                            for ( int sw_size = 64 * std::pow(1.06, ss); sw_size < std::min(cols, rows); sw_size = 64 * std::pow(1.06, ss)){
+                            for ( int sw_size_o = 64 * std::pow(1.06, ss); sw_size_o < std::min(cols, rows); sw_size_o = 64 * std::pow(1.06, ss)){
+                                int sw_size;
+                                //把一部分负例从大到小来用
+                                if ( idx % 2 == 0 ){
+                                    sw_size = sw_size_o;
+                                }
+                                else{
+                                    sw_size = std::min(cols, rows) + 63 - sw_size_o;
+                                }
                                 ss++;
                                 int p = (idx+ss+so) % true_pos_num_;
                                 float shuffle_size = sw_size * 0.06;

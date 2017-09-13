@@ -727,6 +727,10 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
 	int count = 0;
     int pos_num = 0;
 
+    time_t current_time;
+    current_time = time(0);
+    cv::RNG rd(current_time);
+    
 	//std::cout << name << std::endl;
 	while (fin >> name){
 		//std::cout << "reading file: " << name << std::endl;
@@ -755,6 +759,29 @@ int LoadImages(std::vector<cv::Mat_<uchar> >& images,
 //            cv::resize(image, image, cv::Size(image.cols / 2, image.rows / 2), 0, 0, cv::INTER_LINEAR);
 //            ground_truth_shape /= 2.0;
 //        }
+        
+        //截取一些做负例
+        /*
+        BoundingBox obox = CalculateBoundingBox(ground_truth_shape);
+        current_time = time(0);
+        if ( obox.width > image.cols / 2 ){
+            cv::Rect rect;
+            rect.width = obox.width * rd.uniform(0.25, 0.55);
+            rect.height = rect.width;
+            rect.x = obox.start_x + rd.uniform(-rect.width/2.0, obox.width - rect.width/2.0);
+            rect.y = obox.start_y + rd.uniform(-rect.height/2.0, obox.height - rect.width/2.0);
+            if ( rect.width > 160 && rect.x > 0 && rect.y > 0 && rect.x + rect.width < image.cols && rect.y + rect.height < image.rows ){
+                cv::Mat_<uchar> subImage = image(rect);
+                std::stringstream ss;
+                ss << current_time << rect.width << ".jpg";
+                std::string fname;
+                ss >> fname;
+                std::string file_name = "/Users/xujiajun/developer/dataset/helen/negsub/sub_" + fname;
+                imwrite(file_name, subImage);
+            }
+        }
+        */
+        
         
         float scale = image.cols / 500.0;
         if ( image.cols > 500 ){

@@ -22,7 +22,7 @@ CascadeRegressor::CascadeRegressor(){
     previousFrameShapes.clear();
     std::cout << "CascadeRegressor created" << std::endl;
     isLoaded = false;
-    trimNum = 120;
+    trimNum = 100;
     trimFactor = 0.5;
     scaleFactor = 1.15;
     flags = 0 | CASCADE_FLAG_TRACK_MODE;
@@ -889,14 +889,14 @@ bool box_overlap(BoundingBox box1, BoundingBox box2){
 
 struct candidate{
     float score;
-    float score16;
+//    float score16;
     BoundingBox box;
     cv::Mat_<float> shape;
     cv::Mat_<float> rotation;
     float scale;
     float lastThreshold;
     int is_face;
-    float ss[5];
+    float ss[7];
     int no;
     int size;
     struct feature_node_short *fnode;
@@ -1142,8 +1142,8 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
                         struct candidate cand;
 //                        cand.shape = result_shape;
                         cand.box = boxNear;
-                        cand.rotation = initRotation.clone();
-                        cand.scale = scale;
+//                        cand.rotation = initRotation.clone();
+//                        cand.scale = scale;
                         cand.score = score;
                         cand.is_face = is_face;
                         cand.lastThreshold = lastThreshold;
@@ -1166,8 +1166,8 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
                     struct candidate cand;
 //                    cand.shape = result_shape;
                     cand.box = box;
-                    cand.rotation = initRotation.clone();
-                    cand.scale = scale;
+//                    cand.rotation = initRotation.clone();
+//                    cand.scale = scale;
                     cand.score = score;
                     cand.is_face = is_face;
                     cand.lastThreshold = lastThreshold;
@@ -1194,7 +1194,7 @@ _label_search_1:
         std::cout << "***************scan:" << scan_count << " candidates:" << candidates.size() << std::endl;
         for ( int j = 0; j<candidates.size(); j++){
             struct candidate& cand = candidates[j];
-            std::cout << cand.no <<"   " << cand.size << "   " << cand.score16 << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << std::endl;
+            std::cout << cand.no <<"   " << cand.size << "   " << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << std::endl;
         }
     }
     
@@ -1240,13 +1240,15 @@ _label_search_1:
     }
     
     //TODO:这个地方如果cand超过5个或全幅10个,还可以继续删减
-//    sort(candidates.begin(), candidates.end(), my_cmp);
-//    while (candidates.size() > 30 ){
-//        candidates.pop_back();
-//    }
+    sort(candidates.begin(), candidates.end(), my_cmp);
+    while (candidates.size() > 20 ){
+        candidates.pop_back();
+    }
     
     for ( int i = 0; i<candidates.size(); i++){
         struct candidate& cand = candidates[i];
+        cand.rotation = initRotation.clone();
+        cand.scale = initScale;
         cand.shape = regressors_[0].PredictShort(default_shape, cand.fnode, cand.rotation, cand.scale);
     }
     
@@ -1276,7 +1278,7 @@ _label_search_1:
             std::cout << "candidates:" << candidates.size() << std::endl;
             for ( int j = 0; j<candidates.size(); j++){
                 struct candidate& cand = candidates[j];
-                std::cout << cand.no << "   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << "    " << cand.ss[4] << "   rotate:" << cand.rotation(0,0) << "   scale:" << cand.scale << std::endl;
+                std::cout << cand.no << "   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << "    " << cand.ss[4] << "    " << cand.ss[5] << "   rotate:" << cand.rotation(0,0) << "   scale:" << cand.scale << std::endl;
             }
         }
         
@@ -1304,6 +1306,21 @@ _label_search_1:
             }
             else{
                 ++it;
+            }
+        }
+        
+        //设置cand个数上限
+        if ( i == 1 && candidates.size() > 8 ){
+            sort(candidates.begin(), candidates.end(), my_cmp);
+            while (candidates.size() > 8 ){
+                candidates.pop_back();
+            }
+        }
+        
+        if ( i == 2 && candidates.size() > 4 ){
+            sort(candidates.begin(), candidates.end(), my_cmp);
+            while (candidates.size() > 4 ){
+                candidates.pop_back();
             }
         }
         
@@ -2488,6 +2505,7 @@ cv::Mat_<float> Regressor::PredictShort( cv::Mat_<float>& current_shape, feature
     int idx;
     float sum[2*params_.landmarks_num_per_face_];
     for ( int i=0; i<2*params_.landmarks_num_per_face_; i++) sum[i] = 0;
+//    memset(sum, 0, 8*params_.landmarks_num_per_face_); //这个方法不知道是否可行
     
     for(; (idx=fnode->index)!=-1 && idx < linear_model_x_[0]->nr_feature; fnode++){
         idx--;
