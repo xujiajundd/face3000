@@ -75,7 +75,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "trainGender mv0802g"
+            argument = "trainGender mv0913g"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -83,7 +83,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "annotate /Users/xujiajun/developer/dataset/xujj/newTrain/test mv0904"
+            argument = "annotate /Users/xujiajun/developer/dataset/xujj/newTrain/test4 mv0905"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

@@ -27,7 +27,7 @@ CascadeRegressor::CascadeRegressor(){
     scaleFactor = 1.15;
     flags = 0 | CASCADE_FLAG_TRACK_MODE;
 //    defaultMinSize = 100;
-    minSizeFactor = 6;
+    minSizeFactor = 8;
     shuffle = 0.2;
     searchPriority = CASCADE_PRIORITY_ACCURACY;
     cameraOrient = CASCADE_ORIENT_TOP_LEFT;

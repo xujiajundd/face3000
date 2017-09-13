@@ -205,8 +205,8 @@ public:
         }
 */
         
-        if ( gender == -1 ) draw_alert("Female");
-        if ( gender == 1 ) draw_alert("Male");
+        if ( gender == -1 ) draw_alert2("<Female>");
+        if ( gender == 1 ) draw_alert2("<Male>");
         cv::imshow(wname, image);
     }
 
@@ -269,6 +269,14 @@ public:
                 Scalar(20,20,255),1,CV_AA);
         putText(image,alert,cv::Point(image.cols/2 - size.width/2 + 1,image.rows - 49),FONT_HERSHEY_COMPLEX,1.0f,
                 Scalar(20,20,150),1,CV_AA);
+    }
+    
+    void draw_alert2(std::string alert){
+        cv::Size size = getTextSize(alert,FONT_HERSHEY_COMPLEX,1.0f,1,NULL);
+        putText(image,alert,cv::Point(image.cols/2 - size.width/2,image.rows - 20),FONT_HERSHEY_COMPLEX,1.0f,
+                Scalar(20,255,20),1,CV_AA);
+        putText(image,alert,cv::Point(image.cols/2 - size.width/2 + 1,image.rows - 19),FONT_HERSHEY_COMPLEX,1.0f,
+                Scalar(20,200,20),1,CV_AA);
     }
 
     void draw_message(){
@@ -717,7 +725,7 @@ int annotate_main(const char *path, const char *model)
 //    const char *ModelName = model;
     std::string ModelName = model;
     annotation.face_detector.LoadCascadeRegressor(ModelName);
-    annotation.gender_detector.LoadCascadeRegressor("mv0802g");
+    annotation.gender_detector.LoadCascadeRegressor("mv0913g");
 
     std::string current_dir = "";
     std::vector<std::string> lists;
