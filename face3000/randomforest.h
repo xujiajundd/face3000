@@ -46,6 +46,7 @@ public:
 //    std::vector<cv::Mat_<float> > augmented_ground_truth_shapes_;
 //    std::vector<cv::Mat_<float> > augmented_current_shapes_;
     CascadeRegressor *casRegressor_;
+    cv::RNG rd;
     
 	bool TrainForest(//std::vector<cv::Mat_<float> >& regression_targets, 
 		std::vector<cv::Mat_<uchar> >& images,

@@ -725,7 +725,7 @@ int annotate_main(const char *path, const char *model)
 //    const char *ModelName = model;
     std::string ModelName = model;
     annotation.face_detector.LoadCascadeRegressor(ModelName);
-    annotation.gender_detector.LoadCascadeRegressor("mv0913g");
+    annotation.gender_detector.LoadCascadeRegressor("mv0905g");
 
     std::string current_dir = "";
     std::vector<std::string> lists;

@@ -58,9 +58,9 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 //    current_weight_ = current_weight;
     //std::cout << "build forest of landmark: " << landmark_index_ << " of stage: " << stage_ << std::endl;
 	//regression_targets_ = &regression_targets;
-	time_t current_time;
-	current_time = time(0);
-	cv::RNG rd(current_time);
+//	time_t current_time;
+//	current_time = time(0);
+//	cv::RNG rd(current_time);
 //	 random generate feature locations
 	std::cout << "generate feature locations" << std::endl;
 //	local_position_.clear();
@@ -260,8 +260,8 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 		std::set<int> selected_feature_indexes; //这个是用来表示那个feature已经被用过了
         selected_feature_indexes.clear();
 
-        current_time = time(0);
-        cv::RNG rd(current_time);
+//        current_time = time(0);
+//        cv::RNG rd(current_time);
 		std::vector<int> images_indexes;
 		for (int j = start_index; j < end_index; j++){
             if ( find_times[j] < MAXFINDTIMES){
@@ -753,9 +753,9 @@ int RandomForest::FindSplitFeature(Node* node, std::set<int>& selected_feature_i
 	cv::Mat_<int>& pixel_differences, std::vector<int>& images_indexes, std::vector<int> & augmented_ground_truth_faces,std::vector<float> & current_weight, std::vector<int>& left_indexes, std::vector<int>& right_indexes){
 //	std::vector<int> val;
 	//cv::Mat_<int> sorted_fea;
-	time_t current_time;
-	current_time = time(0);
-	cv::RNG rd(current_time);
+//	time_t current_time;
+//	current_time = time(0);
+//	cv::RNG rd(current_time);
 	int threshold;
 //	float var = -1000000000000.0; // use -DBL_MAX will be better
 	int feature_index = -1;
@@ -1155,9 +1155,9 @@ bool RandomForest::TrainForestGender(//std::vector<cv::Mat_<float>>& regression_
                                std::vector<cv::Mat_<float> >& rotations,
                                std::vector<float>& scales){
     
-    time_t current_time;
-    current_time = time(0);
-    cv::RNG rd(current_time);
+//    time_t current_time;
+//    current_time = time(0);
+//    cv::RNG rd(current_time);
     //	 random generate feature locations
     std::cout << "generate feature locations" << std::endl;
 
@@ -1276,8 +1276,8 @@ bool RandomForest::TrainForestGender(//std::vector<cv::Mat_<float>>& regression_
         std::set<int> selected_feature_indexes; //这个是用来表示那个feature已经被用过了
         selected_feature_indexes.clear();
         
-        current_time = time(0);
-        cv::RNG rd(current_time);
+//        current_time = time(0);
+//        cv::RNG rd(current_time);
         std::vector<int> images_indexes;
         for (int j = start_index; j < end_index; j++){
             if ( find_times[j] < MAXFINDTIMES){
@@ -1403,6 +1403,10 @@ RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std
 	regression_targets_ = &regression_targets; // get the address pointer, not reference
     true_pos_num_ = true_pos_num;
     casRegressor_ = casRegressor;
+    
+    time_t current_time;
+    current_time = time(0);
+    rd = rd(current_time);
 }
 
 RandomForest::RandomForest(){

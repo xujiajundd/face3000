@@ -268,11 +268,16 @@ std::vector<cv::Mat_<float>> GetCategoryMeanShapes(std::vector<cv::Mat_<float> >
 void getSimilarityTransformAcc(const cv::Mat_<float>& shape_to,
                             const cv::Mat_<float>& shape_from,
                             cv::Mat_<float>& rotation, float& scale){
+    
+//    getSimilarityTransform(shape_to, shape_from, rotation, scale);
+//    return;
+    
     //int table[] = {0,1,6,7,16,17,21,22,26,27,31,33,35,36,39,42,45,48,51,54,57};
-    int table[] = {0,1,6,7,16,17,26,27,33,36,45,48,54};
-    cv::Mat_<float> from(13, 2);
-    cv::Mat_<float> to(13,2);
-    for ( int i=0; i<13; i++ ){
+    //int table[] = {0,1,6,7,16,17,26,27,33,36,45,48,54};
+    int table[] = {0,1,4,5,8,9,12,13,16,17,19,21,22,24,26,27,33,36,45,48,54};
+    cv::Mat_<float> from(21, 2);
+    cv::Mat_<float> to(21,2);
+    for ( int i=0; i<21; i++ ){
         from(i,0) = shape_from(table[i], 0);
         from(i,1) = shape_from(table[i], 1);
         to(i,0) = shape_to(table[i], 0);

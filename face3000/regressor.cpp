@@ -933,6 +933,17 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
     int maxSize;
     int minSize;
     
+    if ( track_mode){
+        shuffle = 0.4;
+        scaleFactor = 1.2;
+        trimNum = 50;
+    }
+    else{
+        shuffle = 0.2;
+        scaleFactor = 1.15;
+        trimNum = 100;
+    }
+    
     cv::Rect searchRect;
     cv::Mat_<float> default_shape;
     BoundingBox sbox;
@@ -1240,8 +1251,15 @@ _label_search_1:
     }
     
     //TODO:这个地方如果cand超过5个或全幅10个,还可以继续删减
+    int limitNum;
+    if ( track_mode ){
+        limitNum = 4;
+    }
+    else{
+        limitNum = 24;
+    }
     sort(candidates.begin(), candidates.end(), my_cmp);
-    while (candidates.size() > 20 ){
+    while (candidates.size() > limitNum ){
         candidates.pop_back();
     }
     
@@ -1294,8 +1312,9 @@ _label_search_1:
         }
         
         if ( !tracking && candidates.size() < ( /*params_.predict_regressor_stages_*/ 5 - i - 1) ){ //中间阶段没有neighbor也可能是误识别
-            if ( maxScore < 0 )
+            if ( maxScore < 0 ){
                 return false;
+            }
         }
         //处理candidates，删除排名靠后的
         std::vector<struct candidate>::iterator it;

@@ -64,7 +64,7 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "video mv0905"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "video model_t6d4n8i2"
@@ -76,7 +76,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "trainGender mv0913g"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "annotate  /Users/xujiajun/developer/dataset/xujj/newtrain/test3 mv0802 "
