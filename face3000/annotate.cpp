@@ -83,7 +83,7 @@ public:
             cv::Rect rect;
             struct timeval t1, t2;
             gettimeofday(&t1, NULL);
-            bool ret = face_detector.detectOne(grayImage, rect, shape, CASCADE_FLAG_TRACK_MODE);
+            bool ret = face_detector.detectOne(grayImage, rect, shape, 0);
             gettimeofday(&t2, NULL);
             cout << "time predict: " << t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec)/1000000.0 << " isface:" << ret << endl;
             if ( ret > 0 ){
@@ -725,7 +725,7 @@ int annotate_main(const char *path, const char *model)
 //    const char *ModelName = model;
     std::string ModelName = model;
     annotation.face_detector.LoadCascadeRegressor(ModelName);
-    annotation.gender_detector.LoadCascadeRegressor("mv0905g");
+    annotation.gender_detector.LoadCascadeRegressor("mv0913g");
 
     std::string current_dir = "";
     std::vector<std::string> lists;

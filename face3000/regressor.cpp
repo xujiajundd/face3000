@@ -25,15 +25,15 @@ CascadeRegressor::CascadeRegressor(){
     trimNum = 100;
     trimFactor = 0.5;
     scaleFactor = 1.15;
-    flags = 0 | CASCADE_FLAG_TRACK_MODE;
+//    flags = 0 | CASCADE_FLAG_TRACK_MODE;
 //    defaultMinSize = 100;
     minSizeFactor = 8;
     shuffle = 0.2;
     searchPriority = CASCADE_PRIORITY_ACCURACY;
     cameraOrient = CASCADE_ORIENT_TOP_LEFT;
     multiOrientSupport = false;
-    f_nodes = new feature_node_short*[3*trimNum];
-    for ( int i=0; i<3*trimNum; i++ ){
+    f_nodes = new feature_node_short*[4*trimNum];
+    for ( int i=0; i<4*trimNum; i++ ){
         f_nodes[i] = NULL;
     }
 }
@@ -940,8 +940,8 @@ bool CascadeRegressor::detectOne(cv::Mat_<uchar>& image, cv::Rect& rect, cv::Mat
     }
     else{
         shuffle = 0.2;
-        scaleFactor = 1.15;
-        trimNum = 100;
+        scaleFactor = 1.1;
+        trimNum = 160;
     }
     
     cv::Rect searchRect;
@@ -1256,7 +1256,7 @@ _label_search_1:
         limitNum = 4;
     }
     else{
-        limitNum = 24;
+        limitNum = 32;
     }
     sort(candidates.begin(), candidates.end(), my_cmp);
     while (candidates.size() > limitNum ){
