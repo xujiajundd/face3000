@@ -1209,7 +1209,7 @@ _label_search_1:
         }
     }
     
-    if ( candidates.size() < 3 || (candidates.size() < 12 && !tracking) ){ //第一没有足够neighbor可能是误识别
+    if ( candidates.size() < 3 || (candidates.size() < 10 && !tracking) ){ //第一没有足够neighbor可能是误识别
         return false;
     }
     
@@ -1329,14 +1329,14 @@ _label_search_1:
         }
         
         //设置cand个数上限
-        if ( i == 1 && candidates.size() > 8 ){
+        if ( i == 1 && candidates.size() > 10 ){
             sort(candidates.begin(), candidates.end(), my_cmp);
             while (candidates.size() > 8 ){
                 candidates.pop_back();
             }
         }
         
-        if ( i == 2 && candidates.size() > 4 ){
+        if ( i == 2 && candidates.size() > 5 ){
             sort(candidates.begin(), candidates.end(), my_cmp);
             while (candidates.size() > 4 ){
                 candidates.pop_back();
