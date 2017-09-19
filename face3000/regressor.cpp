@@ -1296,7 +1296,7 @@ _label_search_1:
             std::cout << "candidates:" << candidates.size() << std::endl;
             for ( int j = 0; j<candidates.size(); j++){
                 struct candidate& cand = candidates[j];
-                std::cout << cand.no << "   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << "    " << cand.ss[4] << "    " << cand.ss[5] << "   rotate:" << cand.rotation(0,0) << "   scale:" << cand.scale << std::endl;
+                std::cout << cand.no << "   " << cand.size << "   " << cand.ss[0] << "     " << cand.ss[1] << "    " << cand.ss[2] << "    " << cand.ss[3] << "    " << cand.ss[4] << "    " << cand.ss[5] << "    " << cand.ss[6] <<"   rotate:" << cand.rotation(0,0) << "   scale:" << cand.scale << std::endl;
             }
         }
         
