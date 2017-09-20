@@ -1371,7 +1371,7 @@ _label_search_1:
             }
         }
         if ( !tracking && cand.score < 0 ){
-            return false;
+//            return false;
         }
         shape = ReProjection(cand.shape, cand.box);
 //        previousFrameRotation = cand.rotation;
