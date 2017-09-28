@@ -645,9 +645,9 @@ void Train(const char* ModelName){
     params.detect_factor_by_stage_.push_back(0.7);
     params.detect_factor_by_stage_.push_back(0.6);
     params.detect_factor_by_stage_.push_back(0.5);
-    params.detect_factor_by_stage_.push_back(0.5);
-    params.detect_factor_by_stage_.push_back(0.5);
-    params.detect_factor_by_stage_.push_back(0.5);
+    params.detect_factor_by_stage_.push_back(0.4);
+    params.detect_factor_by_stage_.push_back(0.3);
+    params.detect_factor_by_stage_.push_back(0.3);
     params.detect_factor_by_stage_.push_back(0.2);
     
     params.tree_depth_ = 3;

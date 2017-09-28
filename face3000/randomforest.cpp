@@ -429,7 +429,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
                                         if ( tmp_isface){
                                             current_fi[idx] = tmp_fi;
                                             current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
-                                            if ( current_weight[idx] > 10000000 ) continue;
+                                            if ( current_weight[idx] > 1000000000 ) continue;
                                             faceFound = true;
                                             //augmented_current_shapes[idx] = shape;
                                             //augmented_bboxes[idx]=new_box;
@@ -605,7 +605,7 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
 //                                                if ( tmp_fi > 0 ) tmp_fi /= 5.0;
                                                 current_fi[idx] = tmp_fi;
                                                 current_weight[idx] = exp(0.0-augmented_ground_truth_faces[idx]*current_fi[idx]);
-                                                if ( current_weight[idx] > 10000000 ) continue;
+                                                if ( current_weight[idx] > 1000000000 ) continue;
                                                 faceFound = true;
 //                                                augmented_current_shapes[idx] = shape;
 //                                                augmented_bboxes[idx]=new_box;
