@@ -158,8 +158,12 @@ bool RandomForest::TrainForest(//std::vector<cv::Mat_<float>>& regression_target
             //TODO，这个地方可以试多个策略：1）自己，2）自己和随机一个，3）随机两个
             //TODO，在前2个stage，用3，第三stage用2，后续stage，用1？如何？
             int landmark1, landmark2;
-            if ( stage_ == 0 && landmark_index_ < 17 /*&& landmark_index_ < 50*/ ){
+            if ( stage_ == 0 /*&& landmark_index_ < 17 *//*&& landmark_index_ < 50*/ ){
                 landmark1 = (int)rd.uniform(0, landmark_num_);
+                landmark2 = (int)rd.uniform(0, landmark_num_);
+            }
+            else if ( stage_ == 1 || stage_ == 2 ){
+                landmark1 = landmark_index_;
                 landmark2 = (int)rd.uniform(0, landmark_num_);
             }
             else{
