@@ -1392,17 +1392,17 @@ RandomForest::RandomForest(Parameters& param, int landmark_index, int stage, std
             local_features_num_ = param.local_features_num_;
         }
         else{
-            local_features_num_ = param.local_features_num_;
+            local_features_num_ = param.local_features_num_ / 4;
         }
     }
 //    else if ( stage >= 3 ){
 //        local_features_num_ = param.local_features_num_ / 2;
 //    }
     else if ( stage == 1 || stage == 2 ){
-        local_features_num_ = param.local_features_num_ ;
+        local_features_num_ = param.local_features_num_ / 4;
     }
     else {
-        local_features_num_ = param.local_features_num_ / 4;
+        local_features_num_ = param.local_features_num_ / 8;
     }
 
 	landmark_index_ = landmark_index;
